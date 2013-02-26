@@ -16,7 +16,6 @@ def login(host, username, password):
     token = None
     url = "/api-token-auth/"
 
-    # Get token and destroy the user credentials
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
 
     auth_headers = {
@@ -80,7 +79,6 @@ def get_projects(host, token, project_name=None):
     conn = httplib.HTTPConnection(host)
     conn.request('GET', project_list_url, headers=headers)
 
-    # get the response, then the headers and data
     response = conn.getresponse()
     #headers = response.getheaders()
     if response.status == 200:
@@ -130,22 +128,22 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     body.append('')
     body.append(subject_pk)
 
+    # add the site field if present
     if site_pk:
-        # add the site field and value to body
         body.append('--%s' % BOUNDARY)
         body.append('Content-Disposition: form-data; name="site"')
         body.append('')
         body.append(site_pk)
 
+    # add the visit_type field if present
     if visit_type_pk:
-        # add the site field and value to body
         body.append('--%s' % BOUNDARY)
         body.append('Content-Disposition: form-data; name="visit_type"')
         body.append('')
         body.append(visit_type_pk)
-
+    
+    # add the panel field if present
     if panel_pk:
-        # add the site field and value to body
         body.append('--%s' % BOUNDARY)
         body.append('Content-Disposition: form-data; name="panel"')
         body.append('')
