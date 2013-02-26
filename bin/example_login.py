@@ -7,7 +7,6 @@ username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
 token = login(host, username, password)
-print token
 
 if token:
     print "Got token!!!"

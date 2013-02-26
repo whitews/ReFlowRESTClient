@@ -5,6 +5,51 @@ import json
 import urllib
 
 BOUNDARY = '----Boundary'
+URLS = {
+    'TOKEN': '/api-token-auth/',
+    'PROJECTS': '/api/projects/',
+    'SITES': '/api/sites/',
+    'SUBJECTS': '/api/subjects/',
+    'PANELS': '/api/panels/',
+    'PARAMETERS': '/api/parameters/',
+    'SAMPLES': '/api/samples/',
+}
+
+
+def get_request(host, token, url):
+    """
+    Returns a dictionary with the following keys:
+        status: HTTP response status code
+        reason: HTTP response reason
+        data: A dictionary converted from JSON response data
+    """
+
+    headers = {
+        'User-Agent': 'python',
+        'Authorization': "Token %s" % token,
+    }
+
+    conn = httplib.HTTPConnection(host)
+    conn.request('GET', url, headers=headers)
+
+    response = conn.getresponse()
+    #headers = response.getheaders()
+    if response.status == 200:
+        try:
+            data = json.loads(response.read())
+        except Exception, e:
+            data = ''
+            print e
+
+    else:
+        data = ''
+
+    return {
+        'status': response.status,
+        'reason': response.reason,
+        'data': data,
+    }
+
 
 def login(host, username, password):
     """
@@ -14,7 +59,6 @@ def login(host, username, password):
     """
 
     token = None
-    url = "/api-token-auth/"
 
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
 
@@ -37,7 +81,7 @@ def login(host, username, password):
     ]
 
     conn = httplib.HTTPConnection(host)
-    conn.request('POST', url, '\r\n'.join(auth_data), auth_headers)
+    conn.request('POST', URLS['TOKEN'], '\r\n'.join(auth_data), auth_headers)
     response = conn.getresponse()
 
     if response.status == 200:
@@ -59,7 +103,7 @@ def login(host, username, password):
 
 
 def get_projects(host, token, project_name=None):
-    project_list_url = '/api/projects/'
+    url = URLS['PROJECTS']
     filter_params = list()
 
     if project_name is not None:
@@ -67,35 +111,106 @@ def get_projects(host, token, project_name=None):
 
     if len(filter_params) > 0:
         filter_string = "&".join(filter_params)
-        project_list_url = "?".join([project_list_url, filter_string])
+        url = "?".join([url, filter_string])
 
-    print project_list_url
+    return get_request(host, token, url)
 
-    headers = {
-        'User-Agent': 'python',
-        'Authorization': "Token %s" % token,
-    }
 
-    conn = httplib.HTTPConnection(host)
-    conn.request('GET', project_list_url, headers=headers)
+def get_sites(host, token, site_name=None, project_pk=None):
+    url = URLS['SITES']
+    filter_params = list()
 
-    response = conn.getresponse()
-    #headers = response.getheaders()
-    if response.status == 200:
-        try:
-            data = response.read()
-        except Exception, e:
-            data = ''
-            print e
+    if site_name is not None:
+        filter_params.append(urllib.urlencode({'site_name': site_name}))
 
-    else:
-        data = ''
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'project': project_pk}))
 
-    return {
-        'status': response.status,
-        'reason': response.reason,
-        'data': data,
-    }
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_subjects(host, token, subject_id=None, project_pk=None):
+    url = URLS['SUBJECTS']
+    filter_params = list()
+
+    if subject_id is not None:
+        filter_params.append(urllib.urlencode({'subject_id': subject_id}))
+
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'project': project_pk}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
+    url = URLS['PANELS']
+    filter_params = list()
+
+    if panel_name is not None:
+        filter_params.append(urllib.urlencode({'panel_name': panel_name}))
+
+    if site_pk is not None:
+        filter_params.append(urllib.urlencode({'site': site_pk}))
+
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'site__project': project_pk}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
+    url = URLS['PARAMETERS']
+    filter_params = list()
+
+    if name is not None:
+        filter_params.append(urllib.urlencode({'parameter_short_name': name}))
+
+    if name_contains is not None:
+        filter_params.append(urllib.urlencode({'name_contains': name_contains}))
+
+    if type is not None:
+        filter_params.append(urllib.urlencode({'parameter_type': parameter_type}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, parameter_names=None):
+    url = URLS['SAMPLES']
+    filter_params = list()
+
+    if subject_pk is not None:
+        filter_params.append(urllib.urlencode({'subject': subject_pk}))
+
+    if site_pk is not None:
+        filter_params.append(urllib.urlencode({'site': site_pk}))
+
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'subject__project': project_pk}))
+
+    if parameter_names is not None:
+        filter_params.append(urllib.urlencode({'parameter_names': parameter_names}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
 
 
 def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visit_type_pk=None, panel_pk=None):
