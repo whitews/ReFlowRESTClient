@@ -13,6 +13,7 @@ URLS = {
     'PANELS': '/api/panels/',
     'PARAMETERS': '/api/parameters/',
     'SAMPLES': '/api/samples/',
+    'VISIT_TYPES': '/api/visit_types/'
 }
 
 
@@ -108,6 +109,23 @@ def get_projects(host, token, project_name=None):
 
     if project_name is not None:
         filter_params.append(urllib.urlencode({'project_name': project_name}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_visit_types(host, token, visit_type_name=None, project_pk=None):
+    url = URLS['VISIT_TYPES']
+    filter_params = list()
+
+    if visit_type_name is not None:
+        filter_params.append(urllib.urlencode({'visit_type_name': visit_type_name}))
+
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'project': project_pk}))
 
     if len(filter_params) > 0:
         filter_string = "&".join(filter_params)
@@ -253,7 +271,7 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     # add the visit_type field if present
     if visit_type_pk:
         body.append('--%s' % BOUNDARY)
-        body.append('Content-Disposition: form-data; name="visit_type"')
+        body.append('Content-Disposition: form-data; name="visit"')
         body.append('')
         body.append(visit_type_pk)
     
@@ -279,12 +297,13 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     conn = httplib.HTTPConnection(host)
     conn.request('POST', post_sample_url, '\r\n'.join(body), headers)
     response = conn.getresponse()
-    if response.status == 200:
+    if response.status == 201:
         try:
-            data = response.read()
+            data = json.loads(response.read())
         except Exception, e:
             data = ''
             print e
+
 
     else:
         data = ''
