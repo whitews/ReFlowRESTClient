@@ -30,10 +30,11 @@ def get_request(host, token, url):
         'Authorization': "Token %s" % token,
     }
 
-    conn = httplib.HTTPConnection(host)
+    conn = httplib.HTTPSConnection(host)
     conn.request('GET', url, headers=headers)
 
     response = conn.getresponse()
+
     #headers = response.getheaders()
     if response.status == 200:
         try:
@@ -81,7 +82,7 @@ def login(host, username, password):
         '',
     ]
 
-    conn = httplib.HTTPConnection(host)
+    conn = httplib.HTTPSConnection(host)
     conn.request('POST', URLS['TOKEN'], '\r\n'.join(auth_data), auth_headers)
     response = conn.getresponse()
 
@@ -294,7 +295,7 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     body.append('--' + BOUNDARY + '--')
     body.append('')
 
-    conn = httplib.HTTPConnection(host)
+    conn = httplib.HTTPSConnection(host)
     conn.request('POST', post_sample_url, '\r\n'.join(body), headers)
     response = conn.getresponse()
     if response.status == 201:
