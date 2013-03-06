@@ -4,7 +4,7 @@ import stat
 import json
 import urllib
 
-BOUNDARY = '----Boundary'
+BOUNDARY = '--------Boundary'
 URLS = {
     'TOKEN': '/api-token-auth/',
     'PROJECTS': '/api/projects/',
@@ -242,18 +242,8 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
         'data': JSON string representation of the Sample object successfully posted, empty string if unsuccessful
     """
 
-    file_obj = open(file_path, "rb")
-
     post_sample_url = '/api/samples/'
-
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-
-    headers = {
-        'User-Agent': 'python',
-        'Content-Type': content_type,
-        'Authorization': "Token %s" % token,
-    }
-
     body = list()
 
     # add the subject field and value to body
@@ -284,30 +274,50 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
         body.append(panel_pk)
 
     # get FCS file and append to body
+    file_obj = open(file_path, "rb")
     file_size = os.fstat(file_obj.fileno())[stat.ST_SIZE]  # not used now, but we may want to chunk the file if too large
     filename = file_obj.name.split('/')[-1]
     body.append('--%s' % BOUNDARY)
     body.append('Content-Disposition: form-data; name="sample_file"; filename="%s"' % filename)
     body.append('Content-Type: application/octet-stream')
     file_obj.seek(0)
-    body.append('\r\n' + file_obj.read())
-
+    body.append('')
+    body.append(file_obj.read())
+    file_obj.close()
     body.append('--' + BOUNDARY + '--')
     body.append('')
 
+    body = '\r\n'.join(body)
+
     conn = httplib.HTTPSConnection(host)
-    conn.request('POST', post_sample_url, '\r\n'.join(body), headers)
-    response = conn.getresponse()
+    #conn.set_debuglevel(1)
+    headers = {
+        'User-Agent': 'python',
+        'Authorization': "Token %s" % token,
+        'Content-Type': content_type,
+        'Content-Length': str(len(body)),
+        'Connection': 'keep-alive',
+    }
+
+    conn.request('POST', post_sample_url, body, headers)
+    try:
+        response = conn.getresponse()
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
     if response.status == 201:
         try:
-            data = json.loads(response.read())
+            resp = response.read()
+            print response.getheaders()
         except Exception, e:
-            data = ''
+            return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
+        try:
+            data = json.loads(resp)
+        except Exception, e:
+            data = resp
             print e
-
-
     else:
-        data = ''
+        data = response.read()
 
     return {
         'status': response.status,
