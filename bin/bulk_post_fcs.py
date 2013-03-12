@@ -3,7 +3,6 @@ import sys
 import json
 from reflowrestclient.utils import *
 import fcm
-import time
 
 file_path_list = sys.argv[1:]
 
@@ -72,17 +71,6 @@ for i, result in enumerate(site_list['data']['results']):
 site_choice = raw_input('Choose Site: ')
 site = site_list['data']['results'][int(site_choice)]
 
-
-# Panels
-panel_list = get_panels(host, token, site_pk=site['id'], project_pk=project['id'])
-
-for i, result in enumerate(panel_list['data']['results']):
-    print i, ':', result['panel_name']
-
-panel_choice = raw_input('Choose Panel: ')
-panel = panel_list['data']['results'][int(panel_choice)]
-
-
 # Now have user verify information
 print '=' * 40
 print 'The following files will be uploaded:'
@@ -95,7 +83,6 @@ print '\tProject: %s' % project['project_name']
 print '\tVisit Type: %s' % visit_type['visit_type_name']
 print '\tSubject: %s' % subject['subject_id']
 print '\tSite: %s' % site['site_name']
-print '\tPanel: %s' % panel['panel_name']
 print '=' * 40
 
 upload_choice = None
@@ -114,12 +101,9 @@ for file_path in file_path_list:
         file_path,
         subject_pk=str(subject['id']),
         site_pk=str(site['id']),
-        visit_type_pk=str(visit_type['id']),
-        panel_pk=str(panel['id'])
+        visit_type_pk=str(visit_type['id'])
     )
 
     print "Response: ", response_dict['status'], response_dict['reason']
-    #print 'Data: '
-    #print json.dumps(response_dict['data'], indent=4)
-
-    #time.sleep(1)
+    print 'Data: '
+    print json.dumps(response_dict['data'], indent=4)
