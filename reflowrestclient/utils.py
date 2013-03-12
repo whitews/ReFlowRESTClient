@@ -1,6 +1,4 @@
 import httplib
-import os
-import stat
 import json
 import urllib
 
@@ -90,7 +88,7 @@ def login(host, username, password):
         try:
             data = response.read()
             json_resp = json.loads(data)
-            if json_resp.has_key('token'):
+            if 'token' in json_resp:
                 token = json_resp['token']
                 # delete all the user credentials
                 del(data, json_resp, response, username, password)
@@ -232,9 +230,28 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, par
     return get_request(host, token, url)
 
 
+def get_sample_data(host, token, sample_pk=None):
+    if sample_pk is not None:
+        url = "%s%d%s" % (URLS['SAMPLES'], sample_pk, '/channels/')
+    else:
+        return 'sample_pk is required'
+
+    filter_params = list()
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
 def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visit_type_pk=None, panel_pk=None):
     """
-    POST a FCS sample, associating the file with a subject (required), site (optional), visit_type (optional), panel (optional)
+    POST a FCS sample, associating the file with the following:
+        subject    (required)
+        site       (optional)
+        visit_type (optional)
+        panel      (optional)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
@@ -275,7 +292,6 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
 
     # get FCS file and append to body
     file_obj = open(file_path, "rb")
-    file_size = os.fstat(file_obj.fileno())[stat.ST_SIZE]  # not used now, but we may want to chunk the file if too large
     filename = file_obj.name.split('/')[-1]
     body.append('--%s' % BOUNDARY)
     body.append('Content-Disposition: form-data; name="sample_file"; filename="%s"' % filename)
@@ -309,7 +325,7 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
         try:
             resp = response.read()
             print response.getheaders()
-        except Exception, e:
+        except:
             return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
         try:
             data = json.loads(resp)
