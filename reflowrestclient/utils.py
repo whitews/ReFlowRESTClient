@@ -105,6 +105,7 @@ def login(host, username, password):
 def get_projects(host, token, project_name=None):
     url = URLS['PROJECTS']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if project_name is not None:
         filter_params.append(urllib.urlencode({'project_name': project_name}))
@@ -119,6 +120,7 @@ def get_projects(host, token, project_name=None):
 def get_visit_types(host, token, visit_type_name=None, project_pk=None):
     url = URLS['VISIT_TYPES']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if visit_type_name is not None:
         filter_params.append(urllib.urlencode({'visit_type_name': visit_type_name}))
@@ -136,6 +138,7 @@ def get_visit_types(host, token, visit_type_name=None, project_pk=None):
 def get_sites(host, token, site_name=None, project_pk=None):
     url = URLS['SITES']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if site_name is not None:
         filter_params.append(urllib.urlencode({'site_name': site_name}))
@@ -153,6 +156,7 @@ def get_sites(host, token, site_name=None, project_pk=None):
 def get_subjects(host, token, subject_id=None, project_pk=None):
     url = URLS['SUBJECTS']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if subject_id is not None:
         filter_params.append(urllib.urlencode({'subject_id': subject_id}))
@@ -170,6 +174,7 @@ def get_subjects(host, token, subject_id=None, project_pk=None):
 def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
     url = URLS['PANELS']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if panel_name is not None:
         filter_params.append(urllib.urlencode({'panel_name': panel_name}))
@@ -190,6 +195,7 @@ def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
 def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
     url = URLS['PARAMETERS']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if name is not None:
         filter_params.append(urllib.urlencode({'parameter_short_name': name}))
@@ -210,6 +216,7 @@ def get_parameters(host, token, name=None, parameter_type=None, name_contains=No
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, parameter_names=None):
     url = URLS['SAMPLES']
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if subject_pk is not None:
         filter_params.append(urllib.urlencode({'subject': subject_pk}))
@@ -237,6 +244,7 @@ def get_sample_data(host, token, sample_pk=None):
         return 'sample_pk is required'
 
     filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
 
     if len(filter_params) > 0:
         filter_string = "&".join(filter_params)
