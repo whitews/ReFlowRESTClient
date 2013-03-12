@@ -35,41 +35,41 @@ else:
 # Projects
 project_list = get_projects(host, token)
 
-for i, result in enumerate(project_list['data']['results']):
+for i, result in enumerate(project_list['data']):
     print i, ':', result['project_name']
 
 project_choice = raw_input('Choose Project:')
-project = project_list['data']['results'][int(project_choice)]
+project = project_list['data'][int(project_choice)]
 
 
 # Visits
 visit_type_list = get_visit_types(host, token, project_pk=project['id'])
 
-for i, result in enumerate(visit_type_list['data']['results']):
+for i, result in enumerate(visit_type_list['data']):
     print i, ':', result['visit_type_name']
 
 visit_type_choice = raw_input('Choose Visit Type: ')
-visit_type = visit_type_list['data']['results'][int(visit_type_choice)]
+visit_type = visit_type_list['data'][int(visit_type_choice)]
 
 
 # Subjects
 subject_list = get_subjects(host, token, project_pk=project['id'])
 
-for i, result in enumerate(subject_list['data']['results']):
+for i, result in enumerate(subject_list['data']):
     print i, ':', result['subject_id']
 
 subject_choice = raw_input('Choose Subject: ')
-subject = subject_list['data']['results'][int(subject_choice)]
+subject = subject_list['data'][int(subject_choice)]
 
 
 # Sites
 site_list = get_sites(host, token, project_pk=project['id'])
 
-for i, result in enumerate(site_list['data']['results']):
+for i, result in enumerate(site_list['data']):
     print i, ':', result['site_name']
 
 site_choice = raw_input('Choose Site: ')
-site = site_list['data']['results'][int(site_choice)]
+site = site_list['data'][int(site_choice)]
 
 # Now have user verify information
 print '=' * 40
