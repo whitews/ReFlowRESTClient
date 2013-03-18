@@ -1,6 +1,7 @@
 import httplib
 import json
 import urllib
+import requests
 
 BOUNDARY = '--------Boundary'
 URLS = {
@@ -213,7 +214,7 @@ def get_parameters(host, token, name=None, parameter_type=None, name_contains=No
     return get_request(host, token, url)
 
 
-def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, parameter_names=None):
+def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
     url = URLS['SAMPLES']
     filter_params = list()
     filter_params.append(urllib.urlencode({'paginate_by': '0'}))
@@ -226,6 +227,9 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, par
 
     if project_pk is not None:
         filter_params.append(urllib.urlencode({'subject__project': project_pk}))
+
+    if visit_pk is not None:
+        filter_params.append(urllib.urlencode({'visit': visit_pk}))
 
     if parameter_names is not None:
         filter_params.append(urllib.urlencode({'parameter_names': parameter_names}))
@@ -332,7 +336,6 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     if response.status == 201:
         try:
             resp = response.read()
-            print response.getheaders()
         except:
             return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
         try:
@@ -346,5 +349,44 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     return {
         'status': response.status,
         'reason': response.reason,
+        'data': data,
+    }
+
+
+def patch_sample_with_panel(host, token, sample_pk, panel_pk):
+    """
+    PATCH a FCS sample, creating sample parameters based on a panel
+        sample_pk    (required)
+        panel_pk     (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary (JSON) representation of the Sample object successfully PATCH'd, empty string if unsuccessful
+    """
+    if not sample_pk and panel_pk:
+        return ''
+
+    url = 'https://%s/api/samples/%s/apply_panel/' % (host, sample_pk)
+    headers = {'Authorization': "Token %s" % token}
+
+    try:
+        r = requests.patch(url, data={'panel': panel_pk}, headers=headers, verify=False)
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if r.status_code == 201:
+        try:
+            data = r.json()
+        except Exception, e:
+            data = r.text()
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
         'data': data,
     }
