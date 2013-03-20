@@ -2,6 +2,8 @@ import httplib
 import json
 import urllib
 import requests
+import os
+import re
 
 BOUNDARY = '--------Boundary'
 URLS = {
@@ -241,20 +243,39 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, vis
     return get_request(host, token, url)
 
 
-def get_sample_data(host, token, sample_pk=None):
+def download_sample(host, token, sample_pk=None, filename=None, directory=None):
     if sample_pk is not None:
-        url = "%s%d%s" % (URLS['SAMPLES'], sample_pk, '/channels/')
+        url = "https://%s/api/samples/%d/download/" % (host, sample_pk)
     else:
         return 'sample_pk is required'
 
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    headers = {'Authorization': "Token %s" % token}
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
 
-    return get_request(host, token, url)
+    if r.status_code == 200:
+        try:
+            if filename is None:
+                filename = re.findall("filename=(\S+)", r.headers['content-disposition'])
+            if directory is None:
+                directory = os.getcwd()
+
+            with open("%s/%s" % (directory, filename[0]), "wb") as fcs_file:
+                fcs_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': '',
+    }
 
 
 def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visit_type_pk=None, panel_pk=None):
