@@ -452,8 +452,13 @@ def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
     url = 'https://%s/api/samples/%s/add_compensation/' % (host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
 
+    data = {
+        'compensation': compensation_pk,
+        'sample': sample_pk
+    }
+
     try:
-        r = requests.post(url, data={'compensation': compensation_pk}, headers=headers, verify=False)
+        r = requests.post(url, data=data, headers=headers, verify=False)
     except Exception, e:
         print e.__class__
         return {'status': None, 'reason': 'No response', 'data': ''}

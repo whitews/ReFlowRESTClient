@@ -3,7 +3,7 @@ import sys
 import json
 from reflowrestclient.utils import *
 
-host = "localhost"
+host = "localhost:8000"
 
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
@@ -67,13 +67,13 @@ for i, result in enumerate(compensation_list['data']):
     print i, ':', result['original_filename']
 
 compensation_choice = raw_input('Choose Compensation (required): ')
-compensation = compensation_list['data'][int(panel_choice)]
+compensation = compensation_list['data'][int(compensation_choice)]
 
 # Now have user verify information
 print '=' * 40
 print 'You chose to add this compensation to these samples:'
 
-print '\Compensation: %s' % panel['original_filename']
+print '\Compensation: %s' % compensation['original_filename']
 
 print 'Samples:'
 if sample:
@@ -105,7 +105,7 @@ if sample:
 
 else:
     for sample in sample_list['data']:
-        response_dict = patch_sample_with_panel(
+        response_dict = add_compensation_to_sample(
             host,
             token,
             sample_pk=str(sample['id']),
