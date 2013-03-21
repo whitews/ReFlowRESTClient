@@ -12,6 +12,7 @@ URLS = {
     'SITES': '/api/sites/',
     'SUBJECTS': '/api/subjects/',
     'PANELS': '/api/panels/',
+    'COMPENSATIONS': '/api/compensations/',
     'PARAMETERS': '/api/parameters/',
     'SAMPLES': '/api/samples/',
     'VISIT_TYPES': '/api/visit_types/'
@@ -181,6 +182,27 @@ def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
 
     if panel_name is not None:
         filter_params.append(urllib.urlencode({'panel_name': panel_name}))
+
+    if site_pk is not None:
+        filter_params.append(urllib.urlencode({'site': site_pk}))
+
+    if project_pk is not None:
+        filter_params.append(urllib.urlencode({'site__project': project_pk}))
+
+    if len(filter_params) > 0:
+        filter_string = "&".join(filter_params)
+        url = "?".join([url, filter_string])
+
+    return get_request(host, token, url)
+
+
+def get_compensations(host, token, original_filename=None, site_pk=None, project_pk=None):
+    url = URLS['COMPENSATIONS']
+    filter_params = list()
+    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+
+    if original_filename is not None:
+        filter_params.append(urllib.urlencode({'original_filename': original_filename}))
 
     if site_pk is not None:
         filter_params.append(urllib.urlencode({'site': site_pk}))
@@ -393,6 +415,45 @@ def patch_sample_with_panel(host, token, sample_pk, panel_pk):
 
     try:
         r = requests.patch(url, data={'panel': panel_pk}, headers=headers, verify=False)
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if r.status_code == 201:
+        try:
+            data = r.json()
+        except Exception, e:
+            data = r.text()
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
+
+def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
+    """
+    POST a SampleCompensationMap
+        sample_pk    (required)
+        compensation_pk     (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary (JSON) representation of the SampleCompensationMap object successfully POST'd, empty string if unsuccessful
+    """
+    if not sample_pk and compensation_pk:
+        return ''
+
+    url = 'https://%s/api/samples/%s/add_compensation/' % (host, sample_pk)
+    headers = {'Authorization': "Token %s" % token}
+
+    try:
+        r = requests.post(url, data={'compensation': compensation_pk}, headers=headers, verify=False)
     except Exception, e:
         print e.__class__
         return {'status': None, 'reason': 'No response', 'data': ''}
