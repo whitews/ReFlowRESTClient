@@ -282,7 +282,6 @@ def download_sample(host, token, sample_pk=None, filename=None, directory=None):
     if r.status_code == 200:
         try:
             if filename is None:
-                print r.headers
                 filename = re.findall("filename=([^']+)", r.headers['content-disposition'])
             if directory is None:
                 directory = os.getcwd()
