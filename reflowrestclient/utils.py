@@ -272,17 +272,18 @@ def download_sample(host, token, sample_pk=None, filename=None, directory=None):
         return 'sample_pk is required'
 
     headers = {'Authorization': "Token %s" % token}
-
+    data = ''
     try:
         r = requests.get(url, headers=headers, verify=False)
     except Exception, e:
         print e.__class__
-        return {'status': None, 'reason': 'No response', 'data': ''}
+        return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
         try:
             if filename is None:
-                filename = re.findall("filename=(\S+)", r.headers['content-disposition'])
+                print r.headers
+                filename = re.findall("filename=([^']+)", r.headers['content-disposition'])
             if directory is None:
                 directory = os.getcwd()
 
@@ -296,7 +297,7 @@ def download_sample(host, token, sample_pk=None, filename=None, directory=None):
     return {
         'status': r.status_code,
         'reason': r.reason,
-        'data': '',
+        'data': data,
     }
 
 
@@ -444,7 +445,7 @@ def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary (JSON) representation of the SampleCompensationMap object successfully POST'd, empty string if unsuccessful
+        'data': Dictionary (JSON) representation of the SampleCompensationMap object successfully POST'd, else ''
     """
     if not sample_pk and compensation_pk:
         return ''
