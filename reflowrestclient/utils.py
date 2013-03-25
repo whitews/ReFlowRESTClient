@@ -339,30 +339,6 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
         'data': data,
     }
 
-    # try:
-    #     response = conn.getresponse()
-    # except Exception, e:
-    #     print e.__class__
-    #     return {'status': None, 'reason': 'No response', 'data': ''}
-    # if response.status == 201:
-    #     try:
-    #         resp = response.read()
-    #     except:
-    #         return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
-    #     try:
-    #         data = json.loads(resp)
-    #     except Exception, e:
-    #         data = resp
-    #         print e
-    # else:
-    #     data = response.read()
-    #
-    # return {
-    #     'status': response.status,
-    #     'reason': response.reason,
-    #     'data': data,
-    # }
-
 
 def patch_sample_with_panel(host, token, sample_pk, panel_pk):
     """
