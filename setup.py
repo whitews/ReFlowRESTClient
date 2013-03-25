@@ -10,4 +10,7 @@ setup(
     license='LICENSE.txt',
     description='REST client for interacting with a ReFlow Repository.',
     long_description=open('README.md').read(),
+    install_requires=[
+        'requests>=1.1.0',
+    ]
 )

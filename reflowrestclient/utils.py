@@ -1,6 +1,3 @@
-import httplib
-import json
-import urllib
 import requests
 import os
 import re
@@ -19,7 +16,7 @@ URLS = {
 }
 
 
-def get_request(host, token, url):
+def get_request(token, url, params=None):
     """
     Returns a dictionary with the following keys:
         status: HTTP response status code
@@ -32,24 +29,23 @@ def get_request(host, token, url):
         'Authorization': "Token %s" % token,
     }
 
-    conn = httplib.HTTPSConnection(host)
-    conn.request('GET', url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers, params=params, verify=False)
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
 
-    response = conn.getresponse()
-
-    #headers = response.getheaders()
-    if response.status == 200:
+    if response.status_code == 200:
         try:
-            data = json.loads(response.read())
+            data = response.json()
         except Exception, e:
-            data = ''
+            data = response.text()
             print e
-
     else:
-        data = ''
+        data = response.text
 
     return {
-        'status': response.status,
+        'status': response.status_code,
         'reason': response.reason,
         'data': data,
     }
@@ -61,208 +57,193 @@ def login(host, username, password):
 
     Returns the authenticating user's token (string) if successful, returns None if login failed.
     """
+    url = 'https://%s%s' % (host, URLS['TOKEN'])
 
     token = None
 
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-
-    auth_headers = {
-        'User-Agent': 'python',
-        'Content-Type': content_type,
+    data = {
+        'username': username,
+        'password': password,
     }
 
-    auth_data = [
-        '--%s' % BOUNDARY,
-        'Content-Disposition: form-data; name="username"',
-        '',
-        username,
-        '--%s' % BOUNDARY,
-        'Content-Disposition: form-data; name="password"',
-        '',
-        password,
-        '--' + BOUNDARY + '--',
-        '',
-    ]
+    try:
+        response = requests.post(url, data=data, verify=False)
+    except Exception, e:
+        print e.__class__
+        return {'status': None, 'reason': 'No response', 'data': ''}
 
-    conn = httplib.HTTPSConnection(host)
-    conn.request('POST', URLS['TOKEN'], '\r\n'.join(auth_data), auth_headers)
-    response = conn.getresponse()
-
-    if response.status == 200:
+    if response.status_code == 200:
         try:
-            data = response.read()
-            json_resp = json.loads(data)
-            if 'token' in json_resp:
-                token = json_resp['token']
+            data = response.json()
+            print data
+            if 'token' in data:
+                token = data['token']
                 # delete all the user credentials
-                del(data, json_resp, response, username, password)
+                del(data, response, username, password)
             else:
                 raise Exception("Authentication token not in response")
+
         except Exception, e:
             print e
     else:
-        print "Authentication failed (%s: %s)" % (response.status, response.reason)
+        print "Authentication failed (%s: %s)" % (response.status_code, response.reason)
 
     return token
 
 
 def get_projects(host, token, project_name=None):
-    url = URLS['PROJECTS']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['PROJECTS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if project_name is not None:
-        filter_params.append(urllib.urlencode({'project_name': project_name}))
+        filter_params['project_name'] = project_name
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
+    return get_request(token, url, filter_params)
 
-    return get_request(host, token, url)
+
+def get_project(host, token, project_pk):
+    """
+    GET a serialized Project instance
+        project_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary (JSON) representation of the Project object successfully GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['PROJECTS'], project_pk)
+    return get_request(token, url)
 
 
 def get_visit_types(host, token, visit_type_name=None, project_pk=None):
-    url = URLS['VISIT_TYPES']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['VISIT_TYPES'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if visit_type_name is not None:
-        filter_params.append(urllib.urlencode({'visit_type_name': visit_type_name}))
+        filter_params['visit_type_name'] = visit_type_name
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'project': project_pk}))
+        filter_params['project'] = project_pk
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
+    return get_request(token, url, filter_params)
 
-    return get_request(host, token, url)
+
+def get_visit_type(host, token, visit_type_pk):
+    """
+    GET a serialized ProjectVisitType instance
+        visit_type_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of ProjectVisitType object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['VISIT_TYPES'], visit_type_pk)
+    return get_request(token, url)
 
 
 def get_sites(host, token, site_name=None, project_pk=None):
-    url = URLS['SITES']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['SITES'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if site_name is not None:
-        filter_params.append(urllib.urlencode({'site_name': site_name}))
+        filter_params['site_name'] = site_name
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'project': project_pk}))
+        filter_params['project'] = project_pk
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def get_subjects(host, token, subject_id=None, project_pk=None):
-    url = URLS['SUBJECTS']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['SUBJECTS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if subject_id is not None:
-        filter_params.append(urllib.urlencode({'subject_id': subject_id}))
+        filter_params['subject_id'] = subject_id
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'project': project_pk}))
+        filter_params['project'] = project_pk
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
-    url = URLS['PANELS']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['PANELS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if panel_name is not None:
-        filter_params.append(urllib.urlencode({'panel_name': panel_name}))
+        filter_params['panel_name'] = panel_name
 
     if site_pk is not None:
-        filter_params.append(urllib.urlencode({'site': site_pk}))
+        filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'site__project': project_pk}))
+        filter_params['site__project'] = project_pk
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def get_compensations(host, token, original_filename=None, site_pk=None, project_pk=None):
-    url = URLS['COMPENSATIONS']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['COMPENSATIONS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if original_filename is not None:
-        filter_params.append(urllib.urlencode({'original_filename': original_filename}))
+        filter_params['original_filename'] = original_filename
 
     if site_pk is not None:
-        filter_params.append(urllib.urlencode({'site': site_pk}))
+        filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'site__project': project_pk}))
+        filter_params['site__project'] = project_pk
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
-    url = URLS['PARAMETERS']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['PARAMETERS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if name is not None:
-        filter_params.append(urllib.urlencode({'parameter_short_name': name}))
+        filter_params['parameter_short_name'] = name
 
     if name_contains is not None:
-        filter_params.append(urllib.urlencode({'name_contains': name_contains}))
+        filter_params['name_contains'] = name_contains
 
     if type is not None:
-        filter_params.append(urllib.urlencode({'parameter_type': parameter_type}))
+        filter_params['parameter_type'] = parameter_type
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
-    url = URLS['SAMPLES']
-    filter_params = list()
-    filter_params.append(urllib.urlencode({'paginate_by': '0'}))
+    url = 'https://%s%s' % (host, URLS['SAMPLES'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     if subject_pk is not None:
-        filter_params.append(urllib.urlencode({'subject': subject_pk}))
+        filter_params['subject'] = subject_pk
 
     if site_pk is not None:
-        filter_params.append(urllib.urlencode({'site': site_pk}))
+        filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params.append(urllib.urlencode({'subject__project': project_pk}))
+        filter_params['subject__project'] = project_pk
 
     if visit_pk is not None:
-        filter_params.append(urllib.urlencode({'visit': visit_pk}))
+        filter_params['visit'] = visit_pk
 
     if parameter_names is not None:
-        filter_params.append(urllib.urlencode({'parameter_names': parameter_names}))
+        filter_params['parameter_names'] = parameter_names
 
-    if len(filter_params) > 0:
-        filter_string = "&".join(filter_params)
-        url = "?".join([url, filter_string])
-
-    return get_request(host, token, url)
+    return get_request(token, url, filter_params)
 
 
 def download_sample(host, token, sample_pk=None, filename=None, directory=None):
@@ -314,86 +295,73 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
         'data': JSON string representation of the Sample object successfully posted, empty string if unsuccessful
     """
 
-    post_sample_url = '/api/samples/'
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    body = list()
+    url = 'https://%s%s' % (host, URLS['SAMPLES'])
+    headers = {'Authorization': "Token %s" % token}
 
-    # add the subject field and value to body
-    body.append('--%s' % BOUNDARY)
-    body.append('Content-Disposition: form-data; name="subject"')
-    body.append('')
-    body.append(subject_pk)
+    # Subject is required
+    data = {'subject': subject_pk}
 
     # add the site field if present
     if site_pk:
-        body.append('--%s' % BOUNDARY)
-        body.append('Content-Disposition: form-data; name="site"')
-        body.append('')
-        body.append(site_pk)
+        data['site'] = site_pk
 
     # add the visit_type field if present
     if visit_type_pk:
-        body.append('--%s' % BOUNDARY)
-        body.append('Content-Disposition: form-data; name="visit"')
-        body.append('')
-        body.append(visit_type_pk)
-    
+        data['visit'] = visit_type_pk
+
     # add the panel field if present
     if panel_pk:
-        body.append('--%s' % BOUNDARY)
-        body.append('Content-Disposition: form-data; name="panel"')
-        body.append('')
-        body.append(panel_pk)
+        data['panel'] = panel_pk
 
-    # get FCS file and append to body
-    file_obj = open(file_path, "rb")
-    filename = file_obj.name.split('/')[-1]
-    body.append('--%s' % BOUNDARY)
-    body.append('Content-Disposition: form-data; name="sample_file"; filename="%s"' % filename)
-    body.append('Content-Type: application/octet-stream')
-    file_obj.seek(0)
-    body.append('')
-    body.append(file_obj.read())
-    file_obj.close()
-    body.append('--' + BOUNDARY + '--')
-    body.append('')
-
-    body = '\r\n'.join(body)
-
-    conn = httplib.HTTPSConnection(host)
-    #conn.set_debuglevel(1)
-    headers = {
-        'User-Agent': 'python',
-        'Authorization': "Token %s" % token,
-        'Content-Type': content_type,
-        'Content-Length': str(len(body)),
-        'Connection': 'keep-alive',
+    # get FCS file
+    files = {
+        'sample_file': open(file_path, "rb")
     }
 
-    conn.request('POST', post_sample_url, body, headers)
     try:
-        response = conn.getresponse()
+        response = requests.post(url, headers=headers, data=data, files=files, verify=False)
     except Exception, e:
         print e.__class__
         return {'status': None, 'reason': 'No response', 'data': ''}
-    if response.status == 201:
+
+    if response.status_code == 201:
         try:
-            resp = response.read()
-        except:
-            return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
-        try:
-            data = json.loads(resp)
+            data = response.json()
         except Exception, e:
-            data = resp
+            data = response.text()
             print e
     else:
-        data = response.read()
+        data = response.text
 
     return {
-        'status': response.status,
+        'status': response.status_code,
         'reason': response.reason,
         'data': data,
     }
+
+    # try:
+    #     response = conn.getresponse()
+    # except Exception, e:
+    #     print e.__class__
+    #     return {'status': None, 'reason': 'No response', 'data': ''}
+    # if response.status == 201:
+    #     try:
+    #         resp = response.read()
+    #     except:
+    #         return {'status': response.status, 'reason': 'Could not read response', 'data': ''}
+    #     try:
+    #         data = json.loads(resp)
+    #     except Exception, e:
+    #         data = resp
+    #         print e
+    # else:
+    #     data = response.read()
+    #
+    # return {
+    #     'status': response.status,
+    #     'reason': response.reason,
+    #     'data': data,
+    # }
 
 
 def patch_sample_with_panel(host, token, sample_pk, panel_pk):
