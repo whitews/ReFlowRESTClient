@@ -158,6 +158,20 @@ def get_sites(host, token, site_name=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
+def get_site(host, token, site_pk):
+    """
+    GET a serialized Site instance
+        site_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Site object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['SITES'], site_pk)
+    return get_request(token, url)
+
+
 def get_subjects(host, token, subject_id=None, project_pk=None):
     url = 'https://%s%s' % (host, URLS['SUBJECTS'])
     filter_params = dict()
@@ -170,6 +184,20 @@ def get_subjects(host, token, subject_id=None, project_pk=None):
         filter_params['project'] = project_pk
 
     return get_request(token, url, filter_params)
+
+
+def get_subject(host, token, subject_pk):
+    """
+    GET a serialized Subject instance
+        subject_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Subject object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['SUBJECTS'], subject_pk)
+    return get_request(token, url)
 
 
 def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
@@ -189,6 +217,20 @@ def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
+def get_panel(host, token, panel_pk):
+    """
+    GET a serialized Panel instance
+        panel_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['PANELS'], panel_pk)
+    return get_request(token, url)
+
+
 def get_compensations(host, token, original_filename=None, site_pk=None, project_pk=None):
     url = 'https://%s%s' % (host, URLS['COMPENSATIONS'])
     filter_params = dict()
@@ -206,6 +248,20 @@ def get_compensations(host, token, original_filename=None, site_pk=None, project
     return get_request(token, url, filter_params)
 
 
+def get_compensation(host, token, compensation_pk):
+    """
+    GET a serialized Compensation instance
+        compensation_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Compensation object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['COMPENSATIONS'], compensation_pk)
+    return get_request(token, url)
+
+
 def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
     url = 'https://%s%s' % (host, URLS['PARAMETERS'])
     filter_params = dict()
@@ -221,6 +277,20 @@ def get_parameters(host, token, name=None, parameter_type=None, name_contains=No
         filter_params['parameter_type'] = parameter_type
 
     return get_request(token, url, filter_params)
+
+
+def get_parameter(host, token, parameter_pk):
+    """
+    GET a serialized Parameter instance
+        compensation_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Parameter object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['PARAMETERS'], parameter_pk)
+    return get_request(token, url)
 
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
@@ -244,6 +314,20 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, vis
         filter_params['parameter_names'] = parameter_names
 
     return get_request(token, url, filter_params)
+
+
+def get_sample(host, token, sample_pk):
+    """
+    GET a serialized Sample instance
+        sample_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Sample object GET'd, empty string if unsuccessful
+    """
+    url = 'https://%s%s%s/' % (host, URLS['SAMPLES'], sample_pk)
+    return get_request(token, url)
 
 
 def download_sample(host, token, sample_pk=None, filename=None, directory=None):
