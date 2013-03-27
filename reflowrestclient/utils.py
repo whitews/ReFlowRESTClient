@@ -69,13 +69,12 @@ def login(host, username, password):
     try:
         response = requests.post(url, data=data, verify=False)
     except Exception, e:
-        print e.__class__
+        print e
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if response.status_code == 200:
         try:
             data = response.json()
-            print data
             if 'token' in data:
                 token = data['token']
                 # delete all the user credentials
@@ -341,7 +340,7 @@ def download_sample(host, token, sample_pk=None, filename=None, directory=None):
     try:
         r = requests.get(url, headers=headers, verify=False)
     except Exception, e:
-        print e.__class__
+        print e
         return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
@@ -405,7 +404,7 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     try:
         response = requests.post(url, headers=headers, data=data, files=files, verify=False)
     except Exception, e:
-        print e.__class__
+        print e
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if response.status_code == 201:
@@ -444,7 +443,7 @@ def patch_sample_with_panel(host, token, sample_pk, panel_pk):
     try:
         r = requests.patch(url, data={'panel': panel_pk}, headers=headers, verify=False)
     except Exception, e:
-        print e.__class__
+        print e
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if r.status_code == 201:
@@ -488,7 +487,7 @@ def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
     try:
         r = requests.post(url, data=data, headers=headers, verify=False)
     except Exception, e:
-        print e.__class__
+        print e
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if r.status_code == 201:
