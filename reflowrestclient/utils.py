@@ -2,7 +2,6 @@ import requests
 import os
 import re
 
-BOUNDARY = '--------Boundary'
 URLS = {
     'TOKEN': '/api-token-auth/',
     'PROJECTS': '/api/projects/',
@@ -329,12 +328,8 @@ def get_sample(host, token, sample_pk):
     return get_request(token, url)
 
 
-def download_sample(host, token, sample_pk=None, filename=None, directory=None):
-    if sample_pk is not None:
-        url = "https://%s/api/samples/%d/download/" % (host, sample_pk)
-    else:
-        return 'sample_pk is required'
-
+def download_sample(host, token, sample_pk, filename=None, directory=None):
+    url = "https://%s/api/samples/%d/download/" % (host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
     data = ''
     try:
