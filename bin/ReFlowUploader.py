@@ -24,22 +24,26 @@ class Application(tk.Frame):
         self.logoLabel.config(bg='#f5f5f5')
         self.logoLabel.pack(side='top', pady=9)
 
+        self.hostEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
+        self.hostEntry = tk.Entry(self.hostEntryFrame, highlightbackground='#f5f5f5')
+        self.hostLabel = tk.Label(self.hostEntryFrame, text='Host', bg='#f5f5f5')
+        self.hostLabel.config(width=10)
+        self.hostLabel.pack(side='left')
+        self.hostEntry.pack()
+        self.hostEntryFrame.pack(pady=3)
+
         self.userEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.userEntry = tk.Entry(
-            self.userEntryFrame,
-            highlightbackground='#f5f5f5')
+        self.userEntry = tk.Entry(self.userEntryFrame, highlightbackground='#f5f5f5')
         self.userLabel = tk.Label(self.userEntryFrame, text='Username', bg='#f5f5f5')
-        self.userLabel.config(width=12)
+        self.userLabel.config(width=10)
         self.userLabel.pack(side='left')
         self.userEntry.pack()
         self.userEntryFrame.pack(pady=3)
 
         self.passwordEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.passwordEntry = tk.Entry(
-            self.passwordEntryFrame,
-            highlightbackground='#f5f5f5')
+        self.passwordEntry = tk.Entry(self.passwordEntryFrame, highlightbackground='#f5f5f5')
         self.passwordLabel = tk.Label(self.passwordEntryFrame, text='Password', bg='#f5f5f5')
-        self.passwordLabel.config(width=12)
+        self.passwordLabel.config(width=10)
         self.passwordLabel.pack(side='left')
         self.passwordEntry.pack()
         self.passwordEntryFrame.pack(pady=3)
