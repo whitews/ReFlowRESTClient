@@ -1,4 +1,5 @@
 import Tkinter as tk
+import tkMessageBox
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 
@@ -41,7 +42,7 @@ class Application(tk.Frame):
         self.passwordEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
         self.passwordLabel = tk.Label(self.passwordEntryFrame, text='Password', bg='#f5f5f5', width=8, anchor='e')
         self.passwordLabel.pack(side='left')
-        self.passwordEntry = tk.Entry(self.passwordEntryFrame, highlightbackground='#f5f5f5', width=24)
+        self.passwordEntry = tk.Entry(self.passwordEntryFrame, show='*', highlightbackground='#f5f5f5', width=24)
         self.passwordEntry.pack(padx=3)
         self.passwordEntryFrame.pack(pady=3)
 
@@ -57,11 +58,24 @@ class Application(tk.Frame):
         self.loginButtonLabel.pack(side='right')
         self.loginButtonFrame.pack(fill='x')
 
-        #self.loginFrame.pack(fill='both', expand=True)
         self.loginFrame.place(in_=self.master, anchor='c', relx=.5, rely=.5)
 
     def login(self):
-        print 'login'
+        try:
+            username = self.userEntry.get()
+            token = rest.login(self.hostEntry.get(), username, self.passwordEntry.get())
+        except Exception, e:
+            print e
+        if not token:
+            tkMessageBox.showwarning('Login Failed', ' Check that the hostname, username, and password are correct')
+            return
+
+        self.token = token
+        self.username = username
+        self.loadProjectFrame()
+
+    def loadProjectFrame(self):
+        self.loadLoginFrame()
 
 root = tk.Tk()
 app = Application(root)

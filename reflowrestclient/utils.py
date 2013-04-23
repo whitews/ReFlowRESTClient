@@ -69,7 +69,7 @@ def login(host, username, password):
         response = requests.post(url, data=data, verify=False)
     except Exception, e:
         print e
-        return {'status': None, 'reason': 'No response', 'data': ''}
+        return None
 
     if response.status_code == 200:
         try:
@@ -79,10 +79,11 @@ def login(host, username, password):
                 # delete all the user credentials
                 del(data, response, username, password)
             else:
-                raise Exception("Authentication token not in response")
+                print "Authentication token not in response"
 
         except Exception, e:
             print e
+            return None
     else:
         print "Authentication failed (%s: %s)" % (response.status_code, response.reason)
 
