@@ -1,5 +1,6 @@
 import Tkinter as tk
 import tkMessageBox
+import tkFileDialog
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 
@@ -9,6 +10,8 @@ LOGO_PATH = '../imgs/reflow_text.png'
 class Application(tk.Frame):
 
     def __init__(self, master):
+        self.uploadFileList = list()
+
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
         self.master.title('ReFlow Uploader')
@@ -61,6 +64,8 @@ class Application(tk.Frame):
         self.loginFrame.place(in_=self.master, anchor='c', relx=.5, rely=.5)
 
     def login(self):
+        token = None
+        username = None
         try:
             username = self.userEntry.get()
             token = rest.login(self.hostEntry.get(), username, self.passwordEntry.get())
@@ -72,10 +77,36 @@ class Application(tk.Frame):
 
         self.token = token
         self.username = username
-        self.loadProjectFrame()
+        self.loginFrame.destroy()
+        self.loadFileChooserFrame()
 
-    def loadProjectFrame(self):
-        self.loadLoginFrame()
+    def loadFileChooserFrame(self):
+        self.fileChooserFrame = tk.Frame(self.master, bg='#f5f5f5')
+
+        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg='#f5f5f5')
+        self.fileListBox = tk.Listbox(self.fileListFrame)
+        self.fileListBox.pack(fill='both', expand=True)
+        self.fileListFrame.pack(fill='both', expand=True)
+
+        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg='#f5f5f5')
+        self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg='#f5f5f5')
+        self.fileChooserButton = tk.Button(
+            self.fileChooserButtonLabel,
+            text='Choose FCS Files...',
+            command=self.selectFiles,
+            bg='#f5f5f5',
+            highlightbackground='#f5f5f5')
+        self.fileChooserButton.pack()
+        self.fileChooserButtonLabel.pack(side='right')
+        self.fileChooserButtonFrame.pack(fill='x')
+
+        self.fileChooserFrame.pack(fill='both', expand=True)
+
+    def selectFiles(self):
+        selectedFiles = tkFileDialog.askopenfiles('r')
+        self.uploadFileList.extend(selectedFiles)
+        for file in selectedFiles:
+            self.fileListBox.insert('end', file.name)
 
 root = tk.Tk()
 app = Application(root)
