@@ -100,7 +100,7 @@ class Application(tk.Frame):
         self.fileChooserButtonLabel.pack(side='right')
         self.fileChooserButtonFrame.pack(fill='x')
 
-        self.fileChooserFrame.pack(fill='both', expand=True)
+        self.fileChooserFrame.pack(fill='x', expand=True, anchor='n', padx=6, pady=6)
 
     def selectFiles(self):
         selectedFiles = tkFileDialog.askopenfiles('r')
