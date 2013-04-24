@@ -10,7 +10,7 @@ LOGO_PATH = '../imgs/reflow_text.png'
 class Application(tk.Frame):
 
     def __init__(self, master):
-        self.uploadFileList = list()
+        self.uploadFileSet = set()
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
@@ -84,7 +84,14 @@ class Application(tk.Frame):
         self.fileChooserFrame = tk.Frame(self.master, bg='#f5f5f5')
 
         self.fileListFrame = tk.Frame(self.fileChooserFrame, bg='#f5f5f5')
-        self.fileListBox = tk.Listbox(self.fileListFrame)
+        self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
+        self.fileListBox = tk.Listbox(
+            self.fileListFrame,
+            yscrollcommand=self.fileScrollBar.set,
+            relief='sunken',
+            borderwidth=2)
+        self.fileScrollBar.config(command=self.fileListBox.yview)
+        self.fileScrollBar.pack(side='right', fill='y')
         self.fileListBox.pack(fill='both', expand=True)
         self.fileListFrame.pack(fill='both', expand=True)
 
@@ -104,9 +111,12 @@ class Application(tk.Frame):
 
     def selectFiles(self):
         selectedFiles = tkFileDialog.askopenfiles('r')
-        self.uploadFileList.extend(selectedFiles)
-        for file in selectedFiles:
-            self.fileListBox.insert('end', file.name)
+        self.uploadFileSet.update(selectedFiles)
+        sortedFileList = list(self.uploadFileSet)
+        sortedFileList.sort(key=lambda x: x.name)
+        self.fileListBox.delete(0, 'end')
+        for f in sortedFileList:
+            self.fileListBox.insert('end', f.name)
 
 root = tk.Tk()
 app = Application(root)
