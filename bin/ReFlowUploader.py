@@ -1,4 +1,5 @@
 import Tkinter as tk
+import ttk
 import tkMessageBox
 import tkFileDialog
 from PIL import Image, ImageTk
@@ -15,6 +16,9 @@ class Application(tk.Frame):
         self.siteDict = dict()
         self.subjectDict = dict()
         self.visitDict = dict()
+
+        self.style = ttk.Style()
+        self.style.configure("ProgressBar", height=20)
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
@@ -221,6 +225,19 @@ class Application(tk.Frame):
 
         self.metadataFrame.pack(fill='both', expand=True, padx=6, pady=6)
 
+        # upload progress bar and upload button
+        self.progressFrame = tk.Frame(self.master, bg='#f5f5f5')
+        self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
+        self.uploadButton = tk.Button(
+            self.progressFrame,
+            text='Upload Files',
+            command=self.uploadFiles,
+            bg='#f5f5f5',
+            highlightbackground='#f5f5f5')
+        self.uploadProgressBar.pack(side='left', fill='x', expand=True)
+        self.uploadButton.pack(side='right')
+        self.progressFrame.pack(fill='x', expand=False, padx=6, pady=6)
+
         self.loadUserProjects()
 
     def selectFiles(self):
@@ -290,6 +307,9 @@ class Application(tk.Frame):
             self.loadProjectSites(self.projectDict[selectedProjectName])
             self.loadProjectSubjects(self.projectDict[selectedProjectName])
             self.loadProjectVisits(self.projectDict[selectedProjectName])
+
+    def uploadFiles(self):
+        print 'uploading files'
 
 root = tk.Tk()
 app = Application(root)
