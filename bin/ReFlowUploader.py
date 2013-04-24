@@ -11,6 +11,10 @@ class Application(tk.Frame):
 
     def __init__(self, master):
         self.uploadFileSet = set()
+        self.projectDict = dict()  # a bit weird, but we'll use the project name as the key, pk as the value
+        self.siteDict = dict()
+        self.subjectDict = dict()
+        self.visitDict = dict()
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
@@ -64,19 +68,17 @@ class Application(tk.Frame):
         self.loginFrame.place(in_=self.master, anchor='c', relx=.5, rely=.5)
 
     def login(self):
-        token = None
-        username = None
+        self.token = None
+        self.host = self.hostEntry.get()
+        self.username = self.userEntry.get()
+        password = self.passwordEntry.get()
         try:
-            username = self.userEntry.get()
-            token = rest.login(self.hostEntry.get(), username, self.passwordEntry.get())
+            self.token = rest.login(self.host, self.username, password)
         except Exception, e:
             print e
-        if not token:
+        if not self.token:
             tkMessageBox.showwarning('Login Failed', ' Check that the hostname, username, and password are correct')
             return
-
-        self.token = token
-        self.username = username
         self.loginFrame.destroy()
         self.loadFileChooserFrame()
 
@@ -107,7 +109,119 @@ class Application(tk.Frame):
         self.fileChooserButtonLabel.pack(side='right')
         self.fileChooserButtonFrame.pack(fill='x')
 
-        self.fileChooserFrame.pack(fill='x', expand=True, anchor='n', padx=6, pady=6)
+        self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=6, pady=6)
+
+        # Start metadata choices, including:
+        #    - project
+        #    - site
+        #    - subject
+        #    - visit
+        self.metadataFrame = tk.Frame(self.master, bg='#f5f5f5')
+
+        # overall project frame (on bottom left of main window)
+        self.projectFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+
+        # project label frame (top of project chooser frame)
+        self.projectChooserLabelFrame = tk.Frame(self.projectFrame, bg='#f5f5f5')
+        self.projectChooserLabel = tk.Label(self.projectChooserLabelFrame, text='Choose Project', bg='#f5f5f5')
+        self.projectChooserLabel.pack(side='left')
+        self.projectChooserLabelFrame.pack(fill='x')
+
+        # project chooser listbox frame (bottom of project chooser frame)
+        self.projectChooserFrame = tk.Frame(self.projectFrame, bg='#f5f5f5')
+        self.projectScrollBar = tk.Scrollbar(self.projectChooserFrame, orient='vertical')
+        self.projectListBox = tk.Listbox(
+            self.projectChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.projectScrollBar.set,
+            relief='sunken',
+            borderwidth=2)
+        self.projectListBox.bind('<<ListboxSelect>>', self.updateMetadata)
+        self.projectScrollBar.config(command=self.projectListBox.yview)
+        self.projectScrollBar.pack(side='right', fill='y')
+        self.projectListBox.pack(fill='both', expand=True)
+        self.projectChooserFrame.pack(fill='both', expand=True)
+
+        self.projectFrame.pack(side='left', fill='both', expand=True)
+
+        # overall site frame (on bottom, 2nd from left of main window
+        self.siteFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+
+        # site label frame (top of site chooser frame)
+        self.siteChooserLabelFrame = tk.Frame(self.siteFrame, bg='#f5f5f5')
+        self.siteChooserLabel = tk.Label(self.siteChooserLabelFrame, text='Choose Site', bg='#f5f5f5')
+        self.siteChooserLabel.pack(side='left')
+        self.siteChooserLabelFrame.pack(fill='x')
+
+        # site chooser listbox frame (bottom of site chooser frame)
+        self.siteChooserFrame = tk.Frame(self.siteFrame, bg='#f5f5f5')
+        self.siteScrollBar = tk.Scrollbar(self.siteChooserFrame, orient='vertical')
+        self.siteListBox = tk.Listbox(
+            self.siteChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.siteScrollBar.set,
+            relief='sunken',
+            borderwidth=2)
+        self.siteScrollBar.config(command=self.siteListBox.yview)
+        self.siteScrollBar.pack(side='right', fill='y')
+        self.siteListBox.pack(fill='both', expand=True)
+        self.siteChooserFrame.pack(fill='both', expand=True)
+
+        self.siteFrame.pack(side='left', fill='both', expand=True)
+
+        # overall subject frame (on bottom, 2nd from left of main window
+        self.subjectFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+
+        # subject label frame (top of subject chooser frame)
+        self.subjectChooserLabelFrame = tk.Frame(self.subjectFrame, bg='#f5f5f5')
+        self.subjectChooserLabel = tk.Label(self.subjectChooserLabelFrame, text='Choose Subject', bg='#f5f5f5')
+        self.subjectChooserLabel.pack(side='left')
+        self.subjectChooserLabelFrame.pack(fill='x')
+
+        # subject chooser listbox frame (bottom of subject chooser frame)
+        self.subjectChooserFrame = tk.Frame(self.subjectFrame, bg='#f5f5f5')
+        self.subjectScrollBar = tk.Scrollbar(self.subjectChooserFrame, orient='vertical')
+        self.subjectListBox = tk.Listbox(
+            self.subjectChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.subjectScrollBar.set,
+            relief='sunken',
+            borderwidth=2)
+        self.subjectScrollBar.config(command=self.subjectListBox.yview)
+        self.subjectScrollBar.pack(side='right', fill='y')
+        self.subjectListBox.pack(fill='both', expand=True)
+        self.subjectChooserFrame.pack(fill='both', expand=True)
+
+        self.subjectFrame.pack(side='left', fill='both', expand=True)
+
+        # overall visit frame (on bottom, 2nd from left of main window
+        self.visitFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+
+        # visit label frame (top of visit chooser frame)
+        self.visitChooserLabelFrame = tk.Frame(self.visitFrame, bg='#f5f5f5')
+        self.visitChooserLabel = tk.Label(self.visitChooserLabelFrame, text='Choose Visit', bg='#f5f5f5')
+        self.visitChooserLabel.pack(side='left')
+        self.visitChooserLabelFrame.pack(fill='x')
+
+        # visit chooser listbox frame (bottom of visit chooser frame)
+        self.visitChooserFrame = tk.Frame(self.visitFrame, bg='#f5f5f5')
+        self.visitScrollBar = tk.Scrollbar(self.visitChooserFrame, orient='vertical')
+        self.visitListBox = tk.Listbox(
+            self.visitChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.visitScrollBar.set,
+            relief='sunken',
+            borderwidth=2)
+        self.visitScrollBar.config(command=self.visitListBox.yview)
+        self.visitScrollBar.pack(side='right', fill='y')
+        self.visitListBox.pack(fill='both', expand=True)
+        self.visitChooserFrame.pack(fill='both', expand=True)
+
+        self.visitFrame.pack(side='left', fill='both', expand=True)
+
+        self.metadataFrame.pack(fill='both', expand=True, padx=6, pady=6)
+
+        self.loadUserProjects()
 
     def selectFiles(self):
         selectedFiles = tkFileDialog.askopenfiles('r')
@@ -117,6 +231,65 @@ class Application(tk.Frame):
         self.fileListBox.delete(0, 'end')
         for f in sortedFileList:
             self.fileListBox.insert('end', f.name)
+
+    def loadUserProjects(self):
+        response = None
+        try:
+            response = rest.get_projects(self.host, self.token)
+        except Exception, e:
+            print e
+
+        self.projectListBox.delete(0, 'end')
+        for result in response['data']:
+            self.projectDict[result['project_name']] = result['id']
+            self.projectListBox.insert('end', result['project_name'])
+
+    def loadProjectSites(self, project_id):
+        response = None
+        try:
+            response = rest.get_sites(self.host, self.token, project_pk=project_id)
+        except Exception, e:
+            print e
+
+        self.siteListBox.delete(0, 'end')
+        self.siteDict.clear()
+        for result in response['data']:
+            self.siteDict[result['site_name']] = result['id']
+            self.siteListBox.insert('end', result['site_name'])
+
+    def loadProjectSubjects(self, project_id):
+        response = None
+        try:
+            response = rest.get_subjects(self.host, self.token, project_pk=project_id)
+        except Exception, e:
+            print e
+
+        self.subjectListBox.delete(0, 'end')
+        self.subjectDict.clear()
+        for result in response['data']:
+            self.subjectDict[result['subject_id']] = result['id']
+            self.subjectListBox.insert('end', result['subject_id'])
+
+    def loadProjectVisits(self, project_id):
+        response = None
+        try:
+            response = rest.get_visit_types(self.host, self.token, project_pk=project_id)
+        except Exception, e:
+            print e
+
+        self.visitListBox.delete(0, 'end')
+        self.visitDict.clear()
+        for result in response['data']:
+            self.visitDict[result['visit_type_name']] = result['id']
+            self.visitListBox.insert('end', result['visit_type_name'])
+
+    def updateMetadata(self, event):
+        selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
+
+        if selectedProjectName in self.projectDict:
+            self.loadProjectSites(self.projectDict[selectedProjectName])
+            self.loadProjectSubjects(self.projectDict[selectedProjectName])
+            self.loadProjectVisits(self.projectDict[selectedProjectName])
 
 root = tk.Tk()
 app = Application(root)
