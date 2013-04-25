@@ -12,6 +12,10 @@ BORDER_COLOR = '#bebebe'
 HIGHLIGHT_COLOR = '#5489b9'
 ROW_ALT_COLOR = '#f3f6fa'
 
+PAD_SMALL = 3
+PAD_MEDIUM = 6
+PAD_LARGE = 12
+PAD_EXTRA_LARGE = 15
 
 class Application(tk.Frame):
 
@@ -41,7 +45,7 @@ class Application(tk.Frame):
         self.logoImage = ImageTk.PhotoImage(Image.open(LOGO_PATH))
         self.logoLabel = tk.Label(self.loginFrame, image=self.logoImage)
         self.logoLabel.config(bg=BACKGROUND_COLOR)
-        self.logoLabel.pack(side='top', pady=15)
+        self.logoLabel.pack(side='top', pady=PAD_EXTRA_LARGE)
 
         self.hostEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
         self.hostLabel = tk.Label(
@@ -55,8 +59,8 @@ class Application(tk.Frame):
             self.hostEntryFrame,
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.hostEntry.pack(padx=3)
-        self.hostEntryFrame.pack(pady=3)
+        self.hostEntry.pack(padx=PAD_SMALL)
+        self.hostEntryFrame.pack(pady=PAD_SMALL)
 
         self.userEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
         self.userLabel = tk.Label(
@@ -70,8 +74,8 @@ class Application(tk.Frame):
             self.userEntryFrame,
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.userEntry.pack(padx=3)
-        self.userEntryFrame.pack(pady=3)
+        self.userEntry.pack(padx=PAD_SMALL)
+        self.userEntryFrame.pack(pady=PAD_SMALL)
 
         self.passwordEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
         self.passwordLabel = tk.Label(
@@ -86,8 +90,8 @@ class Application(tk.Frame):
             show='*',
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.passwordEntry.pack(padx=3)
-        self.passwordEntryFrame.pack(pady=3)
+        self.passwordEntry.pack(padx=PAD_SMALL)
+        self.passwordEntryFrame.pack(pady=PAD_SMALL)
 
         self.loginButtonFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
         self.loginButtonLabel = tk.Label(self.loginButtonFrame, bg=BACKGROUND_COLOR)
@@ -148,10 +152,10 @@ class Application(tk.Frame):
         self.fileChooserButtonLabel.pack(side='right')
         self.fileChooserButtonFrame.pack(fill='x')
 
-        self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=6, pady=6)
+        self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
 
         self.separatorFrame = tk.Frame(self.master, bg=SEPARATOR_COLOR, height=1)
-        self.separatorFrame.pack(fill='both', expand=False, padx=6, pady=6)
+        self.separatorFrame.pack(fill='both', expand=False, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
 
         # Start metadata choices, including:
         #    - project
@@ -292,7 +296,7 @@ class Application(tk.Frame):
 
         self.visitFrame.pack(side='left', fill='x', expand=True)
 
-        self.metadataFrame.pack(fill='x', expand=False, padx=6, pady=6)
+        self.metadataFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
 
         # upload progress bar and upload button
         self.progressFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
@@ -305,8 +309,8 @@ class Application(tk.Frame):
             bg=BACKGROUND_COLOR,
             highlightbackground=BACKGROUND_COLOR)
         self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
-        self.uploadButton.pack(side='right', pady=12)
-        self.progressFrame.pack(fill='x', expand=False, padx=6)
+        self.uploadButton.pack(side='right', pady=PAD_LARGE)
+        self.progressFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM)
 
         self.loadUserProjects()
 
