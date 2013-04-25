@@ -10,13 +10,18 @@ BACKGROUND_COLOR = '#ededed'
 SEPARATOR_COLOR = '#d7d7d7'
 BORDER_COLOR = '#bebebe'
 HIGHLIGHT_COLOR = '#5489b9'
+ROW_ALT_COLOR = '#f3f6fa'
 
 
 class Application(tk.Frame):
 
     def __init__(self, master):
-        self.uploadFileSet = set()
-        self.projectDict = dict()  # a bit weird, but we'll use the project name as the key, pk as the value
+        self.uploadFileDict = dict()  # key is file path, value is file object
+
+        # a bit weird, but we'll use the names (project, site, etc.) as the key, pk as the value
+        # for the four choice dictionaries below. we need the names to be unique (and they should be) and
+        # it's more convenient to lookup by key using the name to find the selection.
+        self.projectDict = dict()
         self.siteDict = dict()
         self.subjectDict = dict()
         self.visitDict = dict()
@@ -95,7 +100,6 @@ class Application(tk.Frame):
         self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
         self.fileListBox = tk.Listbox(
             self.fileListFrame,
-            state='disabled',
             yscrollcommand=self.fileScrollBar.set,
             relief='flat',
             borderwidth=0,
@@ -271,12 +275,16 @@ class Application(tk.Frame):
 
     def selectFiles(self):
         selectedFiles = tkFileDialog.askopenfiles('r')
-        self.uploadFileSet.update(selectedFiles)
-        sortedFileList = list(self.uploadFileSet)
-        sortedFileList.sort(key=lambda x: x.name)
+        for f in selectedFiles:
+            self.uploadFileDict[f.name] = f
+        sortedFileList = self.uploadFileDict.keys()
+        sortedFileList.sort()
         self.fileListBox.delete(0, 'end')
-        for f in sortedFileList:
-            self.fileListBox.insert('end', f.name)
+        for i, f in enumerate(sortedFileList):
+            self.fileListBox.insert(i, f)
+            if i % 2:
+                self.fileListBox.itemconfig(i, bg=ROW_ALT_COLOR)
+        self.updateUploadButtonState()
 
     def loadUserProjects(self):
         response = None
@@ -347,7 +355,8 @@ class Application(tk.Frame):
 
         if not site_selection or not subject_selection or not visit_selection:
             active = False
-
+        if len(self.uploadFileDict) == 0:
+            active = False
         if active:
             self.uploadButton.config(state='active')
         else:
