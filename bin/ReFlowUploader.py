@@ -6,6 +6,10 @@ from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 
 LOGO_PATH = '../imgs/reflow_text.png'
+BACKGROUND_COLOR = '#ededed'
+SEPARATOR_COLOR = '#d7d7d7'
+BORDER_COLOR = '#bebebe'
+HIGHLIGHT_COLOR = '#5489b9'
 
 
 class Application(tk.Frame):
@@ -17,54 +21,52 @@ class Application(tk.Frame):
         self.subjectDict = dict()
         self.visitDict = dict()
 
-        self.style = ttk.Style()
-        self.style.configure("ProgressBar", height=20)
-
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
         self.master.title('ReFlow Uploader')
         self.master.minsize(width=800, height=640)
-        self.master.config(bg='#f5f5f5')
+        self.master.config(bg=BACKGROUND_COLOR)
+
         self.pack()
         self.loadLoginFrame()
 
     def loadLoginFrame(self):
-        self.loginFrame = tk.Frame(bg='#f5f5f5')
+        self.loginFrame = tk.Frame(bg=BACKGROUND_COLOR)
 
         self.logoImage = ImageTk.PhotoImage(Image.open(LOGO_PATH))
         self.logoLabel = tk.Label(self.loginFrame, image=self.logoImage)
-        self.logoLabel.config(bg='#f5f5f5')
+        self.logoLabel.config(bg=BACKGROUND_COLOR)
         self.logoLabel.pack(side='top', pady=15)
 
-        self.hostEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.hostLabel = tk.Label(self.hostEntryFrame, text='Hostname', bg='#f5f5f5', width=8, anchor='e')
+        self.hostEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
+        self.hostLabel = tk.Label(self.hostEntryFrame, text='Hostname', bg=BACKGROUND_COLOR, width=8, anchor='e')
         self.hostLabel.pack(side='left')
-        self.hostEntry = tk.Entry(self.hostEntryFrame, highlightbackground='#f5f5f5', width=24)
+        self.hostEntry = tk.Entry(self.hostEntryFrame, highlightbackground=BACKGROUND_COLOR, width=24)
         self.hostEntry.pack(padx=3)
         self.hostEntryFrame.pack(pady=3)
 
-        self.userEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.userLabel = tk.Label(self.userEntryFrame, text='Username', bg='#f5f5f5', width=8, anchor='e')
+        self.userEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
+        self.userLabel = tk.Label(self.userEntryFrame, text='Username', bg=BACKGROUND_COLOR, width=8, anchor='e')
         self.userLabel.pack(side='left')
-        self.userEntry = tk.Entry(self.userEntryFrame, highlightbackground='#f5f5f5', width=24)
+        self.userEntry = tk.Entry(self.userEntryFrame, highlightbackground=BACKGROUND_COLOR, width=24)
         self.userEntry.pack(padx=3)
         self.userEntryFrame.pack(pady=3)
 
-        self.passwordEntryFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.passwordLabel = tk.Label(self.passwordEntryFrame, text='Password', bg='#f5f5f5', width=8, anchor='e')
+        self.passwordEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
+        self.passwordLabel = tk.Label(self.passwordEntryFrame, text='Password', bg=BACKGROUND_COLOR, width=8, anchor='e')
         self.passwordLabel.pack(side='left')
-        self.passwordEntry = tk.Entry(self.passwordEntryFrame, show='*', highlightbackground='#f5f5f5', width=24)
+        self.passwordEntry = tk.Entry(self.passwordEntryFrame, show='*', highlightbackground=BACKGROUND_COLOR, width=24)
         self.passwordEntry.pack(padx=3)
         self.passwordEntryFrame.pack(pady=3)
 
-        self.loginButtonFrame = tk.Frame(self.loginFrame, bg='#f5f5f5')
-        self.loginButtonLabel = tk.Label(self.loginButtonFrame, bg='#f5f5f5')
+        self.loginButtonFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
+        self.loginButtonLabel = tk.Label(self.loginButtonFrame, bg=BACKGROUND_COLOR)
         self.loginButton = tk.Button(
             self.loginButtonLabel,
             text='Login',
             command=self.login,
-            bg='#f5f5f5',
-            highlightbackground='#f5f5f5')
+            bg=BACKGROUND_COLOR,
+            highlightbackground=BACKGROUND_COLOR)
         self.loginButton.pack()
         self.loginButtonLabel.pack(side='right')
         self.loginButtonFrame.pack(fill='x')
@@ -87,156 +89,183 @@ class Application(tk.Frame):
         self.loadFileChooserFrame()
 
     def loadFileChooserFrame(self):
-        self.fileChooserFrame = tk.Frame(self.master, bg='#f5f5f5')
+        self.fileChooserFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
 
-        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg='#f5f5f5')
+        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
         self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
         self.fileListBox = tk.Listbox(
             self.fileListFrame,
+            state='disabled',
             yscrollcommand=self.fileScrollBar.set,
-            relief='sunken',
-            borderwidth=2)
+            relief='flat',
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
         self.fileScrollBar.config(command=self.fileListBox.yview)
         self.fileScrollBar.pack(side='right', fill='y')
         self.fileListBox.pack(fill='both', expand=True)
         self.fileListFrame.pack(fill='both', expand=True)
 
-        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg='#f5f5f5')
-        self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg='#f5f5f5')
+        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg=BACKGROUND_COLOR)
         self.fileChooserButton = tk.Button(
             self.fileChooserButtonLabel,
             text='Choose FCS Files...',
             command=self.selectFiles,
-            bg='#f5f5f5',
-            highlightbackground='#f5f5f5')
+            bg=BACKGROUND_COLOR,
+            highlightbackground=BACKGROUND_COLOR)
         self.fileChooserButton.pack()
         self.fileChooserButtonLabel.pack(side='right')
         self.fileChooserButtonFrame.pack(fill='x')
 
         self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=6, pady=6)
 
+        self.separatorFrame = tk.Frame(self.master, bg=SEPARATOR_COLOR, height=1)
+        self.separatorFrame.pack(fill='both', expand=False, padx=6, pady=6)
+
         # Start metadata choices, including:
         #    - project
         #    - site
         #    - subject
         #    - visit
-        self.metadataFrame = tk.Frame(self.master, bg='#f5f5f5')
+        self.metadataFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
 
         # overall project frame (on bottom left of main window)
-        self.projectFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+        self.projectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
 
         # project label frame (top of project chooser frame)
-        self.projectChooserLabelFrame = tk.Frame(self.projectFrame, bg='#f5f5f5')
-        self.projectChooserLabel = tk.Label(self.projectChooserLabelFrame, text='Choose Project', bg='#f5f5f5')
+        self.projectChooserLabelFrame = tk.Frame(self.projectFrame, bg=BACKGROUND_COLOR)
+        self.projectChooserLabel = tk.Label(self.projectChooserLabelFrame, text='Choose Project', bg=BACKGROUND_COLOR)
         self.projectChooserLabel.pack(side='left')
         self.projectChooserLabelFrame.pack(fill='x')
 
         # project chooser listbox frame (bottom of project chooser frame)
-        self.projectChooserFrame = tk.Frame(self.projectFrame, bg='#f5f5f5')
+        self.projectChooserFrame = tk.Frame(self.projectFrame, bg=BACKGROUND_COLOR)
         self.projectScrollBar = tk.Scrollbar(self.projectChooserFrame, orient='vertical')
         self.projectListBox = tk.Listbox(
             self.projectChooserFrame,
             exportselection=0,
             yscrollcommand=self.projectScrollBar.set,
-            relief='sunken',
-            borderwidth=2)
+            relief='flat',
+            height=5,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
         self.projectListBox.bind('<<ListboxSelect>>', self.updateMetadata)
         self.projectScrollBar.config(command=self.projectListBox.yview)
         self.projectScrollBar.pack(side='right', fill='y')
-        self.projectListBox.pack(fill='both', expand=True)
-        self.projectChooserFrame.pack(fill='both', expand=True)
+        self.projectListBox.pack(fill='x', expand=True)
+        self.projectChooserFrame.pack(fill='x', expand=True)
 
-        self.projectFrame.pack(side='left', fill='both', expand=True)
+        self.projectFrame.pack(side='left', fill='x', expand=True)
 
         # overall site frame (on bottom, 2nd from left of main window
-        self.siteFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+        self.siteFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
 
         # site label frame (top of site chooser frame)
-        self.siteChooserLabelFrame = tk.Frame(self.siteFrame, bg='#f5f5f5')
-        self.siteChooserLabel = tk.Label(self.siteChooserLabelFrame, text='Choose Site', bg='#f5f5f5')
+        self.siteChooserLabelFrame = tk.Frame(self.siteFrame, bg=BACKGROUND_COLOR)
+        self.siteChooserLabel = tk.Label(self.siteChooserLabelFrame, text='Choose Site', bg=BACKGROUND_COLOR)
         self.siteChooserLabel.pack(side='left')
         self.siteChooserLabelFrame.pack(fill='x')
 
         # site chooser listbox frame (bottom of site chooser frame)
-        self.siteChooserFrame = tk.Frame(self.siteFrame, bg='#f5f5f5')
+        self.siteChooserFrame = tk.Frame(self.siteFrame, bg=BACKGROUND_COLOR)
         self.siteScrollBar = tk.Scrollbar(self.siteChooserFrame, orient='vertical')
         self.siteListBox = tk.Listbox(
             self.siteChooserFrame,
             exportselection=0,
             yscrollcommand=self.siteScrollBar.set,
-            relief='sunken',
-            borderwidth=2)
+            relief='flat',
+            height=5,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.siteListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
         self.siteScrollBar.config(command=self.siteListBox.yview)
         self.siteScrollBar.pack(side='right', fill='y')
-        self.siteListBox.pack(fill='both', expand=True)
-        self.siteChooserFrame.pack(fill='both', expand=True)
+        self.siteListBox.pack(fill='x', expand=True)
+        self.siteChooserFrame.pack(fill='x', expand=True)
 
-        self.siteFrame.pack(side='left', fill='both', expand=True)
+        self.siteFrame.pack(side='left', fill='x', expand=True)
 
         # overall subject frame (on bottom, 2nd from left of main window
-        self.subjectFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+        self.subjectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
 
         # subject label frame (top of subject chooser frame)
-        self.subjectChooserLabelFrame = tk.Frame(self.subjectFrame, bg='#f5f5f5')
-        self.subjectChooserLabel = tk.Label(self.subjectChooserLabelFrame, text='Choose Subject', bg='#f5f5f5')
+        self.subjectChooserLabelFrame = tk.Frame(self.subjectFrame, bg=BACKGROUND_COLOR)
+        self.subjectChooserLabel = tk.Label(self.subjectChooserLabelFrame, text='Choose Subject', bg=BACKGROUND_COLOR)
         self.subjectChooserLabel.pack(side='left')
         self.subjectChooserLabelFrame.pack(fill='x')
 
         # subject chooser listbox frame (bottom of subject chooser frame)
-        self.subjectChooserFrame = tk.Frame(self.subjectFrame, bg='#f5f5f5')
+        self.subjectChooserFrame = tk.Frame(self.subjectFrame, bg=BACKGROUND_COLOR)
         self.subjectScrollBar = tk.Scrollbar(self.subjectChooserFrame, orient='vertical')
         self.subjectListBox = tk.Listbox(
             self.subjectChooserFrame,
             exportselection=0,
             yscrollcommand=self.subjectScrollBar.set,
-            relief='sunken',
-            borderwidth=2)
+            relief='flat',
+            height=5,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.subjectListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
         self.subjectScrollBar.config(command=self.subjectListBox.yview)
         self.subjectScrollBar.pack(side='right', fill='y')
-        self.subjectListBox.pack(fill='both', expand=True)
-        self.subjectChooserFrame.pack(fill='both', expand=True)
+        self.subjectListBox.pack(fill='x', expand=True)
+        self.subjectChooserFrame.pack(fill='x', expand=True)
 
-        self.subjectFrame.pack(side='left', fill='both', expand=True)
+        self.subjectFrame.pack(side='left', fill='x', expand=True)
 
         # overall visit frame (on bottom, 2nd from left of main window
-        self.visitFrame = tk.Frame(self.metadataFrame, bg='#f5f5f5')
+        self.visitFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
 
         # visit label frame (top of visit chooser frame)
-        self.visitChooserLabelFrame = tk.Frame(self.visitFrame, bg='#f5f5f5')
-        self.visitChooserLabel = tk.Label(self.visitChooserLabelFrame, text='Choose Visit', bg='#f5f5f5')
+        self.visitChooserLabelFrame = tk.Frame(self.visitFrame, bg=BACKGROUND_COLOR)
+        self.visitChooserLabel = tk.Label(self.visitChooserLabelFrame, text='Choose Visit', bg=BACKGROUND_COLOR)
         self.visitChooserLabel.pack(side='left')
         self.visitChooserLabelFrame.pack(fill='x')
 
         # visit chooser listbox frame (bottom of visit chooser frame)
-        self.visitChooserFrame = tk.Frame(self.visitFrame, bg='#f5f5f5')
+        self.visitChooserFrame = tk.Frame(self.visitFrame, bg=BACKGROUND_COLOR)
         self.visitScrollBar = tk.Scrollbar(self.visitChooserFrame, orient='vertical')
         self.visitListBox = tk.Listbox(
             self.visitChooserFrame,
             exportselection=0,
             yscrollcommand=self.visitScrollBar.set,
-            relief='sunken',
-            borderwidth=2)
+            relief='flat',
+            height=5,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.visitListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
         self.visitScrollBar.config(command=self.visitListBox.yview)
         self.visitScrollBar.pack(side='right', fill='y')
-        self.visitListBox.pack(fill='both', expand=True)
-        self.visitChooserFrame.pack(fill='both', expand=True)
+        self.visitListBox.pack(fill='x', expand=True)
+        self.visitChooserFrame.pack(fill='x', expand=True)
 
-        self.visitFrame.pack(side='left', fill='both', expand=True)
+        self.visitFrame.pack(side='left', fill='x', expand=True)
 
-        self.metadataFrame.pack(fill='both', expand=True, padx=6, pady=6)
+        self.metadataFrame.pack(fill='x', expand=False, padx=6, pady=6)
 
         # upload progress bar and upload button
-        self.progressFrame = tk.Frame(self.master, bg='#f5f5f5')
+        self.progressFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
         self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
         self.uploadButton = tk.Button(
             self.progressFrame,
             text='Upload Files',
+            state='disabled',
             command=self.uploadFiles,
-            bg='#f5f5f5',
-            highlightbackground='#f5f5f5')
-        self.uploadProgressBar.pack(side='left', fill='x', expand=True)
-        self.uploadButton.pack(side='right')
-        self.progressFrame.pack(fill='x', expand=False, padx=6, pady=6)
+            bg=BACKGROUND_COLOR,
+            highlightbackground=BACKGROUND_COLOR)
+        self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
+        self.uploadButton.pack(side='right', pady=12)
+        self.progressFrame.pack(fill='x', expand=False, padx=6)
 
         self.loadUserProjects()
 
@@ -307,6 +336,22 @@ class Application(tk.Frame):
             self.loadProjectSites(self.projectDict[selectedProjectName])
             self.loadProjectSubjects(self.projectDict[selectedProjectName])
             self.loadProjectVisits(self.projectDict[selectedProjectName])
+
+        self.updateUploadButtonState()
+
+    def updateUploadButtonState(self, event=None):
+        active = True
+        site_selection = self.siteListBox.curselection()
+        subject_selection = self.subjectListBox.curselection()
+        visit_selection = self.visitListBox.curselection()
+
+        if not site_selection or not subject_selection or not visit_selection:
+            active = False
+
+        if active:
+            self.uploadButton.config(state='active')
+        else:
+            self.uploadButton.config(state='disabled')
 
     def uploadFiles(self):
         print 'uploading files'
