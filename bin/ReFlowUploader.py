@@ -409,6 +409,8 @@ class Application(tk.Frame):
         site_selection = self.siteListBox.get(self.siteListBox.curselection())
         visit_selection = self.visitListBox.get(self.visitListBox.curselection())
 
+        self.uploadProgressBar.config(maximum=len(self.uploadFileDict))
+
         for file_path in self.uploadFileDict.keys():
             response_dict = rest.post_sample(
                 self.host,
@@ -422,6 +424,10 @@ class Application(tk.Frame):
             print "Response: ", response_dict['status'], response_dict['reason']
             print 'Data: '
             print json.dumps(response_dict['data'], indent=4)
+
+            self.uploadProgressBar.step()
+            self.uploadProgressBar.update()
+
 
 
 
