@@ -44,23 +44,48 @@ class Application(tk.Frame):
         self.logoLabel.pack(side='top', pady=15)
 
         self.hostEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.hostLabel = tk.Label(self.hostEntryFrame, text='Hostname', bg=BACKGROUND_COLOR, width=8, anchor='e')
+        self.hostLabel = tk.Label(
+            self.hostEntryFrame,
+            text='Hostname',
+            bg=BACKGROUND_COLOR,
+            width=8,
+            anchor='e')
         self.hostLabel.pack(side='left')
-        self.hostEntry = tk.Entry(self.hostEntryFrame, highlightbackground=BACKGROUND_COLOR, width=24)
+        self.hostEntry = tk.Entry(
+            self.hostEntryFrame,
+            highlightbackground=BACKGROUND_COLOR,
+            width=24)
         self.hostEntry.pack(padx=3)
         self.hostEntryFrame.pack(pady=3)
 
         self.userEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.userLabel = tk.Label(self.userEntryFrame, text='Username', bg=BACKGROUND_COLOR, width=8, anchor='e')
+        self.userLabel = tk.Label(
+            self.userEntryFrame,
+            text='Username',
+            bg=BACKGROUND_COLOR,
+            width=8,
+            anchor='e')
         self.userLabel.pack(side='left')
-        self.userEntry = tk.Entry(self.userEntryFrame, highlightbackground=BACKGROUND_COLOR, width=24)
+        self.userEntry = tk.Entry(
+            self.userEntryFrame,
+            highlightbackground=BACKGROUND_COLOR,
+            width=24)
         self.userEntry.pack(padx=3)
         self.userEntryFrame.pack(pady=3)
 
         self.passwordEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.passwordLabel = tk.Label(self.passwordEntryFrame, text='Password', bg=BACKGROUND_COLOR, width=8, anchor='e')
+        self.passwordLabel = tk.Label(
+            self.passwordEntryFrame,
+            text='Password',
+            bg=BACKGROUND_COLOR,
+            width=8,
+            anchor='e')
         self.passwordLabel.pack(side='left')
-        self.passwordEntry = tk.Entry(self.passwordEntryFrame, show='*', highlightbackground=BACKGROUND_COLOR, width=24)
+        self.passwordEntry = tk.Entry(
+            self.passwordEntryFrame,
+            show='*',
+            highlightbackground=BACKGROUND_COLOR,
+            width=24)
         self.passwordEntry.pack(padx=3)
         self.passwordEntryFrame.pack(pady=3)
 
@@ -140,7 +165,10 @@ class Application(tk.Frame):
 
         # project label frame (top of project chooser frame)
         self.projectChooserLabelFrame = tk.Frame(self.projectFrame, bg=BACKGROUND_COLOR)
-        self.projectChooserLabel = tk.Label(self.projectChooserLabelFrame, text='Choose Project', bg=BACKGROUND_COLOR)
+        self.projectChooserLabel = tk.Label(
+            self.projectChooserLabelFrame,
+            text='Choose Project',
+            bg=BACKGROUND_COLOR)
         self.projectChooserLabel.pack(side='left')
         self.projectChooserLabelFrame.pack(fill='x')
 
@@ -170,7 +198,10 @@ class Application(tk.Frame):
 
         # site label frame (top of site chooser frame)
         self.siteChooserLabelFrame = tk.Frame(self.siteFrame, bg=BACKGROUND_COLOR)
-        self.siteChooserLabel = tk.Label(self.siteChooserLabelFrame, text='Choose Site', bg=BACKGROUND_COLOR)
+        self.siteChooserLabel = tk.Label(
+            self.siteChooserLabelFrame,
+            text='Choose Site',
+            bg=BACKGROUND_COLOR)
         self.siteChooserLabel.pack(side='left')
         self.siteChooserLabelFrame.pack(fill='x')
 
@@ -200,7 +231,10 @@ class Application(tk.Frame):
 
         # subject label frame (top of subject chooser frame)
         self.subjectChooserLabelFrame = tk.Frame(self.subjectFrame, bg=BACKGROUND_COLOR)
-        self.subjectChooserLabel = tk.Label(self.subjectChooserLabelFrame, text='Choose Subject', bg=BACKGROUND_COLOR)
+        self.subjectChooserLabel = tk.Label(
+            self.subjectChooserLabelFrame,
+            text='Choose Subject',
+            bg=BACKGROUND_COLOR)
         self.subjectChooserLabel.pack(side='left')
         self.subjectChooserLabelFrame.pack(fill='x')
 
@@ -230,7 +264,10 @@ class Application(tk.Frame):
 
         # visit label frame (top of visit chooser frame)
         self.visitChooserLabelFrame = tk.Frame(self.visitFrame, bg=BACKGROUND_COLOR)
-        self.visitChooserLabel = tk.Label(self.visitChooserLabelFrame, text='Choose Visit', bg=BACKGROUND_COLOR)
+        self.visitChooserLabel = tk.Label(
+            self.visitChooserLabelFrame,
+            text='Choose Visit',
+            bg=BACKGROUND_COLOR)
         self.visitChooserLabel.pack(side='left')
         self.visitChooserLabelFrame.pack(fill='x')
 
