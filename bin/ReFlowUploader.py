@@ -4,6 +4,7 @@ import tkMessageBox
 import tkFileDialog
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
+import json
 
 LOGO_PATH = '../imgs/reflow_text.png'
 BACKGROUND_COLOR = '#ededed'
@@ -404,7 +405,25 @@ class Application(tk.Frame):
             self.uploadButton.config(state='disabled')
 
     def uploadFiles(self):
-        print 'uploading files'
+        subject_selection = self.subjectListBox.get(self.subjectListBox.curselection())
+        site_selection = self.siteListBox.get(self.siteListBox.curselection())
+        visit_selection = self.visitListBox.get(self.visitListBox.curselection())
+
+        for file_path in self.uploadFileDict.keys():
+            response_dict = rest.post_sample(
+                self.host,
+                self.token,
+                file_path,
+                subject_pk=str(self.subjectDict[subject_selection]),
+                site_pk=str(self.siteDict[site_selection]),
+                visit_type_pk=str(self.visitDict[visit_selection])
+            )
+
+            print "Response: ", response_dict['status'], response_dict['reason']
+            print 'Data: '
+            print json.dumps(response_dict['data'], indent=4)
+
+
 
 root = tk.Tk()
 app = Application(root)
