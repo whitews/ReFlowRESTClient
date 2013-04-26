@@ -18,6 +18,7 @@ PAD_MEDIUM = 6
 PAD_LARGE = 12
 PAD_EXTRA_LARGE = 15
 
+
 class Application(tk.Frame):
 
     def __init__(self, master):
@@ -96,12 +97,10 @@ class Application(tk.Frame):
 
         self.loginButtonFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
         self.loginButtonLabel = tk.Label(self.loginButtonFrame, bg=BACKGROUND_COLOR)
-        self.loginButton = tk.Button(
+        self.loginButton = ttk.Button(
             self.loginButtonLabel,
             text='Login',
-            command=self.login,
-            bg=BACKGROUND_COLOR,
-            highlightbackground=BACKGROUND_COLOR)
+            command=self.login)
         self.loginButton.pack()
         self.loginButtonLabel.pack(side='right')
         self.loginButtonFrame.pack(fill='x')
@@ -143,12 +142,10 @@ class Application(tk.Frame):
 
         self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
         self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg=BACKGROUND_COLOR)
-        self.fileChooserButton = tk.Button(
+        self.fileChooserButton = ttk.Button(
             self.fileChooserButtonLabel,
             text='Choose FCS Files...',
-            command=self.selectFiles,
-            bg=BACKGROUND_COLOR,
-            highlightbackground=BACKGROUND_COLOR)
+            command=self.selectFiles)
         self.fileChooserButton.pack()
         self.fileChooserButtonLabel.pack(side='right')
         self.fileChooserButtonFrame.pack(fill='x')
@@ -302,13 +299,11 @@ class Application(tk.Frame):
         # upload progress bar and upload button
         self.progressFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
         self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
-        self.uploadButton = tk.Button(
+        self.uploadButton = ttk.Button(
             self.progressFrame,
             text='Upload Files',
             state='disabled',
-            command=self.uploadFiles,
-            bg=BACKGROUND_COLOR,
-            highlightbackground=BACKGROUND_COLOR)
+            command=self.uploadFiles)
         self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
         self.uploadButton.pack(side='right', pady=PAD_LARGE)
         self.progressFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM)
