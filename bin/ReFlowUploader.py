@@ -22,8 +22,6 @@ PAD_EXTRA_LARGE = 15
 class Application(tk.Frame):
 
     def __init__(self, master):
-        self.uploadFileDict = dict()  # key is file path, value is file object
-
         # a bit weird, but we'll use the names (project, site, etc.) as the key, pk as the value
         # for the four choice dictionaries below. we need the names to be unique (and they should be) and
         # it's more convenient to lookup by key using the name to find the selection.
@@ -141,6 +139,17 @@ class Application(tk.Frame):
         self.fileListFrame.pack(fill='both', expand=True)
 
         self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileClearSelectionButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear Selected',
+            command=self.clearSelectedFiles)
+        self.fileClearAllButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear All',
+            command=self.clearAllFiles)
+        self.fileClearSelectionButton.pack(side='left')
+        self.fileClearAllButton.pack(side='left')
+
         self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg=BACKGROUND_COLOR)
         self.fileChooserButton = ttk.Button(
             self.fileChooserButtonLabel,
@@ -310,11 +319,20 @@ class Application(tk.Frame):
 
         self.loadUserProjects()
 
+    def clearSelectedFiles(self):
+        for i in self.fileListBox.curselection():
+            self.fileListBox.delete(i)
+        self.updateUploadButtonState()
+
+    def clearAllFiles(self):
+        self.fileListBox.delete(0, 'end')
+        self.updateUploadButtonState()
+
     def selectFiles(self):
         selectedFiles = tkFileDialog.askopenfiles('r')
+        sortedFileList = list()
         for f in selectedFiles:
-            self.uploadFileDict[f.name] = f
-        sortedFileList = self.uploadFileDict.keys()
+            sortedFileList.append(f.name)
         sortedFileList.sort()
         self.fileListBox.delete(0, 'end')
         for i, f in enumerate(sortedFileList):
@@ -392,7 +410,7 @@ class Application(tk.Frame):
 
         if not site_selection or not subject_selection or not visit_selection:
             active = False
-        if len(self.uploadFileDict) == 0:
+        if len(self.fileListBox.get(0,'end')) == 0:
             active = False
         if active:
             self.uploadButton.config(state='active')
@@ -404,9 +422,10 @@ class Application(tk.Frame):
         site_selection = self.siteListBox.get(self.siteListBox.curselection())
         visit_selection = self.visitListBox.get(self.visitListBox.curselection())
 
-        self.uploadProgressBar.config(maximum=len(self.uploadFileDict))
+        uploadFileList = self.fileListBox.get(0,'end')
+        self.uploadProgressBar.config(maximum=len(uploadFileList))
 
-        for file_path in self.uploadFileDict.keys():
+        for i, file_path in enumerate(uploadFileList):
             response_dict = rest.post_sample(
                 self.host,
                 self.token,
@@ -420,10 +439,12 @@ class Application(tk.Frame):
             print 'Data: '
             print json.dumps(response_dict['data'], indent=4)
 
+            if response_dict['status'] == 201:
+                pass
+            elif response_dict['status'] == 400:
+                self.fileListBox.itemconfig(i, fg='red', selectforeground='red')
             self.uploadProgressBar.step()
             self.uploadProgressBar.update()
-
-
 
 
 root = tk.Tk()
