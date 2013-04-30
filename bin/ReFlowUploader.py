@@ -8,10 +8,12 @@ import json
 
 LOGO_PATH = '../imgs/reflow_text.png'
 BACKGROUND_COLOR = '#ededed'
-SEPARATOR_COLOR = '#d7d7d7'
+INACTIVE_BACKGROUND_COLOR = '#e2e2e2'
+INACTIVE_FOREGROUND_COLOR = '#767676'
 BORDER_COLOR = '#bebebe'
 HIGHLIGHT_COLOR = '#5489b9'
 ROW_ALT_COLOR = '#f3f6fa'
+ERROR_FOREGROUND_COLOR = '#ff0000'
 
 PAD_SMALL = 3
 PAD_MEDIUM = 6
@@ -35,6 +37,9 @@ class Application(tk.Frame):
         self.master.title('ReFlow Uploader')
         self.master.minsize(width=800, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
+
+        self.s = ttk.Style()
+        self.s.map('Inactive.TButton', foreground=[('disabled', INACTIVE_FOREGROUND_COLOR),])
 
         self.pack()
         self.loadLoginFrame()
@@ -121,7 +126,34 @@ class Application(tk.Frame):
         self.loadFileChooserFrame()
 
     def loadFileChooserFrame(self):
+
+        # action buttons along the top of the window
         self.fileChooserFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
+
+        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileClearSelectionButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear Selected',
+            command=self.clearSelectedFiles)
+        self.fileClearAllButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear All',
+            command=self.clearAllFiles)
+        self.fileChooserButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Choose FCS Files...',
+            command=self.selectFiles)
+        self.uploadButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Upload Files',
+            state='disabled',
+            style='Inactive.TButton',
+            command=self.uploadFiles)
+        self.fileChooserButton.pack(side='left')
+        self.fileClearSelectionButton.pack(side='left')
+        self.fileClearAllButton.pack(side='left')
+        self.uploadButton.pack(side='right')
+        self.fileChooserButtonFrame.pack(side='top', fill='x', expand=False)
 
         self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
         self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
@@ -136,33 +168,8 @@ class Application(tk.Frame):
         self.fileScrollBar.config(command=self.fileListBox.yview)
         self.fileScrollBar.pack(side='right', fill='y')
         self.fileListBox.pack(fill='both', expand=True)
-        self.fileListFrame.pack(fill='both', expand=True)
-
-        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
-        self.fileClearSelectionButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear Selected',
-            command=self.clearSelectedFiles)
-        self.fileClearAllButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear All',
-            command=self.clearAllFiles)
-        self.fileClearSelectionButton.pack(side='left')
-        self.fileClearAllButton.pack(side='left')
-
-        self.fileChooserButtonLabel = tk.Label(self.fileChooserButtonFrame, bg=BACKGROUND_COLOR)
-        self.fileChooserButton = ttk.Button(
-            self.fileChooserButtonLabel,
-            text='Choose FCS Files...',
-            command=self.selectFiles)
-        self.fileChooserButton.pack()
-        self.fileChooserButtonLabel.pack(side='right')
-        self.fileChooserButtonFrame.pack(fill='x')
-
+        self.fileListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
         self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
-
-        self.separatorFrame = tk.Frame(self.master, bg=SEPARATOR_COLOR, height=1)
-        self.separatorFrame.pack(fill='both', expand=False, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
 
         # Start metadata choices, including:
         #    - project
@@ -305,16 +312,25 @@ class Application(tk.Frame):
 
         self.metadataFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
 
-        # upload progress bar and upload button
+        # upload log text box
+        self.logFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
+        self.uploadLogText = tk.Text(
+            self.logFrame,
+            height=6,
+            borderwidth=1,
+            highlightthickness=1,
+            highlightbackground=BORDER_COLOR,
+            background=INACTIVE_BACKGROUND_COLOR,
+            takefocus=False,
+            state='disabled')
+        self.setLogTextStyles()
+        self.uploadLogText.pack(fill='both', expand=True)
+        self.logFrame.pack(fill='both', expand=True, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+
+        # upload button, upload progress bar
         self.progressFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
         self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
-        self.uploadButton = ttk.Button(
-            self.progressFrame,
-            text='Upload Files',
-            state='disabled',
-            command=self.uploadFiles)
         self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
-        self.uploadButton.pack(side='right', pady=PAD_LARGE)
         self.progressFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM)
 
         self.loadUserProjects()
@@ -417,6 +433,9 @@ class Application(tk.Frame):
         else:
             self.uploadButton.config(state='disabled')
 
+    def setLogTextStyles(self):
+        self.uploadLogText.tag_config('error', foreground=ERROR_FOREGROUND_COLOR)
+
     def uploadFiles(self):
         subject_selection = self.subjectListBox.get(self.subjectListBox.curselection())
         site_selection = self.siteListBox.get(self.siteListBox.curselection())
@@ -435,17 +454,18 @@ class Application(tk.Frame):
                 visit_type_pk=str(self.visitDict[visit_selection])
             )
 
-            print "Response: ", response_dict['status'], response_dict['reason']
-            print 'Data: '
-            print json.dumps(response_dict['data'], indent=4)
+            log_text = ''.join([file_path, ' (', str(response_dict['status']), ': ', str(response_dict['reason']), ')\n'])
+            self.uploadLogText.config(state='normal')
 
             if response_dict['status'] == 201:
-                pass
+                self.uploadLogText.insert('end', log_text)
             elif response_dict['status'] == 400:
-                self.fileListBox.itemconfig(i, fg='red', selectforeground='red')
+                self.fileListBox.itemconfig(i, fg=ERROR_FOREGROUND_COLOR, selectforeground=ERROR_FOREGROUND_COLOR)
+                self.uploadLogText.insert('end', log_text, 'error')
+            self.uploadLogText.config(state='disabled')
+
             self.uploadProgressBar.step()
             self.uploadProgressBar.update()
-
 
 root = tk.Tk()
 app = Application(root)
