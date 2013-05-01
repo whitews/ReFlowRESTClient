@@ -4,7 +4,6 @@ import tkMessageBox
 import tkFileDialog
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
-import json
 
 LOGO_PATH = '../imgs/reflow_text.png'
 BACKGROUND_COLOR = '#ededed'
@@ -39,7 +38,7 @@ class Application(tk.Frame):
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.s = ttk.Style()
-        self.s.map('Inactive.TButton', foreground=[('disabled', INACTIVE_FOREGROUND_COLOR),])
+        self.s.map('Inactive.TButton', foreground=[('disabled', INACTIVE_FOREGROUND_COLOR)])
 
         self.pack()
         self.loadLoginFrame()
@@ -426,7 +425,7 @@ class Application(tk.Frame):
 
         if not site_selection or not subject_selection or not visit_selection:
             active = False
-        if len(self.fileListBox.get(0,'end')) == 0:
+        if len(self.fileListBox.get(0, 'end')) == 0:
             active = False
         if active:
             self.uploadButton.config(state='active')
@@ -441,7 +440,7 @@ class Application(tk.Frame):
         site_selection = self.siteListBox.get(self.siteListBox.curselection())
         visit_selection = self.visitListBox.get(self.visitListBox.curselection())
 
-        uploadFileList = self.fileListBox.get(0,'end')
+        uploadFileList = self.fileListBox.get(0, 'end')
         self.uploadProgressBar.config(maximum=len(uploadFileList))
 
         for i, file_path in enumerate(uploadFileList):
@@ -454,7 +453,16 @@ class Application(tk.Frame):
                 visit_type_pk=str(self.visitDict[visit_selection])
             )
 
-            log_text = ''.join([file_path, ' (', str(response_dict['status']), ': ', str(response_dict['reason']), ')\n'])
+            log_text = ''.join(
+                [
+                    file_path,
+                    ' (',
+                    str(response_dict['status']),
+                    ': ',
+                    str(response_dict['reason']),
+                    ')\n'
+                ]
+            )
             self.uploadLogText.config(state='normal')
 
             if response_dict['status'] == 201:
