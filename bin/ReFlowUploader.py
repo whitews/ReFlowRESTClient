@@ -4,6 +4,7 @@ import tkMessageBox
 import tkFileDialog
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
+import json
 
 LOGO_PATH = '../imgs/reflow_text.png'
 BACKGROUND_COLOR = '#ededed'
@@ -130,6 +131,10 @@ class Application(tk.Frame):
         self.fileChooserFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
 
         self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileChooserButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Choose FCS Files...',
+            command=self.selectFiles)
         self.fileClearSelectionButton = ttk.Button(
             self.fileChooserButtonFrame,
             text='Clear Selected',
@@ -138,10 +143,6 @@ class Application(tk.Frame):
             self.fileChooserButtonFrame,
             text='Clear All',
             command=self.clearAllFiles)
-        self.fileChooserButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Choose FCS Files...',
-            command=self.selectFiles)
         self.uploadButton = ttk.Button(
             self.fileChooserButtonFrame,
             text='Upload Files',
@@ -313,8 +314,12 @@ class Application(tk.Frame):
 
         # upload log text box
         self.logFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
+        self.logVerticalScrollBar = tk.Scrollbar(self.logFrame, orient='vertical')
+        self.logHorizontalScrollBar = tk.Scrollbar(self.logFrame, orient='horizontal')
         self.uploadLogText = tk.Text(
             self.logFrame,
+            xscrollcommand=self.logHorizontalScrollBar.set,
+            yscrollcommand=self.logVerticalScrollBar.set,
             height=6,
             borderwidth=1,
             highlightthickness=1,
@@ -322,6 +327,10 @@ class Application(tk.Frame):
             background=INACTIVE_BACKGROUND_COLOR,
             takefocus=False,
             state='disabled')
+        self.logVerticalScrollBar.config(command=self.uploadLogText.yview)
+        self.logHorizontalScrollBar.config(command=self.uploadLogText.xview)
+        self.logVerticalScrollBar.pack(side='right', fill='y')
+        self.logHorizontalScrollBar.pack(side='bottom', fill='x')
         self.setLogTextStyles()
         self.uploadLogText.pack(fill='both', expand=True)
         self.logFrame.pack(fill='both', expand=True, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
@@ -460,7 +469,8 @@ class Application(tk.Frame):
                     str(response_dict['status']),
                     ': ',
                     str(response_dict['reason']),
-                    ')\n'
+                    ')\n',
+                    json.dumps(json.loads(response_dict['data']), indent=4)
                 ]
             )
             self.uploadLogText.config(state='normal')
