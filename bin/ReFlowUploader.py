@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 import json
 import sys
+import os
 
 
 if hasattr(sys, '_MEIPASS'):
@@ -15,11 +16,11 @@ else:
     # for development
     RESOURCE_DIR = '../resources'
 
-LOGO_PATH = RESOURCE_DIR + '/reflow_text.png'
+LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.png')
 if sys.platform == 'win32':
-    ICON_PATH = RESOURCE_DIR + '/reflow.ico'
+    ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.ico')
 elif sys.platform == 'darwin':
-    ICON_PATH = RESOURCE_DIR + '/reflow.icns'
+    ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.icns')
 else:
     sys.exit("Your operating system is not supported.")
 BACKGROUND_COLOR = '#ededed'
