@@ -16,7 +16,7 @@ else:
     RESOURCE_DIR = '../resources'
 
 LOGO_PATH = RESOURCE_DIR + '/reflow_text.png'
-if sys.platform == 'Windows':
+if sys.platform == 'win32':
     ICON_PATH = RESOURCE_DIR + '/reflow.ico'
 elif sys.platform == 'darwin':
     ICON_PATH = RESOURCE_DIR + '/reflow.icns'
