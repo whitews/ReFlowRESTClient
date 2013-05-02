@@ -16,6 +16,12 @@ else:
     RESOURCE_DIR = '../resources'
 
 LOGO_PATH = RESOURCE_DIR + '/reflow_text.png'
+if sys.platform == 'Windows':
+    ICON_PATH = RESOURCE_DIR + '/reflow.ico'
+elif sys.platform == 'darwin':
+    ICON_PATH = RESOURCE_DIR + '/reflow.icns'
+else:
+    sys.exit("Your operating system is not supported.")
 BACKGROUND_COLOR = '#ededed'
 INACTIVE_BACKGROUND_COLOR = '#e2e2e2'
 INACTIVE_FOREGROUND_COLOR = '#767676'
@@ -43,6 +49,7 @@ class Application(tk.Frame):
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
+        self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Uploader')
         self.master.minsize(width=800, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
