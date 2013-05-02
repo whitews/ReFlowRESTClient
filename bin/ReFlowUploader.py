@@ -5,8 +5,17 @@ import tkFileDialog
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 import json
+import sys
 
-LOGO_PATH = '../imgs/reflow_text.png'
+
+if hasattr(sys, '_MEIPASS'):
+    # for PyInstaller 2.0
+    RESOURCE_DIR = sys._MEIPASS
+else:
+    # for development
+    RESOURCE_DIR = '../resources'
+
+LOGO_PATH = RESOURCE_DIR + '/reflow_text.png'
 BACKGROUND_COLOR = '#ededed'
 INACTIVE_BACKGROUND_COLOR = '#e2e2e2'
 INACTIVE_FOREGROUND_COLOR = '#767676'
