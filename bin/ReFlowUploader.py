@@ -487,7 +487,8 @@ class Application(tk.Frame):
                     ': ',
                     str(response_dict['reason']),
                     ')\n',
-                    json.dumps(json.loads(response_dict['data']), indent=4)
+                    json.dumps(response_dict['data'], indent=4),
+                    '\n'
                 ]
             )
             self.uploadLogText.config(state='normal')
