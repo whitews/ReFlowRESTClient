@@ -29,6 +29,7 @@ INACTIVE_FOREGROUND_COLOR = '#767676'
 BORDER_COLOR = '#bebebe'
 HIGHLIGHT_COLOR = '#5489b9'
 ROW_ALT_COLOR = '#f3f6fa'
+SUCCESS_FOREGROUND_COLOR = '#00cc00'
 ERROR_FOREGROUND_COLOR = '#ff0000'
 
 PAD_SMALL = 3
@@ -54,6 +55,9 @@ class Application(tk.Frame):
         self.master.title('ReFlow Uploader')
         self.master.minsize(width=800, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
+
+        self.menuBar = tk.Menu(master)
+        self.master.config(menu=self.menuBar)
 
         self.s = ttk.Style()
         self.s.map('Inactive.TButton', foreground=[('disabled', INACTIVE_FOREGROUND_COLOR)])
@@ -160,6 +164,10 @@ class Application(tk.Frame):
             self.fileChooserButtonFrame,
             text='Clear All',
             command=self.clearAllFiles)
+        self.refreshButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Refresh from Server',
+            command=self.loadUserProjects)
         self.uploadButton = ttk.Button(
             self.fileChooserButtonFrame,
             text='Upload Files',
@@ -170,6 +178,7 @@ class Application(tk.Frame):
         self.fileClearSelectionButton.pack(side='left')
         self.fileClearAllButton.pack(side='left')
         self.uploadButton.pack(side='right')
+        self.refreshButton.pack(side='right')
         self.fileChooserButtonFrame.pack(side='top', fill='x', expand=False)
 
         self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
@@ -390,9 +399,13 @@ class Application(tk.Frame):
             print e
 
         self.projectListBox.delete(0, 'end')
+        self.siteListBox.delete(0, 'end')
+        self.subjectListBox.delete(0, 'end')
+        self.visitListBox.delete(0, 'end')
         for result in response['data']:
             self.projectDict[result['project_name']] = result['id']
             self.projectListBox.insert('end', result['project_name'])
+        self.updateUploadButtonState()
 
     def loadProjectSites(self, project_id):
         response = None
@@ -433,7 +446,8 @@ class Application(tk.Frame):
             self.visitDict[result['visit_type_name']] = result['id']
             self.visitListBox.insert('end', result['visit_type_name'])
 
-    def updateMetadata(self, event):
+    def updateMetadata(self, event=None):
+
         selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
 
         if selectedProjectName in self.projectDict:
@@ -494,9 +508,16 @@ class Application(tk.Frame):
             self.uploadLogText.config(state='normal')
 
             if response_dict['status'] == 201:
+                self.fileListBox.itemconfig(
+                    i,
+                    fg=SUCCESS_FOREGROUND_COLOR,
+                    selectforeground=SUCCESS_FOREGROUND_COLOR)
                 self.uploadLogText.insert('end', log_text)
             elif response_dict['status'] == 400:
-                self.fileListBox.itemconfig(i, fg=ERROR_FOREGROUND_COLOR, selectforeground=ERROR_FOREGROUND_COLOR)
+                self.fileListBox.itemconfig(
+                    i,
+                    fg=ERROR_FOREGROUND_COLOR,
+                    selectforeground=ERROR_FOREGROUND_COLOR)
                 self.uploadLogText.insert('end', log_text, 'error')
             self.uploadLogText.config(state='disabled')
 
