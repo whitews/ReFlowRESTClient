@@ -154,7 +154,12 @@ class Application(tk.Frame):
 
     def loadMainFrame(self):
         self.mainFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
-        self.mainFrame.pack(fill='both', expand=True, anchor='n', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+        self.mainFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         self.topFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
         self.topFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
@@ -163,10 +168,22 @@ class Application(tk.Frame):
         self.bottomFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
 
         self.leftFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
-        self.leftFrame.pack(fill='y', expand=False, anchor='n', side='left', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+        self.leftFrame.pack(
+            fill='y',
+            expand=False,
+            anchor='n',
+            side='left',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         self.rightFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
-        self.rightFrame.pack(fill='both', expand=True, anchor='n', side='right', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+        self.rightFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
         self.innerRightFrame = tk.LabelFrame(self.rightFrame, bg=BACKGROUND_COLOR)
         self.innerRightFrame.pack(
             fill='both',
@@ -225,7 +242,12 @@ class Application(tk.Frame):
         self.progressFrame = tk.Frame(self.bottomFrame, bg=BACKGROUND_COLOR)
         self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
         self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
-        self.progressFrame.pack(fill='x', expand=False, anchor='s', padx=PAD_MEDIUM, pady=PAD_SMALL)
+        self.progressFrame.pack(
+            fill='x',
+            expand=False,
+            anchor='s',
+            padx=PAD_MEDIUM,
+            pady=PAD_SMALL)
 
         self.functionListBox.selection_set(0, 0)
         self.loadSelectedFunction()
@@ -244,7 +266,12 @@ class Application(tk.Frame):
                         expand=True,
                         anchor='n',
                         side='right')
-                    self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+                    self.fileChooserFrame.pack(
+                        fill='both',
+                        expand=True,
+                        anchor='n',
+                        padx=PAD_MEDIUM,
+                        pady=PAD_MEDIUM)
                 else:
                     self.loadFileChooserFrame()
 
@@ -303,7 +330,12 @@ class Application(tk.Frame):
         self.fileScrollBar.pack(side='right', fill='y')
         self.fileListBox.pack(fill='both', expand=True)
         self.fileListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
-        self.fileChooserFrame.pack(fill='both', expand=True, anchor='n', padx=PAD_MEDIUM, pady=PAD_MEDIUM)
+        self.fileChooserFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         # Start metadata choices, including:
         #    - project
