@@ -255,36 +255,48 @@ class Application(tk.Frame):
     def loadSelectedFunction(self, event=None):
         selectedFunction = self.functionListBox.curselection()
 
-        self.innerRightFrame.pack_forget()
+        for widget in self.innerRightFrame.pack_slaves():
+            widget.pack_forget()
 
         if selectedFunction[0] in FUNCTION_DICT:
             if selectedFunction[0] == '0':
-                if hasattr(self, 'fileChooserFrame'):
+                if hasattr(self, 'fileUploadFrame'):
                     self.innerRightFrame.config(text="Upload Files")
-                    self.innerRightFrame.pack(
-                        fill='both',
-                        expand=True,
-                        anchor='n',
-                        side='right')
-                    self.fileChooserFrame.pack(
+                    self.fileUploadFrame.pack(
                         fill='both',
                         expand=True,
                         anchor='n',
                         padx=PAD_MEDIUM,
                         pady=PAD_MEDIUM)
                 else:
-                    self.loadFileChooserFrame()
+                    self.loadFileUploadFrame()
+            elif selectedFunction[0] == '1':
+                if hasattr(self, 'applyPanelFrame'):
+                    self.innerRightFrame.config(text="Apply Panel to Samples")
+                    self.applyPanelFrame.pack(
+                        fill='both',
+                        expand=True,
+                        anchor='n',
+                        padx=PAD_MEDIUM,
+                        pady=PAD_MEDIUM)
+                else:
+                    self.loadApplyPanelFrame()
 
-    def loadFileChooserFrame(self):
+    def loadFileUploadFrame(self):
         self.innerRightFrame.config(text="Upload Files")
-        self.innerRightFrame.pack(
+        if hasattr(self, 'fileUploadFrame'):
+            pass
+        else:
+            self.fileUploadFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+
+        self.fileUploadFrame.pack(
             fill='both',
             expand=True,
             anchor='n',
             side='right')
 
         # action buttons along the top of the window
-        self.fileChooserFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+        self.fileChooserFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
 
         self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
         self.fileChooserButton = ttk.Button(
@@ -342,7 +354,7 @@ class Application(tk.Frame):
         #    - site
         #    - subject
         #    - visit
-        self.metadataFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+        self.metadataFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
 
         # overall project frame (on bottom left of main window)
         self.projectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
@@ -634,6 +646,25 @@ class Application(tk.Frame):
 
             self.uploadProgressBar.step()
             self.uploadProgressBar.update()
+
+    def loadApplyPanelFrame(self):
+        self.innerRightFrame.config(text="Apply Panel to Samples")
+        if hasattr(self, 'applyPanelFrame'):
+            pass
+        else:
+            self.applyPanelFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+
+        self.applyPanelFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right')
+
+        self.someButton = ttk.Button(
+            self.applyPanelFrame,
+            text='Some Button',
+            style='Inactive.TButton')
+        self.someButton.pack(side='left')
 
 root = tk.Tk()
 app = Application(root)
