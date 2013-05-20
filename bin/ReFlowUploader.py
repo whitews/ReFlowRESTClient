@@ -162,199 +162,21 @@ class Application(tk.Frame):
             pady=PAD_MEDIUM)
 
         self.topFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
-        self.topFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
+        self.topFrame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
+
+        self.middleFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
+        self.middleFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
 
         self.bottomFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
-        self.bottomFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
+        self.bottomFrame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
 
-        self.leftFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
-        self.leftFrame.pack(
-            fill='y',
-            expand=False,
-            anchor='n',
-            side='left',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
-
-        self.rightFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
-        self.rightFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
-        self.innerRightFrame = tk.LabelFrame(self.rightFrame, bg=BACKGROUND_COLOR)
-        self.innerRightFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right')
-        self.functionLabelFrame = tk.LabelFrame(
-            self.leftFrame,
-            bg=BACKGROUND_COLOR,
-            text="Choose Function")
-        self.functionLabelFrame.pack(fill='y', expand=False, anchor='n', side='left')
-
-        self.functionListFrame = tk.Frame(self.functionLabelFrame, bg=BACKGROUND_COLOR)
-        self.functionListScrollBar = tk.Scrollbar(self.functionListFrame, orient='vertical')
-        self.functionListBox = tk.Listbox(
-            self.functionListFrame,
-            yscrollcommand=self.functionListScrollBar.set,
-            relief='flat',
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.functionListBox.bind('<<ListboxSelect>>', self.loadSelectedFunction)
-        self.functionListScrollBar.config(command=self.functionListBox.yview)
-        self.functionListScrollBar.pack(side='right', fill='y')
-        self.functionListBox.pack(fill='both', expand=True, padx=PAD_MEDIUM, pady=0)
-        self.functionListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
-
-        for key in FUNCTION_DICT:
-            self.functionListBox.insert(key, FUNCTION_DICT[key])
-
-        # session log text box
-        self.logFrame = tk.LabelFrame(self.bottomFrame, bg=BACKGROUND_COLOR, text='Session Log')
-        self.logVerticalScrollBar = tk.Scrollbar(self.logFrame, orient='vertical')
-        self.logHorizontalScrollBar = tk.Scrollbar(self.logFrame, orient='horizontal')
-        self.uploadLogText = tk.Text(
-            self.logFrame,
-            xscrollcommand=self.logHorizontalScrollBar.set,
-            yscrollcommand=self.logVerticalScrollBar.set,
-            height=6,
-            borderwidth=0,
-            highlightthickness=0,
-            highlightbackground=BORDER_COLOR,
-            background=BACKGROUND_COLOR,
-            takefocus=False,
-            state='disabled')
-        self.logVerticalScrollBar.config(command=self.uploadLogText.yview)
-        self.logHorizontalScrollBar.config(command=self.uploadLogText.xview)
-        self.logVerticalScrollBar.pack(side='right', fill='y')
-        self.logHorizontalScrollBar.pack(side='bottom', fill='x')
-        self.setLogTextStyles()
-        self.uploadLogText.pack(fill='both', expand=True)
-        self.logFrame.pack(fill='both', expand=True, anchor='s', padx=PAD_MEDIUM, pady=0)
-
-        # upload button, upload progress bar
-        self.progressFrame = tk.Frame(self.bottomFrame, bg=BACKGROUND_COLOR)
-        self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
-        self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
-        self.progressFrame.pack(
-            fill='x',
-            expand=False,
-            anchor='s',
-            padx=PAD_MEDIUM,
-            pady=PAD_SMALL)
-
-        self.functionListBox.selection_set(0, 0)
-        self.loadSelectedFunction()
-
-    def loadSelectedFunction(self, event=None):
-        selectedFunction = self.functionListBox.curselection()
-
-        for widget in self.innerRightFrame.pack_slaves():
-            widget.pack_forget()
-
-        if selectedFunction[0] in FUNCTION_DICT:
-            if selectedFunction[0] == '0':
-                if hasattr(self, 'fileUploadFrame'):
-                    self.innerRightFrame.config(text="Upload Files")
-                    self.fileUploadFrame.pack(
-                        fill='both',
-                        expand=True,
-                        anchor='n',
-                        padx=PAD_MEDIUM,
-                        pady=PAD_MEDIUM)
-                else:
-                    self.loadFileUploadFrame()
-            elif selectedFunction[0] == '1':
-                if hasattr(self, 'applyPanelFrame'):
-                    self.innerRightFrame.config(text="Apply Panel to Samples")
-                    self.applyPanelFrame.pack(
-                        fill='both',
-                        expand=True,
-                        anchor='n',
-                        padx=PAD_MEDIUM,
-                        pady=PAD_MEDIUM)
-                else:
-                    self.loadApplyPanelFrame()
-
-    def loadFileUploadFrame(self):
-        self.innerRightFrame.config(text="Upload Files")
-        if hasattr(self, 'fileUploadFrame'):
-            pass
-        else:
-            self.fileUploadFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
-
-        self.fileUploadFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right')
-
-        # action buttons along the top of the window
-        self.fileChooserFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
-
-        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
-        self.fileChooserButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Choose FCS Files...',
-            command=self.selectFiles)
-        self.fileClearSelectionButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear Selected',
-            command=self.clearSelectedFiles)
-        self.fileClearAllButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear All',
-            command=self.clearAllFiles)
-        self.refreshButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Refresh from Server',
-            command=self.loadUserProjects)
-        self.uploadButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Upload Files',
-            state='disabled',
-            style='Inactive.TButton',
-            command=self.uploadFiles)
-        self.fileChooserButton.pack(side='left')
-        self.fileClearSelectionButton.pack(side='left')
-        self.fileClearAllButton.pack(side='left')
-        self.uploadButton.pack(side='right')
-        self.refreshButton.pack(side='right')
-        self.fileChooserButtonFrame.pack(side='top', fill='x', expand=False)
-
-        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
-        self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
-        self.fileListBox = tk.Listbox(
-            self.fileListFrame,
-            yscrollcommand=self.fileScrollBar.set,
-            relief='flat',
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.fileScrollBar.config(command=self.fileListBox.yview)
-        self.fileScrollBar.pack(side='right', fill='y')
-        self.fileListBox.pack(fill='both', expand=True)
-        self.fileListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
-        self.fileChooserFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
-
+        # Metadata frame - for choosing project/subject/site etc.
+        self.metadataFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
         # Start metadata choices, including:
         #    - project
         #    - site
         #    - subject
         #    - visit
-        self.metadataFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
 
         # overall project frame (on bottom left of main window)
         self.projectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
@@ -488,9 +310,197 @@ class Application(tk.Frame):
 
         self.visitFrame.pack(side='left', fill='x', expand=True)
 
-        self.metadataFrame.pack(fill='x', expand=False, padx=PAD_MEDIUM, pady=PAD_MEDIUM)
-
         self.loadUserProjects()
+
+        self.metadataFrame.pack(
+            fill='x',
+            expand=False,
+            anchor='n',
+            padx=PAD_MEDIUM,
+            pady=0)
+
+        self.leftFrame = tk.Frame(self.middleFrame, bg=BACKGROUND_COLOR)
+        self.leftFrame.pack(
+            fill='y',
+            expand=False,
+            anchor='n',
+            side='left',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+
+        self.rightFrame = tk.Frame(self.middleFrame, bg=BACKGROUND_COLOR)
+        self.rightFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+        self.innerRightFrame = tk.LabelFrame(self.rightFrame, bg=BACKGROUND_COLOR)
+        self.innerRightFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right')
+        self.functionLabelFrame = tk.LabelFrame(
+            self.leftFrame,
+            bg=BACKGROUND_COLOR,
+            text="Choose Function")
+        self.functionLabelFrame.pack(fill='y', expand=False, anchor='n', side='left')
+
+        self.functionListFrame = tk.Frame(self.functionLabelFrame, bg=BACKGROUND_COLOR)
+        self.functionListScrollBar = tk.Scrollbar(self.functionListFrame, orient='vertical')
+        self.functionListBox = tk.Listbox(
+            self.functionListFrame,
+            yscrollcommand=self.functionListScrollBar.set,
+            relief='flat',
+            height=14,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.functionListBox.bind('<<ListboxSelect>>', self.loadSelectedFunction)
+        self.functionListScrollBar.config(command=self.functionListBox.yview)
+        self.functionListScrollBar.pack(side='right', fill='y')
+        self.functionListBox.pack(fill='both', expand=True, padx=PAD_MEDIUM, pady=0)
+        self.functionListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
+
+        for key in FUNCTION_DICT:
+            self.functionListBox.insert(key, FUNCTION_DICT[key])
+
+        # session log text box
+        self.logFrame = tk.LabelFrame(self.bottomFrame, bg=BACKGROUND_COLOR, text='Session Log')
+        self.logVerticalScrollBar = tk.Scrollbar(self.logFrame, orient='vertical')
+        self.logHorizontalScrollBar = tk.Scrollbar(self.logFrame, orient='horizontal')
+        self.uploadLogText = tk.Text(
+            self.logFrame,
+            xscrollcommand=self.logHorizontalScrollBar.set,
+            yscrollcommand=self.logVerticalScrollBar.set,
+            height=10,
+            borderwidth=0,
+            highlightthickness=0,
+            highlightbackground=BORDER_COLOR,
+            background=BACKGROUND_COLOR,
+            takefocus=False,
+            state='disabled')
+        self.logVerticalScrollBar.config(command=self.uploadLogText.yview)
+        self.logHorizontalScrollBar.config(command=self.uploadLogText.xview)
+        self.logVerticalScrollBar.pack(side='right', fill='y')
+        self.logHorizontalScrollBar.pack(side='bottom', fill='x')
+        self.setLogTextStyles()
+        self.uploadLogText.pack(fill='both', expand=True)
+        self.logFrame.pack(fill='both', expand=False, anchor='s', padx=PAD_MEDIUM, pady=0)
+
+        # upload button, upload progress bar
+        self.progressFrame = tk.Frame(self.bottomFrame, bg=BACKGROUND_COLOR)
+        self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
+        self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
+        self.progressFrame.pack(
+            fill='x',
+            expand=False,
+            anchor='s',
+            padx=PAD_MEDIUM,
+            pady=PAD_SMALL)
+
+        self.functionListBox.selection_set(0, 0)
+        self.loadSelectedFunction()
+
+    def loadSelectedFunction(self, event=None):
+        selectedFunction = self.functionListBox.curselection()
+
+        for widget in self.innerRightFrame.pack_slaves():
+            widget.pack_forget()
+
+        if selectedFunction[0] in FUNCTION_DICT:
+            if selectedFunction[0] == '0':
+                if hasattr(self, 'fileUploadFrame'):
+                    self.innerRightFrame.config(text="Upload Files")
+                    self.fileUploadFrame.pack(
+                        fill='both',
+                        expand=True,
+                        anchor='n',
+                        padx=PAD_MEDIUM,
+                        pady=PAD_MEDIUM)
+                else:
+                    self.loadFileUploadFrame()
+            elif selectedFunction[0] == '1':
+                if hasattr(self, 'applyPanelFrame'):
+                    self.innerRightFrame.config(text="Apply Panel to Samples")
+                    self.applyPanelFrame.pack(
+                        fill='both',
+                        expand=True,
+                        anchor='n',
+                        padx=PAD_MEDIUM,
+                        pady=PAD_MEDIUM)
+                else:
+                    self.loadApplyPanelFrame()
+
+    def loadFileUploadFrame(self):
+        self.innerRightFrame.config(text="Upload Files")
+        if hasattr(self, 'fileUploadFrame'):
+            pass
+        else:
+            self.fileUploadFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+
+        self.fileUploadFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right')
+
+        # action buttons along the top of the window
+        self.fileChooserFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
+
+        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileChooserButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Choose FCS Files...',
+            command=self.selectFiles)
+        self.fileClearSelectionButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear Selected',
+            command=self.clearSelectedFiles)
+        self.fileClearAllButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Clear All',
+            command=self.clearAllFiles)
+        self.refreshButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Refresh from Server',
+            command=self.loadUserProjects)
+        self.uploadButton = ttk.Button(
+            self.fileChooserButtonFrame,
+            text='Upload Files',
+            state='disabled',
+            style='Inactive.TButton',
+            command=self.uploadFiles)
+        self.fileChooserButton.pack(side='left')
+        self.fileClearSelectionButton.pack(side='left')
+        self.fileClearAllButton.pack(side='left')
+        self.uploadButton.pack(side='right')
+        self.refreshButton.pack(side='right')
+        self.fileChooserButtonFrame.pack(side='top', fill='x', expand=False)
+
+        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
+        self.fileListBox = tk.Listbox(
+            self.fileListFrame,
+            yscrollcommand=self.fileScrollBar.set,
+            relief='flat',
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.fileScrollBar.config(command=self.fileListBox.yview)
+        self.fileScrollBar.pack(side='right', fill='y')
+        self.fileListBox.pack(fill='both', expand=True)
+        self.fileListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
+        self.fileChooserFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
     def clearSelectedFiles(self):
         for i in self.fileListBox.curselection():
@@ -528,7 +538,6 @@ class Application(tk.Frame):
         for result in response['data']:
             self.projectDict[result['project_name']] = result['id']
             self.projectListBox.insert('end', result['project_name'])
-        self.updateUploadButtonState()
 
     def loadProjectSites(self, project_id):
         response = None
@@ -588,7 +597,10 @@ class Application(tk.Frame):
 
         if not site_selection or not subject_selection or not visit_selection:
             active = False
-        if len(self.fileListBox.get(0, 'end')) == 0:
+        if hasattr(self, 'fileListBox'):
+            if len(self.fileListBox.get(0, 'end')) == 0:
+                active = False
+        else:
             active = False
         if active:
             self.uploadButton.config(state='active')
