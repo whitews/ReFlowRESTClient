@@ -47,12 +47,14 @@ class Application(tk.Frame):
 
     def __init__(self, master):
         # a bit weird, but we'll use the names (project, site, etc.) as the key, pk as the value
-        # for the four choice dictionaries below. we need the names to be unique (and they should be) and
+        # for the four choice dictionaries below.
+        # we need the names to be unique (and they should be) and
         # it's more convenient to lookup by key using the name to find the selection.
         self.projectDict = dict()
         self.siteDict = dict()
         self.subjectDict = dict()
         self.visitDict = dict()
+        self.panelDict = dict()
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
@@ -147,7 +149,9 @@ class Application(tk.Frame):
         except Exception, e:
             print e
         if not self.token:
-            tkMessageBox.showwarning('Login Failed', ' Check that the hostname, username, and password are correct')
+            tkMessageBox.showwarning(
+                'Login Failed',
+                ' Check that the hostname, username, and password are correct')
             return
         self.loginFrame.destroy()
         self.loadMainFrame()
@@ -236,7 +240,7 @@ class Application(tk.Frame):
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
             highlightthickness=1)
-        self.siteListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
+        self.siteListBox.bind('<<ListboxSelect>>', self.siteSelectionChanged)
         self.siteScrollBar.config(command=self.siteListBox.yview)
         self.siteScrollBar.pack(side='right', fill='y')
         self.siteListBox.pack(fill='x', expand=True)
@@ -406,9 +410,9 @@ class Application(tk.Frame):
         self.loadSelectedFunction()
 
     def deselectMetadata(self):
-        self.subjectListBox.selection_clear(0, 'end');
-        self.siteListBox.selection_clear(0, 'end');
-        self.visitListBox.selection_clear(0, 'end');
+        self.subjectListBox.selection_clear(0, 'end')
+        self.siteListBox.selection_clear(0, 'end')
+        self.visitListBox.selection_clear(0, 'end')
 
     def loadSelectedFunction(self, event=None):
         selectedFunction = self.functionListBox.curselection()
@@ -437,8 +441,12 @@ class Application(tk.Frame):
                         anchor='n',
                         padx=PAD_MEDIUM,
                         pady=PAD_MEDIUM)
+                    self.updateApplyPanelData()
                 else:
                     self.loadApplyPanelFrame()
+
+        self.deselectMetadata()
+        self.update_idletasks()
 
     def loadFileUploadFrame(self):
         self.innerRightFrame.config(text="Upload Files")
@@ -588,6 +596,32 @@ class Application(tk.Frame):
         for visit_type_name in sorted(self.visitDict.keys()):
             self.visitListBox.insert('end', visit_type_name)
 
+    def loadProjectPanels(self):
+        if self.projectListBox.curselection():
+            selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
+        else:
+            return
+        selectedSiteName = None
+        if self.siteListBox.curselection():
+            selectedSiteName = self.siteListBox.get(self.siteListBox.curselection())
+
+        panel_args = [self.host, self.token]
+        panel_kwargs = {'project_pk': self.projectDict[selectedProjectName]}
+        if selectedSiteName:
+            panel_kwargs['site_pk'] = self.siteDict[selectedSiteName]
+
+        try:
+            response = rest.get_panels(*panel_args, **panel_kwargs)
+        except Exception, e:
+            print e
+
+        self.panelListBox.delete(0, 'end')
+        self.panelDict.clear()
+        for result in response['data']:
+            self.panelDict[result['panel_name']] = result['id']
+        for panel_name in sorted(self.panelDict.keys()):
+            self.panelListBox.insert('end', panel_name)
+
     def updateMetadata(self, event=None):
 
         selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
@@ -598,6 +632,11 @@ class Application(tk.Frame):
             self.loadProjectVisits(self.projectDict[selectedProjectName])
 
         self.updateUploadButtonState()
+        self.updateApplyPanelData()
+
+    def siteSelectionChanged(self, event=None):
+        self.updateUploadButtonState()
+        self.updateApplyPanelData()
 
     def updateUploadButtonState(self, event=None):
         active = True
@@ -682,11 +721,112 @@ class Application(tk.Frame):
             anchor='n',
             side='right')
 
+        self.applyPanelActionFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
+        self.applyPanelActionFrame.pack(
+            fill='x',
+            expand=False,
+            anchor='n')
+
         self.someButton = ttk.Button(
-            self.applyPanelFrame,
+            self.applyPanelActionFrame,
             text='Some Button',
             style='Inactive.TButton')
         self.someButton.pack(side='left')
+
+        self.applyPanelSelectorFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
+        self.applyPanelSelectorFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n')
+
+        self.applyPanelSelectorLeftFrame = tk.Frame(
+            self.applyPanelSelectorFrame,
+            bg=BACKGROUND_COLOR)
+        self.applyPanelSelectorLeftFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='left')
+
+        self.applyPanelSelectorRightFrame = tk.Frame(
+            self.applyPanelSelectorFrame,
+            bg=BACKGROUND_COLOR)
+        self.applyPanelSelectorRightFrame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            side='right')
+
+        # apply panel label frame
+        self.panelChooserLabelFrame = tk.Frame(
+            self.applyPanelSelectorLeftFrame,
+            bg=BACKGROUND_COLOR)
+        self.panelChooserLabel = tk.Label(
+            self.panelChooserLabelFrame,
+            text='Choose Panel',
+            bg=BACKGROUND_COLOR)
+        self.panelChooserLabel.pack(side='left')
+        self.panelChooserLabelFrame.pack(fill='x')
+
+        # apply panel chooser listbox frame
+        self.panelChooserFrame = tk.Frame(self.applyPanelSelectorLeftFrame, bg=BACKGROUND_COLOR)
+        self.panelScrollBar = tk.Scrollbar(self.panelChooserFrame, orient='vertical')
+        self.panelListBox = tk.Listbox(
+            self.panelChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.panelScrollBar.set,
+            relief='flat',
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.panelListBox.bind('<<ListboxSelect>>', self.updateMatchingSamples)
+        self.panelScrollBar.config(command=self.panelListBox.yview)
+        self.panelScrollBar.pack(side='right', fill='y')
+        self.panelListBox.pack(fill='both', expand=True)
+        self.panelChooserFrame.pack(fill='both', expand=True)
+
+        # matching sample label frame
+        self.sampleChooserLabelFrame = tk.Frame(
+            self.applyPanelSelectorRightFrame,
+            bg=BACKGROUND_COLOR)
+        self.sampleChooserLabel = tk.Label(
+            self.sampleChooserLabelFrame,
+            text='Matching Samples',
+            bg=BACKGROUND_COLOR)
+        self.sampleChooserLabel.pack(side='left')
+        self.sampleChooserLabelFrame.pack(fill='x')
+
+        # apply panel sample chooser listbox frame
+        self.sampleChooserFrame = tk.Frame(
+            self.applyPanelSelectorRightFrame,
+            bg=BACKGROUND_COLOR)
+        self.sampleScrollBar = tk.Scrollbar(self.sampleChooserFrame, orient='vertical')
+        self.sampleListBox = tk.Listbox(
+            self.sampleChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.sampleScrollBar.set,
+            relief='flat',
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.sampleScrollBar.config(command=self.sampleListBox.yview)
+        self.sampleScrollBar.pack(side='right', fill='y')
+        self.sampleListBox.pack(fill='both', expand=True)
+        self.sampleChooserFrame.pack(fill='both', expand=True)
+
+        self.updateApplyPanelData()
+
+    def updateApplyPanelData(self):
+        # only update the apply panel frame if the function is selected
+        # ...it makes a REST call, so avoid it if not necessary
+        if self.functionListBox.curselection()[0] == '1':
+            self.loadProjectPanels()
+            self.updateMatchingSamples()
+
+    def updateMatchingSamples(self, event=None):
+        pass
 
 root = tk.Tk()
 app = Application(root)
