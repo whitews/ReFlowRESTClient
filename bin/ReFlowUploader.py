@@ -405,6 +405,11 @@ class Application(tk.Frame):
         self.functionListBox.selection_set(0, 0)
         self.loadSelectedFunction()
 
+    def deselectMetadata(self):
+        self.subjectListBox.selection_clear(0, 'end');
+        self.siteListBox.selection_clear(0, 'end');
+        self.visitListBox.selection_clear(0, 'end');
+
     def loadSelectedFunction(self, event=None):
         selectedFunction = self.functionListBox.curselection()
 
@@ -522,6 +527,7 @@ class Application(tk.Frame):
             self.fileListBox.insert(i, f)
             if i % 2:
                 self.fileListBox.itemconfig(i, bg=ROW_ALT_COLOR)
+        self.deselectMetadata()
         self.updateUploadButtonState()
 
     def loadUserProjects(self):
@@ -537,7 +543,8 @@ class Application(tk.Frame):
         self.visitListBox.delete(0, 'end')
         for result in response['data']:
             self.projectDict[result['project_name']] = result['id']
-            self.projectListBox.insert('end', result['project_name'])
+        for project_name in sorted(self.projectDict.keys()):
+            self.projectListBox.insert('end', project_name)
 
     def loadProjectSites(self, project_id):
         response = None
@@ -550,7 +557,8 @@ class Application(tk.Frame):
         self.siteDict.clear()
         for result in response['data']:
             self.siteDict[result['site_name']] = result['id']
-            self.siteListBox.insert('end', result['site_name'])
+        for site_name in sorted(self.siteDict.keys()):
+            self.siteListBox.insert('end', site_name)
 
     def loadProjectSubjects(self, project_id):
         response = None
@@ -563,7 +571,8 @@ class Application(tk.Frame):
         self.subjectDict.clear()
         for result in response['data']:
             self.subjectDict[result['subject_id']] = result['id']
-            self.subjectListBox.insert('end', result['subject_id'])
+        for subject_id in sorted(self.subjectDict.keys()):
+            self.subjectListBox.insert('end', subject_id)
 
     def loadProjectVisits(self, project_id):
         response = None
@@ -576,7 +585,8 @@ class Application(tk.Frame):
         self.visitDict.clear()
         for result in response['data']:
             self.visitDict[result['visit_type_name']] = result['id']
-            self.visitListBox.insert('end', result['visit_type_name'])
+        for visit_type_name in sorted(self.visitDict.keys()):
+            self.visitListBox.insert('end', visit_type_name)
 
     def updateMetadata(self, event=None):
 
