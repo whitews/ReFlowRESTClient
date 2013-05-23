@@ -459,10 +459,14 @@ class Application(tk.Frame):
             fill='both',
             expand=True,
             anchor='n',
-            side='right')
+            side='right',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         # action buttons along the top of the window
-        self.fileChooserFrame = tk.Frame(self.fileUploadFrame, bg=BACKGROUND_COLOR)
+        self.fileChooserFrame = tk.Frame(
+            self.fileUploadFrame,
+            bg=BACKGROUND_COLOR)
 
         self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
         self.fileChooserButton = ttk.Button(
@@ -492,9 +496,11 @@ class Application(tk.Frame):
         self.fileClearAllButton.pack(side='left')
         self.uploadButton.pack(side='right')
         self.refreshButton.pack(side='right')
-        self.fileChooserButtonFrame.pack(side='top', fill='x', expand=False)
+        self.fileChooserButtonFrame.pack(anchor='n', fill='x', expand=False)
 
-        self.fileListFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
+        self.fileListFrame = tk.Frame(
+            self.fileChooserFrame,
+            bg=BACKGROUND_COLOR)
         self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
         self.fileListBox = tk.Listbox(
             self.fileListFrame,
@@ -507,13 +513,11 @@ class Application(tk.Frame):
         self.fileScrollBar.config(command=self.fileListBox.yview)
         self.fileScrollBar.pack(side='right', fill='y')
         self.fileListBox.pack(fill='both', expand=True)
-        self.fileListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
+        self.fileListFrame.pack(fill='both', expand=True)
         self.fileChooserFrame.pack(
             fill='both',
             expand=True,
-            anchor='n',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
+            anchor='n')
 
     def clearSelectedFiles(self):
         for i in self.fileListBox.curselection():
@@ -719,7 +723,9 @@ class Application(tk.Frame):
             fill='both',
             expand=True,
             anchor='n',
-            side='right')
+            side='right',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         self.applyPanelActionFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
         self.applyPanelActionFrame.pack(
