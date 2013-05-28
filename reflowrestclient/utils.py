@@ -11,7 +11,8 @@ URLS = {
     'COMPENSATIONS': '/api/compensations/',
     'PARAMETERS': '/api/parameters/',
     'SAMPLES': '/api/samples/',
-    'VISIT_TYPES': '/api/visit_types/'
+    'UNCAT_SAMPLES': '/api/samples/uncategorized/',
+    'VISIT_TYPES': '/api/visit_types/',
 }
 
 
@@ -294,6 +295,29 @@ def get_parameter(host, token, parameter_pk):
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
     url = 'https://%s%s' % (host, URLS['SAMPLES'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if subject_pk is not None:
+        filter_params['subject'] = subject_pk
+
+    if site_pk is not None:
+        filter_params['site'] = site_pk
+
+    if project_pk is not None:
+        filter_params['subject__project'] = project_pk
+
+    if visit_pk is not None:
+        filter_params['visit'] = visit_pk
+
+    if parameter_names is not None:
+        filter_params['parameter_names'] = parameter_names
+
+    return get_request(token, url, filter_params)
+
+
+def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
+    url = 'https://%s%s' % (host, URLS['UNCAT_SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
