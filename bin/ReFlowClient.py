@@ -55,6 +55,7 @@ class Application(tk.Frame):
         self.subjectDict = dict()
         self.visitDict = dict()
         self.panelDict = dict()
+        self.matchingPanelSamplesDict = dict()
 
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
@@ -828,11 +829,37 @@ class Application(tk.Frame):
         # only update the apply panel frame if the function is selected
         # ...it makes a REST call, so avoid it if not necessary
         if self.functionListBox.curselection()[0] == '1':
+            self.matchingPanelSamplesDict.clear()
             self.loadProjectPanels()
             self.updateMatchingSamples()
 
     def updateMatchingSamples(self, event=None):
-        pass
+        if not self.panelListBox.curselection():
+            return
+
+        panel_selection = self.panelListBox.get(self.panelListBox.curselection())
+        response = rest.get_panel(self.host, self.token, panel_pk=self.panelDict[panel_selection])
+        panel_params = response['data']['panelparameters']
+        matching_samples = None
+        if len(panel_params) > 0:
+            panel_params_csv_string = ','.join([i['fcs_text'] for i in panel_params])
+            matching_samples = rest.get_uncat_samples(
+                                    self.host,
+                                    self.token,
+                                    fcs_text=panel_params_csv_string,
+                                    parameter_count=len(panel_params))
+        if matching_samples is None:
+            return
+        if matching_samples.has_key('status'):
+            if matching_samples['status'] != 200:
+                return
+
+        if matching_samples.has_key('data'):
+            for sample in matching_samples['data']:
+                dict_key = sample['original_filename'] + ' (id=' + str(sample['id']) + ')'
+                self.matchingPanelSamplesDict[dict_key] = sample['id']
+            for sample in sorted(self.matchingPanelSamplesDict.keys()):
+                self.sampleListBox.insert('end', sample)
 
 root = tk.Tk()
 app = Application(root)
