@@ -293,7 +293,7 @@ def get_parameter(host, token, parameter_pk):
     return get_request(token, url)
 
 
-def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
+def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None, parameter_count=None):
     url = 'https://%s%s' % (host, URLS['SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -313,10 +313,13 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, vis
     if parameter_names is not None:
         filter_params['parameter_names'] = parameter_names
 
+    if parameter_count is not None:
+        filter_params['parameter_count'] = parameter_count
+
     return get_request(token, url, filter_params)
 
 
-def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None):
+def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, fcs_text=None, parameter_count=None):
     url = 'https://%s%s' % (host, URLS['UNCAT_SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -333,8 +336,11 @@ def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=Non
     if visit_pk is not None:
         filter_params['visit'] = visit_pk
 
-    if parameter_names is not None:
-        filter_params['parameter_names'] = parameter_names
+    if fcs_text is not None:
+        filter_params['fcs_text'] = fcs_text
+
+    if parameter_count is not None:
+        filter_params['parameter_count'] = parameter_count
 
     return get_request(token, url, filter_params)
 
