@@ -833,8 +833,13 @@ class Application(tk.Frame):
             self.loadProjectPanels()
             self.updateMatchingSamples()
 
+    def clearMatchingSamples(self):
+        self.matchingPanelSamplesDict.clear()
+        self.sampleListBox.delete(0, 'end')
+
     def updateMatchingSamples(self, event=None):
         if not self.panelListBox.curselection():
+            self.clearMatchingSamples()
             return
 
         panel_selection = self.panelListBox.get(self.panelListBox.curselection())
@@ -849,9 +854,11 @@ class Application(tk.Frame):
                                     fcs_text=panel_params_csv_string,
                                     parameter_count=len(panel_params))
         if matching_samples is None:
+            self.clearMatchingSamples()
             return
         if matching_samples.has_key('status'):
             if matching_samples['status'] != 200:
+                self.clearMatchingSamples()
                 return
 
         if matching_samples.has_key('data'):
