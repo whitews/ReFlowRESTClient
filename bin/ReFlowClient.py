@@ -736,8 +736,9 @@ class Application(tk.Frame):
 
         self.someButton = ttk.Button(
             self.applyPanelActionFrame,
-            text='Some Button',
-            style='Inactive.TButton')
+            text='Apply Panel to Selected Samples',
+            style='Inactive.TButton',
+            command=self.applyPanelToSamples)
         self.someButton.pack(side='left')
 
         self.applyPanelSelectorFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
@@ -811,6 +812,7 @@ class Application(tk.Frame):
         self.sampleScrollBar = tk.Scrollbar(self.sampleChooserFrame, orient='vertical')
         self.sampleListBox = tk.Listbox(
             self.sampleChooserFrame,
+            selectmode='extended',
             exportselection=0,
             yscrollcommand=self.sampleScrollBar.set,
             relief='flat',
@@ -845,6 +847,7 @@ class Application(tk.Frame):
         panel_selection = self.panelListBox.get(self.panelListBox.curselection())
         response = rest.get_panel(self.host, self.token, panel_pk=self.panelDict[panel_selection])
         panel_params = response['data']['panelparameters']
+        site_pk = response['data']['site']['id']
         matching_samples = None
         if len(panel_params) > 0:
             panel_params_csv_string = ','.join([i['fcs_text'] for i in panel_params])
@@ -852,7 +855,8 @@ class Application(tk.Frame):
                                     self.host,
                                     self.token,
                                     fcs_text=panel_params_csv_string,
-                                    parameter_count=len(panel_params))
+                                    parameter_count=len(panel_params),
+                                    site_pk=site_pk)
         if matching_samples is None:
             self.clearMatchingSamples()
             return
@@ -867,6 +871,51 @@ class Application(tk.Frame):
                 self.matchingPanelSamplesDict[dict_key] = sample['id']
             for sample in sorted(self.matchingPanelSamplesDict.keys()):
                 self.sampleListBox.insert('end', sample)
+
+    def applyPanelToSamples(self):
+        if not self.panelListBox.curselection():
+            return
+        if not self.sampleListBox.curselection():
+            return
+
+        panel_selection = self.panelListBox.get(self.panelListBox.curselection())
+        sample_selection = self.sampleListBox.curselection()
+
+        panel_pk = self.panelDict[panel_selection]
+
+        for sample_index in sample_selection:
+            sample_selection = self.sampleListBox.get(sample_index)
+            sample_pk = self.matchingPanelSamplesDict[sample_selection]
+            response_dict = rest.patch_sample_with_panel(
+                self.host,
+                self.token,
+                sample_pk=str(sample_pk),
+                panel_pk=str(panel_pk)
+            )
+
+            log_text = ''.join(
+                [
+                    sample_selection,
+                    ' (',
+                    str(response_dict['status']),
+                    ': ',
+                    str(response_dict['reason']),
+                    ')\n',
+                    str(response_dict['data']),
+                    ')\n'
+                ]
+            )
+            self.uploadLogText.config(state='normal')
+
+            if response_dict['status'] == 201:
+                self.uploadLogText.insert('end', log_text)
+            else:
+                self.uploadLogText.insert('end', log_text, 'error')
+            self.uploadLogText.config(state='disabled')
+
+        self.clearMatchingSamples()
+        self.updateMatchingSamples()
+
 
 root = tk.Tk()
 app = Application(root)
