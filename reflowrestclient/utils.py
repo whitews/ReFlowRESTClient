@@ -429,13 +429,24 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
     }
 
 
-def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visit_type_pk=None, panel_pk=None):
+def post_sample(
+    host,
+    token,
+    file_path,
+    subject_pk,
+    site_pk,
+    visit_type_pk,
+    specimen_pk,
+    sample_group_pk=None,
+    panel_pk=None):
     """
     POST a FCS sample, associating the file with the following:
-        subject    (required)
-        site       (optional)
-        visit_type (optional)
-        panel      (optional)
+        subject      (required)
+        site         (required)
+        visit_type   (required)
+        specimen     (required)
+        sample_group (optional)
+        panel        (optional)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
@@ -446,16 +457,17 @@ def post_sample(host, token, file_path=None, subject_pk=None, site_pk=None, visi
     url = 'https://%s%s' % (host, URLS['SAMPLES'])
     headers = {'Authorization': "Token %s" % token}
 
-    # Subject is required
-    data = {'subject': subject_pk}
+    # Subject, site, visit_type, and specimen are required
+    data = {
+        'subject': subject_pk,
+        'site': site_pk,
+        'visit': visit_type_pk,
+        'specimen': specimen_pk,
+    }
 
-    # add the site field if present
-    if site_pk:
-        data['site'] = site_pk
-
-    # add the visit_type field if present
-    if visit_type_pk:
-        data['visit'] = visit_type_pk
+    # add the sample_group field if present
+    if sample_group_pk:
+        data['sample_group'] = sample_group_pk
 
     # add the panel field if present
     if panel_pk:
