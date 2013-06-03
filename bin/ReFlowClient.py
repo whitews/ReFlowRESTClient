@@ -55,6 +55,8 @@ class Application(tk.Frame):
         self.subjectDict = dict()
         self.visitDict = dict()
         self.panelDict = dict()
+        self.specimenDict = dict()
+        self.sampleGroupDict = dict()
         self.matchingPanelSamplesDict = dict()
 
         # can't call super on old-style class, call parent init directly
@@ -203,7 +205,8 @@ class Application(tk.Frame):
             exportselection=0,
             yscrollcommand=self.projectScrollBar.set,
             relief='flat',
-            height=5,
+            width=16,
+            height=3,
             borderwidth=0,
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
@@ -236,7 +239,8 @@ class Application(tk.Frame):
             exportselection=0,
             yscrollcommand=self.siteScrollBar.set,
             relief='flat',
-            height=5,
+            width=16,
+            height=3,
             borderwidth=0,
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
@@ -269,7 +273,8 @@ class Application(tk.Frame):
             exportselection=0,
             yscrollcommand=self.subjectScrollBar.set,
             relief='flat',
-            height=5,
+            width=16,
+            height=3,
             borderwidth=0,
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
@@ -282,7 +287,7 @@ class Application(tk.Frame):
 
         self.subjectFrame.pack(side='left', fill='x', expand=True)
 
-        # overall visit frame (on bottom, 2nd from left of main window
+        # overall visit frame
         self.visitFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
 
         # visit label frame (top of visit chooser frame)
@@ -302,7 +307,8 @@ class Application(tk.Frame):
             exportselection=0,
             yscrollcommand=self.visitScrollBar.set,
             relief='flat',
-            height=5,
+            width=16,
+            height=3,
             borderwidth=0,
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
@@ -315,7 +321,77 @@ class Application(tk.Frame):
 
         self.visitFrame.pack(side='left', fill='x', expand=True)
 
+        # overall specimen frame
+        self.specimenFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
+
+        # specimen label frame (top of specimen chooser frame)
+        self.specimenChooserLabelFrame = tk.Frame(self.specimenFrame, bg=BACKGROUND_COLOR)
+        self.specimenChooserLabel = tk.Label(
+            self.specimenChooserLabelFrame,
+            text='Choose Specimen',
+            bg=BACKGROUND_COLOR)
+        self.specimenChooserLabel.pack(side='left')
+        self.specimenChooserLabelFrame.pack(fill='x')
+
+        # specimen chooser listbox frame (bottom of specimen chooser frame)
+        self.specimenChooserFrame = tk.Frame(self.specimenFrame, bg=BACKGROUND_COLOR)
+        self.specimenScrollBar = tk.Scrollbar(self.specimenChooserFrame, orient='vertical')
+        self.specimenListBox = tk.Listbox(
+            self.specimenChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.specimenScrollBar.set,
+            relief='flat',
+            width=16,
+            height=3,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.specimenListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
+        self.specimenScrollBar.config(command=self.specimenListBox.yview)
+        self.specimenScrollBar.pack(side='right', fill='y')
+        self.specimenListBox.pack(fill='x', expand=True)
+        self.specimenChooserFrame.pack(fill='x', expand=True)
+
+        self.specimenFrame.pack(side='left', fill='x', expand=True)
+
+        # overall sampleGroup frame
+        self.sampleGroupFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
+
+        # sampleGroup label frame (top of sampleGroup chooser frame)
+        self.sampleGroupChooserLabelFrame = tk.Frame(self.sampleGroupFrame, bg=BACKGROUND_COLOR)
+        self.sampleGroupChooserLabel = tk.Label(
+            self.sampleGroupChooserLabelFrame,
+            text='Choose Sample Group',
+            bg=BACKGROUND_COLOR)
+        self.sampleGroupChooserLabel.pack(side='left')
+        self.sampleGroupChooserLabelFrame.pack(fill='x')
+
+        # sampleGroup chooser listbox frame (bottom of sampleGroup chooser frame)
+        self.sampleGroupChooserFrame = tk.Frame(self.sampleGroupFrame, bg=BACKGROUND_COLOR)
+        self.sampleGroupScrollBar = tk.Scrollbar(self.sampleGroupChooserFrame, orient='vertical')
+        self.sampleGroupListBox = tk.Listbox(
+            self.sampleGroupChooserFrame,
+            exportselection=0,
+            yscrollcommand=self.sampleGroupScrollBar.set,
+            relief='flat',
+            width=16,
+            height=3,
+            borderwidth=0,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        self.sampleGroupListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
+        self.sampleGroupScrollBar.config(command=self.sampleGroupListBox.yview)
+        self.sampleGroupScrollBar.pack(side='right', fill='y')
+        self.sampleGroupListBox.pack(fill='x', expand=True)
+        self.sampleGroupChooserFrame.pack(fill='x', expand=True)
+
+        self.sampleGroupFrame.pack(side='left', fill='x', expand=True)
+
         self.loadUserProjects()
+        self.loadSpecimens()
+        self.loadSampleGroups()
 
         self.metadataFrame.pack(
             fill='x',
@@ -414,6 +490,8 @@ class Application(tk.Frame):
         self.subjectListBox.selection_clear(0, 'end')
         self.siteListBox.selection_clear(0, 'end')
         self.visitListBox.selection_clear(0, 'end')
+        self.specimenListBox.selection_clear(0, 'end')
+        self.sampleGroupListBox.selection_clear(0, 'end')
 
     def loadSelectedFunction(self, event=None):
         selectedFunction = self.functionListBox.curselection()
@@ -559,6 +637,32 @@ class Application(tk.Frame):
         for project_name in sorted(self.projectDict.keys()):
             self.projectListBox.insert('end', project_name)
 
+    def loadSpecimens(self):
+        response = None
+        try:
+            response = rest.get_specimens(self.host, self.token)
+        except Exception, e:
+            print e
+
+        self.specimenListBox.delete(0, 'end')
+        for result in response['data']:
+            self.specimenDict[result['specimen_name']] = result['id']
+        for specimen_name in sorted(self.specimenDict.keys()):
+            self.specimenListBox.insert('end', specimen_name)
+
+    def loadSampleGroups(self):
+        response = None
+        try:
+            response = rest.get_sample_groups(self.host, self.token)
+        except Exception, e:
+            print e
+
+        self.sampleGroupListBox.delete(0, 'end')
+        for result in response['data']:
+            self.sampleGroupDict[result['group_name']] = result['id']
+        for group_name in sorted(self.sampleGroupDict.keys()):
+            self.sampleGroupListBox.insert('end', group_name)
+
     def loadProjectSites(self, project_id):
         response = None
         try:
@@ -648,8 +752,9 @@ class Application(tk.Frame):
         site_selection = self.siteListBox.curselection()
         subject_selection = self.subjectListBox.curselection()
         visit_selection = self.visitListBox.curselection()
+        specimen_selection = self.specimenListBox.curselection()
 
-        if not site_selection or not subject_selection or not visit_selection:
+        if not site_selection or not subject_selection or not visit_selection or not specimen_selection:
             active = False
         if hasattr(self, 'fileListBox'):
             if len(self.fileListBox.get(0, 'end')) == 0:
@@ -668,6 +773,12 @@ class Application(tk.Frame):
         subject_selection = self.subjectListBox.get(self.subjectListBox.curselection())
         site_selection = self.siteListBox.get(self.siteListBox.curselection())
         visit_selection = self.visitListBox.get(self.visitListBox.curselection())
+        specimen_selection = self.specimenListBox.get(self.specimenListBox.curselection())
+
+        if self.sampleGroupListBox.curselection():
+            sample_group_pk = str(self.sampleGroupDict[self.sampleGroupListBox.get(self.sampleGroupListBox.curselection())])
+        else:
+            sample_group_pk = None
 
         uploadFileList = self.fileListBox.get(0, 'end')
         self.uploadProgressBar.config(maximum=len(uploadFileList))
@@ -679,7 +790,9 @@ class Application(tk.Frame):
                 file_path,
                 subject_pk=str(self.subjectDict[subject_selection]),
                 site_pk=str(self.siteDict[site_selection]),
-                visit_type_pk=str(self.visitDict[visit_selection])
+                visit_type_pk=str(self.visitDict[visit_selection]),
+                specimen_pk=str(self.specimenDict[specimen_selection]),
+                sample_group_pk=sample_group_pk
             )
 
             log_text = ''.join(
@@ -734,12 +847,22 @@ class Application(tk.Frame):
             expand=False,
             anchor='n')
 
-        self.someButton = ttk.Button(
+        # self.selectPanelOptionMenu = tk.OptionMenu(
+        #     self.applyPanelActionFrame,
+        #     tk.StringVar(value='Choose Panel'),
+        #     'one', 'two',
+        #     command=self.updateMatchingSamples)
+        # self.selectPanelOptionMenu.config(
+        #     bg=BACKGROUND_COLOR,
+        #     )
+        # self.selectPanelOptionMenu.pack(side='left')
+
+        self.applyPanelToSelectedButton = ttk.Button(
             self.applyPanelActionFrame,
             text='Apply Panel to Selected Samples',
             style='Inactive.TButton',
             command=self.applyPanelToSamples)
-        self.someButton.pack(side='left')
+        self.applyPanelToSelectedButton.pack(side='left')
 
         self.applyPanelSelectorFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
         self.applyPanelSelectorFrame.pack(
