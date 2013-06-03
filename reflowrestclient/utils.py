@@ -5,11 +5,14 @@ import re
 URLS = {
     'TOKEN': '/api-token-auth/',
     'PROJECTS': '/api/projects/',
+    'SPECIMENS': '/api/specimens/',
+    'SUBJECT_GROUPS': '/api/subject_groups/',
     'SITES': '/api/sites/',
     'SUBJECTS': '/api/subjects/',
     'PANELS': '/api/panels/',
     'COMPENSATIONS': '/api/compensations/',
     'PARAMETERS': '/api/parameters/',
+    'SAMPLE_GROUPS': '/api/sample_groups/',
     'SAMPLES': '/api/samples/',
     'UNCAT_SAMPLES': '/api/samples/uncategorized/',
     'VISIT_TYPES': '/api/visit_types/',
@@ -114,6 +117,31 @@ def get_project(host, token, project_pk):
     """
     url = 'https://%s%s%s/' % (host, URLS['PROJECTS'], project_pk)
     return get_request(token, url)
+
+
+def get_specimens(host, token, specimen_name=None):
+    url = 'https://%s%s' % (host, URLS['SPECIMENS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if specimen_name is not None:
+        filter_params['specimen_name'] = specimen_name
+
+    return get_request(token, url, filter_params)
+
+
+def get_subject_groups(host, token, group_name=None, project_pk=None):
+    url = 'https://%s%s' % (host, URLS['SUBJECT_GROUPS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if group_name is not None:
+        filter_params['group_name'] = group_name
+
+    if project_pk is not None:
+        filter_params['project'] = project_pk
+
+    return get_request(token, url, filter_params)
 
 
 def get_visit_types(host, token, visit_type_name=None, project_pk=None):
@@ -291,6 +319,17 @@ def get_parameter(host, token, parameter_pk):
     """
     url = 'https://%s%s%s/' % (host, URLS['PARAMETERS'], parameter_pk)
     return get_request(token, url)
+
+
+def get_sample_groups(host, token, group_name=None):
+    url = 'https://%s%s' % (host, URLS['SAMPLE_GROUPS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if group_name is not None:
+        filter_params['group_name'] = group_name
+
+    return get_request(token, url, filter_params)
 
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None, parameter_count=None):
