@@ -19,6 +19,13 @@ else:
 LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.png')
 if sys.platform == 'win32':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.ico')
+
+    # Hack for tkFileDialog bug in Windows in Python 2.7.5
+    # to avoid IOError on erroneous parsing of file names
+    # ...looks like the file names may be passed as Tcl lists???
+    import Tkinter
+    Tkinter.wantobjects = 0
+
 elif sys.platform == 'darwin':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.icns')
 else:
