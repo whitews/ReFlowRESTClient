@@ -3,19 +3,20 @@ import os
 import re
 
 URLS = {
-    'TOKEN': '/api-token-auth/',
-    'PROJECTS': '/api/projects/',
-    'SPECIMENS': '/api/specimens/',
-    'SUBJECT_GROUPS': '/api/subject_groups/',
-    'SITES': '/api/sites/',
-    'SUBJECTS': '/api/subjects/',
-    'PANELS': '/api/panels/',
-    'COMPENSATIONS': '/api/compensations/',
-    'PARAMETERS': '/api/parameters/',
-    'SAMPLE_GROUPS': '/api/sample_groups/',
-    'SAMPLES': '/api/samples/',
-    'UNCAT_SAMPLES': '/api/samples/uncategorized/',
-    'VISIT_TYPES': '/api/visit_types/',
+    'TOKEN': '/api/token-auth/',
+    'PROJECTS': '/api/repository/projects/',
+    'SPECIMENS': '/api/repository/specimens/',
+    'SUBJECT_GROUPS': '/api/repository/subject_groups/',
+    'SITES': '/api/repository/sites/',
+    'SUBJECTS': '/api/repository/subjects/',
+    'PANELS': '/api/repository/panels/',
+    'COMPENSATIONS': '/api/repository/compensations/',
+    'PARAMETERS': '/api/repository/parameters/',
+    'SAMPLE_GROUPS': '/api/repository/sample_groups/',
+    'SAMPLES': '/api/repository/samples/',
+    'UNCAT_SAMPLES': '/api/repository/samples/uncategorized/',
+    'CREATE_SAMPLES': '/api/repository/samples/add/',
+    'VISIT_TYPES': '/api/repository/visit_types/',
 }
 
 
@@ -399,7 +400,7 @@ def get_sample(host, token, sample_pk):
 
 
 def download_sample(host, token, sample_pk, filename=None, directory=None):
-    url = "https://%s/api/samples/%d/download/" % (host, sample_pk)
+    url = "https://%s/api/repository/samples/%d/download/" % (host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
     data = ''
     try:
@@ -454,7 +455,7 @@ def post_sample(
         'data': JSON string representation of the Sample object successfully posted, empty string if unsuccessful
     """
 
-    url = 'https://%s%s' % (host, URLS['SAMPLES'])
+    url = 'https://%s%s' % (host, URLS['CREATE_SAMPLES'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, site, visit_type, and specimen are required
@@ -514,7 +515,7 @@ def patch_sample_with_panel(host, token, sample_pk, panel_pk):
     if not sample_pk and panel_pk:
         return ''
 
-    url = 'https://%s/api/samples/%s/apply_panel/' % (host, sample_pk)
+    url = 'https://%s/api/repository/samples/%s/apply_panel/' % (host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
 
     try:
@@ -553,7 +554,7 @@ def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
     if not sample_pk and compensation_pk:
         return ''
 
-    url = 'https://%s/api/samples/%s/add_compensation/' % (host, sample_pk)
+    url = 'https://%s/api/repository/samples/%s/add_compensation/' % (host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
 
     data = {
