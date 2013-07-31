@@ -8,6 +8,7 @@ import json
 import sys
 import os
 
+VERSION = '0.10b'
 
 if hasattr(sys, '_MEIPASS'):
     # for PyInstaller 2.0
@@ -69,7 +70,7 @@ class Application(tk.Frame):
         # can't call super on old-style class, call parent init directly
         tk.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
-        self.master.title('ReFlow Client')
+        self.master.title('ReFlow Client - ' + VERSION)
         self.master.minsize(width=954, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
 
