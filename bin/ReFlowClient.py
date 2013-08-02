@@ -8,7 +8,7 @@ import json
 import sys
 import os
 
-VERSION = '0.10b'
+VERSION = '0.11b'
 
 if hasattr(sys, '_MEIPASS'):
     # for PyInstaller 2.0
