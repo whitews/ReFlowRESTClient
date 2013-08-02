@@ -2,6 +2,8 @@ import requests
 import os
 import re
 
+METHOD = 'https://'
+
 URLS = {
     'TOKEN': '/api/token-auth/',
     'PROJECTS': '/api/repository/projects/',
@@ -61,7 +63,7 @@ def login(host, username, password):
 
     Returns the authenticating user's token (string) if successful, returns None if login failed.
     """
-    url = 'https://%s%s' % (host, URLS['TOKEN'])
+    url = '%s%s%s' % (METHOD, host, URLS['TOKEN'])
 
     token = None
 
@@ -96,7 +98,7 @@ def login(host, username, password):
 
 
 def get_projects(host, token, project_name=None):
-    url = 'https://%s%s' % (host, URLS['PROJECTS'])
+    url = '%s%s%s' % (METHOD, host, URLS['PROJECTS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -116,12 +118,12 @@ def get_project(host, token, project_pk):
         'reason': The HTTP response reason
         'data': Dictionary (JSON) representation of the Project object successfully GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['PROJECTS'], project_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECTS'], project_pk)
     return get_request(token, url)
 
 
 def get_specimens(host, token, specimen_name=None):
-    url = 'https://%s%s' % (host, URLS['SPECIMENS'])
+    url = '%s%s%s' % (METHOD, host, URLS['SPECIMENS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -132,7 +134,7 @@ def get_specimens(host, token, specimen_name=None):
 
 
 def get_subject_groups(host, token, group_name=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['SUBJECT_GROUPS'])
+    url = '%s%s%s' % (METHOD, host, URLS['SUBJECT_GROUPS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -146,7 +148,7 @@ def get_subject_groups(host, token, group_name=None, project_pk=None):
 
 
 def get_visit_types(host, token, visit_type_name=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['VISIT_TYPES'])
+    url = '%s%s%s' % (METHOD, host, URLS['VISIT_TYPES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -169,12 +171,12 @@ def get_visit_type(host, token, visit_type_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of ProjectVisitType object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['VISIT_TYPES'], visit_type_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['VISIT_TYPES'], visit_type_pk)
     return get_request(token, url)
 
 
 def get_sites(host, token, site_name=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['SITES'])
+    url = '%s%s%s' % (METHOD, host, URLS['SITES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -197,12 +199,12 @@ def get_site(host, token, site_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Site object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['SITES'], site_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['SITES'], site_pk)
     return get_request(token, url)
 
 
 def get_subjects(host, token, subject_id=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['SUBJECTS'])
+    url = '%s%s%s' % (METHOD, host, URLS['SUBJECTS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -225,12 +227,12 @@ def get_subject(host, token, subject_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Subject object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['SUBJECTS'], subject_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['SUBJECTS'], subject_pk)
     return get_request(token, url)
 
 
 def get_panels(host, token, panel_name=None, site_pk=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['PANELS'])
+    url = '%s%s%s' % (METHOD, host, URLS['PANELS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -256,12 +258,12 @@ def get_panel(host, token, panel_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['PANELS'], panel_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['PANELS'], panel_pk)
     return get_request(token, url)
 
 
 def get_compensations(host, token, original_filename=None, site_pk=None, project_pk=None):
-    url = 'https://%s%s' % (host, URLS['COMPENSATIONS'])
+    url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -287,12 +289,12 @@ def get_compensation(host, token, compensation_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Compensation object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['COMPENSATIONS'], compensation_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['COMPENSATIONS'], compensation_pk)
     return get_request(token, url)
 
 
 def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
-    url = 'https://%s%s' % (host, URLS['PARAMETERS'])
+    url = '%s%s%s' % (METHOD, host, URLS['PARAMETERS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -318,12 +320,12 @@ def get_parameter(host, token, parameter_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Parameter object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['PARAMETERS'], parameter_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['PARAMETERS'], parameter_pk)
     return get_request(token, url)
 
 
 def get_sample_groups(host, token, group_name=None):
-    url = 'https://%s%s' % (host, URLS['SAMPLE_GROUPS'])
+    url = '%s%s%s' % (METHOD, host, URLS['SAMPLE_GROUPS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -334,7 +336,7 @@ def get_sample_groups(host, token, group_name=None):
 
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None, parameter_count=None):
-    url = 'https://%s%s' % (host, URLS['SAMPLES'])
+    url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -360,7 +362,7 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, vis
 
 
 def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, fcs_text=None, parameter_count=None):
-    url = 'https://%s%s' % (host, URLS['UNCAT_SAMPLES'])
+    url = '%s%s%s' % (METHOD, host, URLS['UNCAT_SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -395,12 +397,12 @@ def get_sample(host, token, sample_pk):
         'reason': The HTTP response reason
         'data': Dictionary representation of Sample object GET'd, empty string if unsuccessful
     """
-    url = 'https://%s%s%s/' % (host, URLS['SAMPLES'], sample_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLES'], sample_pk)
     return get_request(token, url)
 
 
 def download_sample(host, token, sample_pk, filename=None, directory=None):
-    url = "https://%s/api/repository/samples/%d/download/" % (host, sample_pk)
+    url = "%s%s/api/repository/samples/%d/download/" % (METHOD, host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
     data = ''
     try:
@@ -455,7 +457,7 @@ def post_sample(
         'data': JSON string representation of the Sample object successfully posted, empty string if unsuccessful
     """
 
-    url = 'https://%s%s' % (host, URLS['CREATE_SAMPLES'])
+    url = '%s%s%s' % (METHOD, host, URLS['CREATE_SAMPLES'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, site, visit_type, and specimen are required
@@ -515,7 +517,7 @@ def patch_sample_with_panel(host, token, sample_pk, panel_pk):
     if not sample_pk and panel_pk:
         return ''
 
-    url = 'https://%s/api/repository/samples/%s/apply_panel/' % (host, sample_pk)
+    url = '%s%s/api/repository/samples/%s/apply_panel/' % (METHOD, host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
 
     try:
@@ -554,7 +556,7 @@ def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
     if not sample_pk and compensation_pk:
         return ''
 
-    url = 'https://%s/api/repository/samples/%s/add_compensation/' % (host, sample_pk)
+    url = '%s%s/api/repository/samples/%s/add_compensation/' % (METHOD, host, sample_pk)
     headers = {'Authorization': "Token %s" % token}
 
     data = {
