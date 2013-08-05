@@ -654,9 +654,9 @@ class Application(tk.Frame):
 
         self.specimenListBox.delete(0, 'end')
         for result in response['data']:
-            self.specimenDict[result['specimen_name']] = result['id']
-        for specimen_name in sorted(self.specimenDict.keys()):
-            self.specimenListBox.insert('end', specimen_name)
+            self.specimenDict[result['specimen_description']] = result['id']
+        for specimen in sorted(self.specimenDict.keys()):
+            self.specimenListBox.insert('end', specimen)
 
     def loadSampleGroups(self):
         response = None
