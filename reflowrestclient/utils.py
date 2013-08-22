@@ -20,6 +20,12 @@ URLS = {
     'CREATE_SAMPLES': '/api/repository/samples/add/',
     'SAMPLE_SETS': '/api/repository/sample_sets/',
     'VISIT_TYPES': '/api/repository/visit_types/',
+
+    # Process manager API URLs
+    'PROCESSES': '/api/process_manager/processes/',
+    'WORKERS': '/api/process_manager/workers/',
+    'PROCESS_REQUESTS': '/api/process_manager/process_requests/',
+    'VIABLE_PROCESS_REQUESTS': '/api/process_manager/viable_process_requests/',
 }
 
 
@@ -612,4 +618,85 @@ def get_sample_set(host, token, sample_set_pk):
         'data': Dictionary representation of object GET'd, empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLE_SETS'], sample_set_pk)
+    return get_request(token, url)
+
+
+#######################################
+### START PROCESS MANAGER FUNCTIONS ###
+###    Note: Most of these require  ###
+###    the user to be a superuser   ###
+###    or a Worker                  ###
+#######################################
+def get_processes(host, token, process_name=None):
+    url = '%s%s%s' % (METHOD, host, URLS['PROCESSES'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if process_name is not None:
+        filter_params['process_name'] = process_name
+
+    return get_request(token, url, filter_params)
+
+
+def get_workers(host, token, worker_name=None):
+    url = '%s%s%s' % (METHOD, host, URLS['WORKERS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if worker_name is not None:
+        filter_params['worker_name'] = worker_name
+
+    return get_request(token, url, filter_params)
+
+
+def get_process_requests(host, token, process_pk=None, worker_pk=None, request_user_pk=None):
+    url = '%s%s%s' % (METHOD, host, URLS['PROCESS_REQUESTS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if process_pk is not None:
+        filter_params['process'] = process_pk
+
+    if worker_pk is not None:
+        filter_params['worker'] = worker_pk
+
+    if request_user_pk is not None:
+        filter_params['request_user'] = request_user_pk
+
+    return get_request(token, url, filter_params)
+
+
+def get_viable_process_requests(host, token, process_pk=None, worker_pk=None, request_user_pk=None):
+    """
+    Returns process requests that are compatible with the requesting user
+    i.e. the requesting user must be a Worker registered with the Process
+    Also, only unassigned 'Pending' requests will be returned
+    """
+    url = '%s%s%s' % (METHOD, host, URLS['VIABLE_PROCESS_REQUESTS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if process_pk is not None:
+        filter_params['process'] = process_pk
+
+    if worker_pk is not None:
+        filter_params['worker'] = worker_pk
+
+    if request_user_pk is not None:
+        filter_params['request_user'] = request_user_pk
+
+    return get_request(token, url, filter_params)
+
+
+def get_process_request(host, token, process_request_pk):
+    """
+    GET a serialized ProcessRequest instance
+        sample_set_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of object GET'd, empty string if unsuccessful
+    """
+    url = '%s%s%s%s/' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk)
     return get_request(token, url)
