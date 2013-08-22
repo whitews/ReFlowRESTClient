@@ -700,3 +700,62 @@ def get_process_request(host, token, process_request_pk):
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk)
     return get_request(token, url)
+
+
+def request_process_request_assignment(host, token, process_request_pk):
+    """
+    Requesting user must be a Worker registered with the Process and
+    and the ProcessRequest must have 'Pending' status
+    """
+    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'request_assignment')
+    headers = {'Authorization': "Token %s" % token}
+
+    try:
+        r = requests.patch(url, data={'process_request': process_request_pk}, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if r.status_code == 201:
+        try:
+            data = r.json()
+        except Exception, e:
+            data = r.text()
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
+
+def verify_process_request_assignment(host, token, process_request_pk):
+    """
+    Result will include 'assignment': True of request.user (Worker) is assigned
+    to the specified ProcessRequest
+    """
+    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'verify_assignment')
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
+
+
+def revoke_process_request_assignment(host, token, process_request_pk):
+    """
+
+    """
+    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'revoke_assignment')
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
