@@ -1,25 +1,9 @@
-import os
 import sys
-import time
-import logging
 from reflowrestclient.worker import Worker
-from reflowrestclient.utils import get_viable_process_requests
 
 
 class MyWorker(Worker):
-    def run(self):
-        logging.basicConfig(
-            filename='/Users/swhite/Desktop/worker.log',
-            filemode='w',
-            level=logging.DEBUG)
-
-        while True:
-            try:
-                get_viable_process_requests(self.host, self.token)
-                time.sleep(1)
-                logging.info('sleeping\n')
-            except Exception as e:
-                logging.warning("Exception: ", e.message)
+    pass
 
 
 if __name__ == "__main__":
