@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import logging
@@ -14,17 +15,18 @@ class MyWorker(Worker):
 
         while True:
             try:
-                get_viable_process_requests('localhost:8000', self.token)
-                time.sleep(5)
+                get_viable_process_requests(self.host, self.token)
+                time.sleep(1)
                 logging.info('sleeping\n')
             except Exception as e:
                 logging.warning("Exception: ", e.message)
 
 
 if __name__ == "__main__":
-    token = 'some-secret'
+    host = 'localhost:8000'
+    name = 'good_worker'
 
-    worker = MyWorker(token, '/tmp/example_worker.pid')
+    worker = MyWorker(host, name)
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
