@@ -24,6 +24,7 @@ URLS = {
     # Process manager API URLs
     'PROCESSES': '/api/process_manager/processes/',
     'WORKERS': '/api/process_manager/workers/',
+    'VERIFY_WORKER': '/api/process_manager/verify_worker/',
     'PROCESS_REQUESTS': '/api/process_manager/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/process_manager/viable_process_requests/',
 }
@@ -757,5 +758,16 @@ def revoke_process_request_assignment(host, token, process_request_pk):
 
     if process_request_pk is not None:
         filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
+
+
+def verify_worker(host, token):
+    """
+    Result will include 'worker': True if request.user is a Worker on host
+    """
+    url = '%s%s%s' % (METHOD, host, URLS['VERIFY_WORKER'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
 
     return get_request(token, url, filter_params)
