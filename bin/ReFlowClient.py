@@ -971,8 +971,8 @@ class Application(tk.Frame):
         self.sampleListBox.delete(0, 'end')
 
     def updateMatchingSamples(self, event=None):
+        self.clearMatchingSamples()
         if not self.panelListBox.curselection():
-            self.clearMatchingSamples()
             return
 
         panel_selection = self.panelListBox.get(self.panelListBox.curselection())
