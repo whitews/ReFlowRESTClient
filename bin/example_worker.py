@@ -3,7 +3,12 @@ from reflowrestclient.worker import Worker
 
 
 class MyWorker(Worker):
-    pass
+    def validate_inputs(self):
+        inputs = self.get_process_inputs()
+        return True
+
+    def process(self):
+        return
 
 
 if __name__ == "__main__":
@@ -11,6 +16,7 @@ if __name__ == "__main__":
     name = 'good_worker'
 
     worker = MyWorker(host, name)
+    worker.sleep = 5
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
