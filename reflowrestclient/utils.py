@@ -422,11 +422,11 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
     if r.status_code == 200:
         try:
             if filename is None:
-                filename = re.findall("filename=([^']+)", r.headers['content-disposition'])
+                filename = re.findall("filename=([^']+)", r.headers['content-disposition'])[0]
             if directory is None:
                 directory = os.getcwd()
 
-            with open("%s/%s" % (directory, filename[0]), "wb") as fcs_file:
+            with open("%s/%s" % (directory, filename), "wb") as fcs_file:
                 fcs_file.write(r.content)
         except Exception, e:
             print e
