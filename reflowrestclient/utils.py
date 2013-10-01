@@ -45,7 +45,8 @@ def get_request(token, url, params=None):
     }
 
     try:
-        response = requests.get(url, headers=headers, params=params, verify=False)
+        response = requests.get(
+            url, headers=headers, params=params, verify=False)
     except Exception, e:
         print e.__class__
         return {'status': None, 'reason': 'No response', 'data': ''}
@@ -70,7 +71,8 @@ def login(host, username, password):
     """
     Login to host url using user credentials given.
 
-    Returns the authenticating user's token (string) if successful, returns None if login failed.
+    Returns the authenticating user's token (string) if successful,
+    returns None if login failed.
     """
     url = '%s%s%s' % (METHOD, host, URLS['TOKEN'])
 
@@ -101,7 +103,8 @@ def login(host, username, password):
             print e
             return None
     else:
-        print "Authentication failed (%s: %s)" % (response.status_code, response.reason)
+        print "Authentication failed (%s: %s)" % (
+            response.status_code, response.reason)
 
     return token
 
@@ -125,7 +128,8 @@ def get_project(host, token, project_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary (JSON) representation of the Project object successfully GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECTS'], project_pk)
     return get_request(token, url)
@@ -178,7 +182,8 @@ def get_visit_type(host, token, visit_type_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of ProjectVisitType object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['VISIT_TYPES'], visit_type_pk)
     return get_request(token, url)
@@ -206,7 +211,8 @@ def get_site(host, token, site_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Site object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SITES'], site_pk)
     return get_request(token, url)
@@ -234,7 +240,8 @@ def get_subject(host, token, subject_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Subject object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SUBJECTS'], subject_pk)
     return get_request(token, url)
@@ -262,7 +269,8 @@ def get_project_panel(host, token, project_panel_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECT_PANELS'], project_panel_pk)
     return get_request(token, url)
@@ -294,13 +302,19 @@ def get_site_panel(host, token, site_panel_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SITE_PANELS'], site_panel_pk)
     return get_request(token, url)
 
 
-def get_compensations(host, token, original_filename=None, site_pk=None, project_pk=None):
+def get_compensations(
+        host,
+        token,
+        original_filename=None,
+        site_pk=None,
+        project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -325,7 +339,8 @@ def get_compensation(host, token, compensation_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Compensation object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['COMPENSATIONS'], compensation_pk)
     return get_request(token, url)
@@ -353,13 +368,22 @@ def get_stimulation(host, token, stimulation_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['STIMULATIONS'], stimulation_pk)
     return get_request(token, url)
 
 
-def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None, parameter_count=None):
+def get_samples(
+        host,
+        token,
+        subject_pk=None,
+        site_pk=None,
+        project_pk=None,
+        visit_pk=None,
+        parameter_names=None,
+        parameter_count=None):
     url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -393,7 +417,8 @@ def get_sample(host, token, sample_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Sample object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLES'], sample_pk)
     return get_request(token, url)
@@ -412,7 +437,8 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
     if r.status_code == 200:
         try:
             if filename is None:
-                filename = re.findall("filename=([^']+)", r.headers['content-disposition'])[0]
+                filename = re.findall(
+                    "filename=([^']+)", r.headers['content-disposition'])[0]
             if directory is None:
                 directory = os.getcwd()
 
@@ -431,15 +457,15 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
 
 
 def post_sample(
-    host,
-    token,
-    file_path,
-    subject_pk,
-    site_pk,
-    visit_type_pk,
-    specimen_pk,
-    sample_group_pk=None,
-    panel_pk=None):
+        host,
+        token,
+        file_path,
+        subject_pk,
+        site_pk,
+        visit_type_pk,
+        specimen_pk,
+        sample_group_pk=None,
+        panel_pk=None):
     """
     POST a FCS sample, associating the file with the following:
         subject      (required)
@@ -452,7 +478,8 @@ def post_sample(
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': JSON string representation of the Sample object successfully posted, empty string if unsuccessful
+        'data': Dictionary string representation of object successfully posted,
+                empty string if unsuccessful
     """
 
     url = '%s%s%s' % (METHOD, host, URLS['CREATE_SAMPLES'])
@@ -480,7 +507,12 @@ def post_sample(
     }
 
     try:
-        response = requests.post(url, headers=headers, data=data, files=files, verify=False)
+        response = requests.post(
+            url,
+            headers=headers,
+            data=data,
+            files=files,
+            verify=False)
     except Exception, e:
         print e
         return {'status': None, 'reason': 'No response', 'data': ''}
@@ -497,50 +529,6 @@ def post_sample(
     return {
         'status': response.status_code,
         'reason': response.reason,
-        'data': data,
-    }
-
-
-def add_compensation_to_sample(host, token, sample_pk, compensation_pk):
-    """
-    POST a SampleCompensationMap
-        sample_pk    (required)
-        compensation_pk     (required)
-
-    Returns a dictionary with keys:
-        'status': The HTTP response code
-        'reason': The HTTP response reason
-        'data': Dictionary (JSON) representation of the SampleCompensationMap object successfully POST'd, else ''
-    """
-    if not sample_pk and compensation_pk:
-        return ''
-
-    url = '%s%s/api/repository/samples/%s/add_compensation/' % (METHOD, host, sample_pk)
-    headers = {'Authorization': "Token %s" % token}
-
-    data = {
-        'compensation': compensation_pk,
-        'sample': sample_pk
-    }
-
-    try:
-        r = requests.post(url, data=data, headers=headers, verify=False)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': ''}
-
-    if r.status_code == 201:
-        try:
-            data = r.json()
-        except Exception, e:
-            data = r.text()
-            print e
-    else:
-        data = r.text
-
-    return {
-        'status': r.status_code,
-        'reason': r.reason,
         'data': data,
     }
 
@@ -567,7 +555,8 @@ def get_sample_set(host, token, sample_set_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLE_SETS'], sample_set_pk)
     return get_request(token, url)
@@ -601,7 +590,12 @@ def get_workers(host, token, worker_name=None):
     return get_request(token, url, filter_params)
 
 
-def get_process_requests(host, token, process_pk=None, worker_pk=None, request_user_pk=None):
+def get_process_requests(
+        host,
+        token,
+        process_pk=None,
+        worker_pk=None,
+        request_user_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['PROCESS_REQUESTS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -618,7 +612,12 @@ def get_process_requests(host, token, process_pk=None, worker_pk=None, request_u
     return get_request(token, url, filter_params)
 
 
-def get_viable_process_requests(host, token, process_pk=None, worker_pk=None, request_user_pk=None):
+def get_viable_process_requests(
+        host,
+        token,
+        process_pk=None,
+        worker_pk=None,
+        request_user_pk=None):
     """
     Returns process requests that are compatible with the requesting user
     i.e. the requesting user must be a Worker registered with the Process
@@ -648,9 +647,14 @@ def get_process_request(host, token, process_request_pk):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk)
+    url = '%s%s%s%s/' % (
+        METHOD,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk)
     return get_request(token, url)
 
 
@@ -659,11 +663,22 @@ def request_process_request_assignment(host, token, process_request_pk):
     Requesting user must be a Worker registered with the Process and
     and the ProcessRequest must have 'Pending' status
     """
-    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'request_assignment')
+    url = '%s%s%s%s/%s' % (
+        METHOD, host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'request_assignment')
     headers = {'Authorization': "Token %s" % token}
 
     try:
-        r = requests.patch(url, data={'process_request': process_request_pk}, headers=headers, verify=False)
+        r = requests.patch(
+            url,
+            data={
+                'process_request':
+                process_request_pk
+            },
+            headers=headers,
+            verify=False)
     except Exception, e:
         print e
         return {'status': None, 'reason': 'No response', 'data': ''}
@@ -689,7 +704,12 @@ def verify_process_request_assignment(host, token, process_request_pk):
     Result will include 'assignment': True of request.user (Worker) is assigned
     to the specified ProcessRequest
     """
-    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'verify_assignment')
+    url = '%s%s%s%s/%s' % (
+        METHOD,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'verify_assignment')
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
@@ -703,7 +723,12 @@ def revoke_process_request_assignment(host, token, process_request_pk):
     """
 
     """
-    url = '%s%s%s%s/%s' % (METHOD, host, URLS['PROCESS_REQUESTS'], process_request_pk, 'revoke_assignment')
+    url = '%s%s%s%s/%s' % (
+        METHOD,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'revoke_assignment')
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
