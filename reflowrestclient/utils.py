@@ -12,6 +12,7 @@ URLS = {
     'SITES': '/api/repository/sites/',
     'SUBJECTS': '/api/repository/subjects/',
     'PROJECT_PANELS': '/api/repository/project_panels/',
+    'SITE_PANELS': '/api/repository/site_panels/',
     'COMPENSATIONS': '/api/repository/compensations/',
     'PARAMETERS': '/api/repository/parameters/',
     'SAMPLE_GROUPS': '/api/repository/sample_groups/',
@@ -264,6 +265,38 @@ def get_project_panel(host, token, project_panel_pk):
         'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECT_PANELS'], project_panel_pk)
+    return get_request(token, url)
+
+
+def get_site_panels(
+        host, token, project_panel_pk=None, site_pk=None, project_pk=None):
+    url = '%s%s%s' % (METHOD, host, URLS['SITE_PANELS'])
+    filter_params = dict()
+    filter_params['paginate_by'] = '0'
+
+    if site_pk is not None:
+        filter_params['site'] = site_pk
+
+    if project_panel_pk is not None:
+        filter_params['project_panel'] = project_panel_pk
+
+    if project_pk is not None:
+        filter_params['site__project'] = project_pk
+
+    return get_request(token, url, filter_params)
+
+
+def get_site_panel(host, token, site_panel_pk):
+    """
+    GET a serialized ProjectPanel instance
+        site_panel_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of Panel object GET'd, empty string if unsuccessful
+    """
+    url = '%s%s%s%s/' % (METHOD, host, URLS['SITE_PANELS'], site_panel_pk)
     return get_request(token, url)
 
 
