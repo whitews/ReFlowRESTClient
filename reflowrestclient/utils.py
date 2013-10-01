@@ -623,7 +623,7 @@ def get_viable_process_requests(
 def get_process_request(host, token, process_request_pk):
     """
     GET a serialized ProcessRequest instance
-        sample_set_pk    (required)
+        process_request_pk    (required)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
