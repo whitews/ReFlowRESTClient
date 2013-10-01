@@ -14,12 +14,9 @@ URLS = {
     'PROJECT_PANELS': '/api/repository/project_panels/',
     'SITE_PANELS': '/api/repository/site_panels/',
     'COMPENSATIONS': '/api/repository/compensations/',
-    'PARAMETERS': '/api/repository/parameters/',
     'STIMULATIONS': '/api/repository/stimulations/',
     'SAMPLES': '/api/repository/samples/',
-    'UNCAT_SAMPLES': '/api/repository/samples/uncategorized/',
     'CREATE_SAMPLES': '/api/repository/samples/add/',
-    'SAMPLE_SETS': '/api/repository/sample_sets/',
     'VISIT_TYPES': '/api/repository/visit_types/',
 
     # Process manager API URLs
@@ -531,35 +528,6 @@ def post_sample(
         'reason': response.reason,
         'data': data,
     }
-
-
-def get_sample_sets(host, token, name=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SAMPLE_SETS'])
-    filter_params = dict()
-    filter_params['paginate_by'] = '0'
-
-    if name is not None:
-        filter_params['name'] = name
-
-    if project_pk is not None:
-        filter_params['project'] = project_pk
-
-    return get_request(token, url, filter_params)
-
-
-def get_sample_set(host, token, sample_set_pk):
-    """
-    GET a serialized SampleSet instance
-        sample_set_pk    (required)
-
-    Returns a dictionary with keys:
-        'status': The HTTP response code
-        'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
-    """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLE_SETS'], sample_set_pk)
-    return get_request(token, url)
 
 
 #######################################
