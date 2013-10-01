@@ -379,8 +379,12 @@ def get_samples(
         site_pk=None,
         project_pk=None,
         visit_pk=None,
-        parameter_names=None,
-        parameter_count=None):
+        stimulation_pk=None,
+        specimen_pk=None,
+        site_panel_pk=None,
+        project_panel_pk=None,
+        original_filename=None,
+        subject_code=None):
     url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
@@ -397,11 +401,23 @@ def get_samples(
     if visit_pk is not None:
         filter_params['visit'] = visit_pk
 
-    if parameter_names is not None:
-        filter_params['parameter_names'] = parameter_names
+    if stimulation_pk is not None:
+        filter_params['stimulation'] = stimulation_pk
 
-    if parameter_count is not None:
-        filter_params['parameter_count'] = parameter_count
+    if specimen_pk is not None:
+        filter_params['specimen'] = specimen_pk
+
+    if site_panel_pk is not None:
+        filter_params['site_panel'] = site_panel_pk
+
+    if project_panel_pk is not None:
+        filter_params['site_panel__project_panel'] = project_panel_pk
+
+    if original_filename is not None:
+        filter_params['original_filename'] = original_filename
+
+    if subject_code is not None:
+        filter_params['subject__subject_code'] = subject_code
 
     return get_request(token, url, filter_params)
 
