@@ -15,7 +15,7 @@ URLS = {
     'SITE_PANELS': '/api/repository/site_panels/',
     'COMPENSATIONS': '/api/repository/compensations/',
     'PARAMETERS': '/api/repository/parameters/',
-    'SAMPLE_GROUPS': '/api/repository/sample_groups/',
+    'STIMULATIONS': '/api/repository/stimulations/',
     'SAMPLES': '/api/repository/samples/',
     'UNCAT_SAMPLES': '/api/repository/samples/uncategorized/',
     'CREATE_SAMPLES': '/api/repository/samples/add/',
@@ -331,46 +331,32 @@ def get_compensation(host, token, compensation_pk):
     return get_request(token, url)
 
 
-def get_parameters(host, token, name=None, parameter_type=None, name_contains=None):
-    url = '%s%s%s' % (METHOD, host, URLS['PARAMETERS'])
+def get_stimulations(host, token, project_pk=None, stimulation_name=None):
+    url = '%s%s%s' % (METHOD, host, URLS['STIMULATIONS'])
     filter_params = dict()
     filter_params['paginate_by'] = '0'
 
-    if name is not None:
-        filter_params['parameter_short_name'] = name
+    if project_pk is not None:
+        filter_params['project'] = project_pk
 
-    if name_contains is not None:
-        filter_params['name_contains'] = name_contains
-
-    if type is not None:
-        filter_params['parameter_type'] = parameter_type
+    if stimulation_name is not None:
+        filter_params['stimulation_name'] = stimulation_name
 
     return get_request(token, url, filter_params)
 
 
-def get_parameter(host, token, parameter_pk):
+def get_stimulation(host, token, stimulation_pk):
     """
-    GET a serialized Parameter instance
-        compensation_pk    (required)
+    GET a serialized Stimulation instance
+        stimulation_pk    (required)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of Parameter object GET'd, empty string if unsuccessful
+        'data': Dictionary representation of object GET'd, empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['PARAMETERS'], parameter_pk)
+    url = '%s%s%s%s/' % (METHOD, host, URLS['STIMULATIONS'], stimulation_pk)
     return get_request(token, url)
-
-
-def get_sample_groups(host, token, group_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SAMPLE_GROUPS'])
-    filter_params = dict()
-    filter_params['paginate_by'] = '0'
-
-    if group_name is not None:
-        filter_params['group_name'] = group_name
-
-    return get_request(token, url, filter_params)
 
 
 def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, parameter_names=None, parameter_count=None):
@@ -392,32 +378,6 @@ def get_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, vis
 
     if parameter_names is not None:
         filter_params['parameter_names'] = parameter_names
-
-    if parameter_count is not None:
-        filter_params['parameter_count'] = parameter_count
-
-    return get_request(token, url, filter_params)
-
-
-def get_uncat_samples(host, token, subject_pk=None, site_pk=None, project_pk=None, visit_pk=None, fcs_text=None, parameter_count=None):
-    url = '%s%s%s' % (METHOD, host, URLS['UNCAT_SAMPLES'])
-    filter_params = dict()
-    filter_params['paginate_by'] = '0'
-
-    if subject_pk is not None:
-        filter_params['subject'] = subject_pk
-
-    if site_pk is not None:
-        filter_params['site'] = site_pk
-
-    if project_pk is not None:
-        filter_params['subject__project'] = project_pk
-
-    if visit_pk is not None:
-        filter_params['visit'] = visit_pk
-
-    if fcs_text is not None:
-        filter_params['fcs_text'] = fcs_text
 
     if parameter_count is not None:
         filter_params['parameter_count'] = parameter_count
@@ -537,45 +497,6 @@ def post_sample(
     return {
         'status': response.status_code,
         'reason': response.reason,
-        'data': data,
-    }
-
-
-def patch_sample_with_panel(host, token, sample_pk, panel_pk):
-    """
-    PATCH a FCS sample, creating sample parameters based on a panel
-        sample_pk    (required)
-        panel_pk     (required)
-
-    Returns a dictionary with keys:
-        'status': The HTTP response code
-        'reason': The HTTP response reason
-        'data': Dictionary (JSON) representation of the Sample object successfully PATCH'd, empty string if unsuccessful
-    """
-    if not sample_pk and panel_pk:
-        return ''
-
-    url = '%s%s/api/repository/samples/%s/apply_panel/' % (METHOD, host, sample_pk)
-    headers = {'Authorization': "Token %s" % token}
-
-    try:
-        r = requests.patch(url, data={'panel': panel_pk}, headers=headers, verify=False)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': ''}
-
-    if r.status_code == 201:
-        try:
-            data = r.json()
-        except Exception, e:
-            data = r.text()
-            print e
-    else:
-        data = r.text
-
-    return {
-        'status': r.status_code,
-        'reason': r.reason,
         'data': data,
     }
 
