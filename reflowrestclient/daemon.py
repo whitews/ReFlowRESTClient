@@ -23,7 +23,7 @@ class Daemon(object):
         self.stderr = os.devnull
         self.pid_file = pid_file
 
-    def daemonize(self):
+    def __daemonize(self):
         """
         do the UNIX double-fork magic, see Stevens' "Advanced
         Programming in the UNIX Environment" for details (ISBN 0201563177)
@@ -90,7 +90,7 @@ class Daemon(object):
             sys.exit(1)
 
         # Start the daemon
-        self.daemonize()
+        self.__daemonize()
         self.run()
 
     def stop(self):
