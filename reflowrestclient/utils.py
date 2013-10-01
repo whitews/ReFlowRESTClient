@@ -474,19 +474,19 @@ def post_sample(
         token,
         file_path,
         subject_pk,
-        site_pk,
         visit_type_pk,
         specimen_pk,
-        sample_group_pk=None,
-        panel_pk=None):
+        stimulation_pk,
+        site_panel_pk,
+        compensation_pk=None):
     """
     POST a FCS sample, associating the file with the following:
-        subject      (required)
-        site         (required)
-        visit_type   (required)
-        specimen     (required)
-        sample_group (optional)
-        panel        (optional)
+        subject_pk      (required)
+        visit_type_pk   (required)
+        specimen_pk     (required)
+        stimulation_pk  (required)
+        site_panel_pk   (required)
+        compensation_pk (optional)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
@@ -498,21 +498,18 @@ def post_sample(
     url = '%s%s%s' % (METHOD, host, URLS['CREATE_SAMPLES'])
     headers = {'Authorization': "Token %s" % token}
 
-    # Subject, site, visit_type, and specimen are required
+    # Subject, visit, specimen, stimulation, and site_panel are required
     data = {
         'subject': subject_pk,
-        'site': site_pk,
         'visit': visit_type_pk,
         'specimen': specimen_pk,
+        'stimulation': stimulation_pk,
+        'site_panel': site_panel_pk
     }
 
-    # add the sample_group field if present
-    if sample_group_pk:
-        data['sample_group'] = sample_group_pk
-
-    # add the panel field if present
-    if panel_pk:
-        data['panel'] = panel_pk
+    # add the compensation field if present
+    if compensation_pk:
+        data['compensation'] = compensation_pk
 
     # get FCS file
     files = {
