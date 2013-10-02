@@ -72,19 +72,19 @@ class Application(Tkinter.Frame):
 
         self.site_selection = Tkinter.StringVar()
         # TODO: site selection needs to update the site panel menu
-        self.site_selection.trace("w", self.update_upload_button_state)
+        self.site_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.subject_selection = Tkinter.StringVar()
-        self.subject_selection.trace("w", self.update_upload_button_state)
+        self.subject_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.visit_selection = Tkinter.StringVar()
-        self.visit_selection.trace("w", self.update_upload_button_state)
+        self.visit_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.specimen_selection = Tkinter.StringVar()
-        self.specimen_selection.trace("w", self.update_upload_button_state)
+        self.specimen_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.stimulation_selection = Tkinter.StringVar()
-        self.stimulation_selection.trace("w", self.update_upload_button_state)
+        self.stimulation_selection.trace("w", self.update_add_to_queue_button_state)
 
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
@@ -219,7 +219,9 @@ class Application(Tkinter.Frame):
         bottom_frame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
 
         # Metadata frame - for choosing project/subject/site etc.
-        metadata_frame = Tkinter.Frame(top_frame, bg=BACKGROUND_COLOR)
+        metadata_frame = Tkinter.Frame(
+            top_frame,
+            bg=BACKGROUND_COLOR)
         # Start metadata choices, including:
         #    - project
         #    - site
@@ -250,7 +252,9 @@ class Application(Tkinter.Frame):
             project_chooser_frame,
             self.project_selection,
             '')
-        self.project_menu.config(bg=BACKGROUND_COLOR)
+        self.project_menu.config(
+            bg=BACKGROUND_COLOR,
+            width=36)
         self.project_menu.pack(fill='x', expand=True)
         project_chooser_frame.pack(fill='x', expand=True)
 
@@ -424,7 +428,7 @@ class Application(Tkinter.Frame):
         log_frame = Tkinter.LabelFrame(
             bottom_frame,
             bg=BACKGROUND_COLOR,
-            text='Session Log')
+            text='Upload Queue')
         log_vertical_scroll_bar = Tkinter.Scrollbar(
             log_frame,
             orient='vertical')
@@ -500,25 +504,21 @@ class Application(Tkinter.Frame):
             file_chooser_button_frame,
             text='Clear All',
             command=self.clear_all_files)
-        refresh_button = ttk.Button(
+        self.add_to_queue_button = ttk.Button(
             file_chooser_button_frame,
-            text='Refresh from Server',
-            command=self.load_user_projects)
-        self.upload_button = ttk.Button(
-            file_chooser_button_frame,
-            text='Upload Files',
+            text='Add to Upload Queue',
             state='disabled',
             style='Inactive.TButton',
-            command=self.upload_files)
+            command=self.add_to_upload_queue)
         file_chooser_button.pack(side='left')
         file_clear_selection_button.pack(side='left')
         file_clear_all_button.pack(side='left')
-        self.upload_button.pack(side='right')
-        refresh_button.pack(side='right')
+        self.add_to_queue_button.pack(side='right')
         file_chooser_button_frame.pack(
             anchor='n',
             fill='x',
-            expand=False)
+            expand=False,
+            pady=PAD_SMALL)
 
         file_list_frame = Tkinter.Frame(
             file_chooser_frame,
@@ -543,21 +543,14 @@ class Application(Tkinter.Frame):
             expand=True,
             anchor='n')
 
-    def deselect_metadata(self):
-        self.subject_menu.selection_clear(0, 'end')
-        self.site_menu.selection_clear(0, 'end')
-        self.visit_menu.selection_clear(0, 'end')
-        self.specimen_menu.selection_clear(0, 'end')
-        self.stimulation_menu.selection_clear(0, 'end')
-
     def clear_selected_files(self):
         for i in self.file_list_box.curselection():
             self.file_list_box.delete(i)
-        self.update_upload_button_state()
+        self.update_add_to_queue_button_state()
 
     def clear_all_files(self):
         self.file_list_box.delete(0, 'end')
-        self.update_upload_button_state()
+        self.update_add_to_queue_button_state()
 
     def select_files(self):
         selected_files = tkFileDialog.askopenfiles('r')
@@ -570,8 +563,7 @@ class Application(Tkinter.Frame):
             self.file_list_box.insert(i, f)
             if i % 2:
                 self.file_list_box.itemconfig(i, bg=ROW_ALT_COLOR)
-        self.deselect_metadata()
-        self.update_upload_button_state()
+        self.update_add_to_queue_button_state()
 
     def load_user_projects(self):
         response = None
@@ -738,10 +730,11 @@ class Application(Tkinter.Frame):
             self.load_project_sites(self.project_dict[option_value])
             self.load_project_subjects(self.project_dict[option_value])
             self.load_project_visits(self.project_dict[option_value])
+            # TODO: add stimulations here and site panel
 
         self.update_upload_button_state()
 
-    def update_upload_button_state(self, event=None):
+    def update_add_to_queue_button_state(self, event=None):
         active = True
 
         if not self.site_selection or not self.subject_selection or \
@@ -753,9 +746,13 @@ class Application(Tkinter.Frame):
         else:
             active = False
         if active:
-            self.upload_button.config(state='active')
+            self.add_to_queue_button.config(state='active')
         else:
-            self.upload_button.config(state='disabled')
+            self.add_to_queue_button.config(state='disabled')
+
+    def add_to_upload_queue(self):
+        pass
+        # TODO: implement this after creating the upload queue frame/widgets
 
     def set_log_text_styles(self):
         self.upload_log_text.tag_config(
