@@ -67,6 +67,25 @@ class Application(Tkinter.Frame):
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
 
+        self.project_selection = Tkinter.StringVar()
+        self.project_selection.trace("w", self.update_metadata)
+
+        self.site_selection = Tkinter.StringVar()
+        # TODO: site selection needs to update the site panel menu
+        self.site_selection.trace("w", self.update_upload_button_state)
+
+        self.subject_selection = Tkinter.StringVar()
+        self.subject_selection.trace("w", self.update_upload_button_state)
+
+        self.visit_selection = Tkinter.StringVar()
+        self.visit_selection.trace("w", self.update_upload_button_state)
+
+        self.specimen_selection = Tkinter.StringVar()
+        self.specimen_selection.trace("w", self.update_upload_button_state)
+
+        self.stimulation_selection = Tkinter.StringVar()
+        self.stimulation_selection.trace("w", self.update_upload_button_state)
+
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
@@ -184,11 +203,17 @@ class Application(Tkinter.Frame):
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
-        top_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
-        top_frame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
+        top_frame = Tkinter.LabelFrame(
+            main_frame,
+            bg=BACKGROUND_COLOR)
+        top_frame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+        top_frame.config(text="Choose & Categorize Files")
 
-        middle_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
-        middle_frame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
 
         bottom_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
         bottom_frame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
@@ -212,7 +237,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         project_chooser_label = Tkinter.Label(
             project_chooser_label_frame,
-            text='Choose Project',
+            text='Project:',
             bg=BACKGROUND_COLOR)
         project_chooser_label.pack(side='left')
         project_chooser_label_frame.pack(fill='x')
@@ -221,27 +246,15 @@ class Application(Tkinter.Frame):
         project_chooser_frame = Tkinter.Frame(
             project_frame,
             bg=BACKGROUND_COLOR)
-        project_scroll_bar = Tkinter.Scrollbar(
+        self.project_menu = Tkinter.OptionMenu(
             project_chooser_frame,
-            orient='vertical')
-        self.project_list_box = Tkinter.Listbox(
-            project_chooser_frame,
-            exportselection=0,
-            yscrollcommand=project_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.project_list_box.bind('<<ListboxSelect>>', self.update_metadata)
-        project_scroll_bar.config(command=self.project_list_box.yview)
-        project_scroll_bar.pack(side='right', fill='y')
-        self.project_list_box.pack(fill='x', expand=True)
+            self.project_selection,
+            '')
+        self.project_menu.config(bg=BACKGROUND_COLOR)
+        self.project_menu.pack(fill='x', expand=True)
         project_chooser_frame.pack(fill='x', expand=True)
 
-        project_frame.pack(side='left', fill='x', expand=True)
+        project_frame.pack(side='top', fill='x', expand=True)
 
         # overall site frame (on bottom, 2nd from left of main window
         site_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
@@ -252,7 +265,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         site_chooser_label = Tkinter.Label(
             site_chooser_label_frame,
-            text='Choose Site',
+            text='Site:',
             bg=BACKGROUND_COLOR)
         site_chooser_label.pack(side='left')
         site_chooser_label_frame.pack(fill='x')
@@ -261,29 +274,15 @@ class Application(Tkinter.Frame):
         site_chooser_frame = Tkinter.Frame(
             site_frame,
             bg=BACKGROUND_COLOR)
-        site_scroll_bar = Tkinter.Scrollbar(
+        self.site_menu = Tkinter.OptionMenu(
             site_chooser_frame,
-            orient='vertical')
-        self.site_list_box = Tkinter.Listbox(
-            site_chooser_frame,
-            exportselection=0,
-            yscrollcommand=site_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.site_list_box.bind(
-            '<<ListboxSelect>>',
-            self.site_selection_changed)
-        site_scroll_bar.config(command=self.site_list_box.yview)
-        site_scroll_bar.pack(side='right', fill='y')
-        self.site_list_box.pack(fill='x', expand=True)
+            self.site_selection,
+            '')
+        self.site_menu.config(bg=BACKGROUND_COLOR)
+        self.site_menu.pack(fill='x', expand=True)
         site_chooser_frame.pack(fill='x', expand=True)
 
-        site_frame.pack(side='left', fill='x', expand=True)
+        site_frame.pack(side='top', fill='x', expand=True)
 
         # overall subject frame (on bottom, 2nd from left of main window
         subject_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
@@ -294,7 +293,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         subject_chooser_label = Tkinter.Label(
             subject_chooser_label_frame,
-            text='Choose Subject',
+            text='Subject:',
             bg=BACKGROUND_COLOR)
         subject_chooser_label.pack(side='left')
         subject_chooser_label_frame.pack(fill='x')
@@ -303,29 +302,15 @@ class Application(Tkinter.Frame):
         subject_chooser_frame = Tkinter.Frame(
             subject_frame,
             bg=BACKGROUND_COLOR)
-        subject_scroll_bar = Tkinter.Scrollbar(
+        self.subject_menu = Tkinter.OptionMenu(
             subject_chooser_frame,
-            orient='vertical')
-        self.subject_list_box = Tkinter.Listbox(
-            subject_chooser_frame,
-            exportselection=0,
-            yscrollcommand=subject_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.subject_list_box.bind(
-            '<<ListboxSelect>>',
-            self.update_upload_button_state)
-        subject_scroll_bar.config(command=self.subject_list_box.yview)
-        subject_scroll_bar.pack(side='right', fill='y')
-        self.subject_list_box.pack(fill='x', expand=True)
+            self.subject_selection,
+            '')
+        self.subject_menu.config(bg=BACKGROUND_COLOR)
+        self.subject_menu.pack(fill='x', expand=True)
         subject_chooser_frame.pack(fill='x', expand=True)
 
-        subject_frame.pack(side='left', fill='x', expand=True)
+        subject_frame.pack(side='top', fill='x', expand=True)
 
         # overall visit frame
         visit_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
@@ -336,36 +321,22 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         visit_chooser_label = Tkinter.Label(
             visit_chooser_label_frame,
-            text='Choose Visit',
+            text='Visit:',
             bg=BACKGROUND_COLOR)
         visit_chooser_label.pack(side='left')
         visit_chooser_label_frame.pack(fill='x')
 
         # visit chooser listbox frame (bottom of visit chooser frame)
         visit_chooser_frame = Tkinter.Frame(visit_frame, bg=BACKGROUND_COLOR)
-        visit_scroll_bar = Tkinter.Scrollbar(
+        self.visit_menu = Tkinter.OptionMenu(
             visit_chooser_frame,
-            orient='vertical')
-        self.visit_list_box = Tkinter.Listbox(
-            visit_chooser_frame,
-            exportselection=0,
-            yscrollcommand=visit_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.visit_list_box.bind(
-            '<<ListboxSelect>>',
-            self.update_upload_button_state)
-        visit_scroll_bar.config(command=self.visit_list_box.yview)
-        visit_scroll_bar.pack(side='right', fill='y')
-        self.visit_list_box.pack(fill='x', expand=True)
+            self.visit_selection,
+            '')
+        self.visit_menu.config(bg=BACKGROUND_COLOR)
+        self.visit_menu.pack(fill='x', expand=True)
         visit_chooser_frame.pack(fill='x', expand=True)
 
-        visit_frame.pack(side='left', fill='x', expand=True)
+        visit_frame.pack(side='top', fill='x', expand=True)
 
         # overall specimen frame
         specimen_frame = Tkinter.Frame(
@@ -378,7 +349,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         specimen_chooser_label = Tkinter.Label(
             specimen_chooser_label_frame,
-            text='Choose Specimen',
+            text='Specimen:',
             bg=BACKGROUND_COLOR)
         specimen_chooser_label.pack(side='left')
         specimen_chooser_label_frame.pack(fill='x')
@@ -387,29 +358,15 @@ class Application(Tkinter.Frame):
         specimen_chooser_frame = Tkinter.Frame(
             specimen_frame,
             bg=BACKGROUND_COLOR)
-        specimen_scroll_bar = Tkinter.Scrollbar(
+        self.specimen_menu = Tkinter.OptionMenu(
             specimen_chooser_frame,
-            orient='vertical')
-        self.specimen_list_box = Tkinter.Listbox(
-            specimen_chooser_frame,
-            exportselection=0,
-            yscrollcommand=specimen_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.specimen_list_box.bind(
-            '<<ListboxSelect>>',
-            self.update_upload_button_state)
-        specimen_scroll_bar.config(command=self.specimen_list_box.yview)
-        specimen_scroll_bar.pack(side='right', fill='y')
-        self.specimen_list_box.pack(fill='x', expand=True)
+            self.specimen_selection,
+            '')
+        self.specimen_menu.config(bg=BACKGROUND_COLOR)
+        self.specimen_menu.pack(fill='x', expand=True)
         specimen_chooser_frame.pack(fill='x', expand=True)
 
-        specimen_frame.pack(side='left', fill='x', expand=True)
+        specimen_frame.pack(side='top', fill='x', expand=True)
 
         # overall stimulation frame
         stimulation_frame = Tkinter.Frame(
@@ -422,7 +379,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         stimulation_chooser_label = Tkinter.Label(
             stimulation_chooser_label_frame,
-            text='Choose Stimulation',
+            text='Stimulation:',
             bg=BACKGROUND_COLOR)
         stimulation_chooser_label.pack(side='left')
         stimulation_chooser_label_frame.pack(fill='x')
@@ -432,30 +389,15 @@ class Application(Tkinter.Frame):
         stimulation_chooser_frame = Tkinter.Frame(
             stimulation_frame,
             bg=BACKGROUND_COLOR)
-        stimulation_scroll_bar = Tkinter.Scrollbar(
+        self.stimulation_menu = Tkinter.OptionMenu(
             stimulation_chooser_frame,
-            orient='vertical')
-        self.simulation_list_box = Tkinter.Listbox(
-            stimulation_chooser_frame,
-            exportselection=0,
-            yscrollcommand=stimulation_scroll_bar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.simulation_list_box.bind(
-            '<<ListboxSelect>>',
-            self.update_upload_button_state)
-        stimulation_scroll_bar.config(
-            command=self.simulation_list_box.yview)
-        stimulation_scroll_bar.pack(side='right', fill='y')
-        self.simulation_list_box.pack(fill='x', expand=True)
+            self.stimulation_selection,
+            '')
+        self.stimulation_menu.config(bg=BACKGROUND_COLOR)
+        self.stimulation_menu.pack(fill='x', expand=True)
         stimulation_chooser_frame.pack(fill='x', expand=True)
 
-        stimulation_frame.pack(side='left', fill='x', expand=True)
+        stimulation_frame.pack(side='top', fill='x', expand=True)
 
         self.load_user_projects()
         self.load_specimens()
@@ -465,10 +407,11 @@ class Application(Tkinter.Frame):
             fill='x',
             expand=False,
             anchor='n',
+            side='left',
             padx=PAD_MEDIUM,
-            pady=0)
+            pady=PAD_MEDIUM)
 
-        right_frame = Tkinter.Frame(middle_frame, bg=BACKGROUND_COLOR)
+        right_frame = Tkinter.Frame(top_frame, bg=BACKGROUND_COLOR)
         right_frame.pack(
             fill='both',
             expand=True,
@@ -476,14 +419,6 @@ class Application(Tkinter.Frame):
             side='right',
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
-        inner_right_frame = Tkinter.LabelFrame(
-            right_frame,
-            bg=BACKGROUND_COLOR)
-        inner_right_frame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right')
 
         # session log text box
         log_frame = Tkinter.LabelFrame(
@@ -533,10 +468,8 @@ class Application(Tkinter.Frame):
             padx=PAD_MEDIUM,
             pady=PAD_SMALL)
 
-        inner_right_frame.config(text="Upload Files")
-
         file_upload_frame = Tkinter.Frame(
-            inner_right_frame,
+            right_frame,
             bg=BACKGROUND_COLOR)
 
         file_upload_frame.pack(
@@ -611,11 +544,11 @@ class Application(Tkinter.Frame):
             anchor='n')
 
     def deselect_metadata(self):
-        self.subject_list_box.selection_clear(0, 'end')
-        self.site_list_box.selection_clear(0, 'end')
-        self.visit_list_box.selection_clear(0, 'end')
-        self.specimen_list_box.selection_clear(0, 'end')
-        self.simulation_list_box.selection_clear(0, 'end')
+        self.subject_menu.selection_clear(0, 'end')
+        self.site_menu.selection_clear(0, 'end')
+        self.visit_menu.selection_clear(0, 'end')
+        self.specimen_menu.selection_clear(0, 'end')
+        self.stimulation_menu.selection_clear(0, 'end')
 
     def clear_selected_files(self):
         for i in self.file_list_box.curselection():
@@ -646,41 +579,22 @@ class Application(Tkinter.Frame):
             response = rest.get_projects(self.host, self.token)
         except Exception, e:
             print e
+            return
 
-        self.project_list_box.delete(0, 'end')
-        self.site_list_box.delete(0, 'end')
-        self.subject_list_box.delete(0, 'end')
-        self.visit_list_box.delete(0, 'end')
+        if not 'results' in response['data']:
+            return
+
+        self.project_menu['menu'].delete(0, 'end')
+        self.site_menu['menu'].delete(0, 'end')
+        self.subject_menu['menu'].delete(0, 'end')
+        self.visit_menu['menu'].delete(0, 'end')
         for result in response['data']['results']:
             self.project_dict[result['project_name']] = result['id']
         for project_name in sorted(self.project_dict.keys()):
-            self.project_list_box.insert('end', project_name)
-
-    def load_specimens(self):
-        response = None
-        try:
-            response = rest.get_specimens(self.host, self.token)
-        except Exception, e:
-            print e
-
-        self.specimen_list_box.delete(0, 'end')
-        for result in response['data']['results']:
-            self.specimen_dict[result['specimen_description']] = result['id']
-        for specimen in sorted(self.specimen_dict.keys()):
-            self.specimen_list_box.insert('end', specimen)
-
-    def load_stimulations(self):
-        response = None
-        try:
-            response = rest.get_stimulations(self.host, self.token)
-        except Exception, e:
-            print e
-
-        self.simulation_list_box.delete(0, 'end')
-        for result in response['data']['results']:
-            self.stimulation_dict[result['stimulation_name']] = result['id']
-        for stimulation in sorted(self.stimulation_dict.keys()):
-            self.simulation_list_box.insert('end', stimulation)
+            self.project_menu['menu'].add_command(
+                label=project_name,
+                command=lambda value=project_name:
+                    self.project_selection.set(value))
 
     def load_project_sites(self, project_id):
         response = None
@@ -692,12 +606,18 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        self.site_list_box.delete(0, 'end')
+        if not 'results' in response['data']:
+            return
+
+        self.site_menu['menu'].delete(0, 'end')
         self.site_dict.clear()
         for result in response['data']['results']:
             self.site_dict[result['site_name']] = result['id']
         for site_name in sorted(self.site_dict.keys()):
-            self.site_list_box.insert('end', site_name)
+            self.site_menu['menu'].add_command(
+                label=site_name,
+                command=lambda value=site_name:
+                    self.site_selection.set(value))
 
     def load_project_subjects(self, project_id):
         response = None
@@ -709,12 +629,18 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        self.subject_list_box.delete(0, 'end')
+        if not 'results' in response['data']:
+            return
+
+        self.subject_menu['menu'].delete(0, 'end')
         self.subject_dict.clear()
         for result in response['data']['results']:
             self.subject_dict[result['subject_code']] = result['id']
-        for subject_id in sorted(self.subject_dict.keys()):
-            self.subject_list_box.insert('end', subject_id)
+        for subject_code in sorted(self.subject_dict.keys()):
+            self.subject_menu['menu'].add_command(
+                label=subject_code,
+                command=lambda value=subject_code:
+                    self.subject_selection.set(value))
 
     def load_project_visits(self, project_id):
         response = None
@@ -726,17 +652,62 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        self.visit_list_box.delete(0, 'end')
+        if not 'results' in response['data']:
+            return
+
+        self.visit_menu['menu'].delete(0, 'end')
         self.visit_dict.clear()
         for result in response['data']['results']:
             self.visit_dict[result['visit_type_name']] = result['id']
         for visit_type_name in sorted(self.visit_dict.keys()):
-            self.visit_list_box.insert('end', visit_type_name)
+            self.visit_menu['menu'].add_command(
+                label=visit_type_name,
+                command=lambda value=visit_type_name:
+                    self.visit_selection.set(value))
+
+    def load_specimens(self):
+        response = None
+        try:
+            response = rest.get_specimens(self.host, self.token)
+        except Exception, e:
+            print e
+            return
+
+        if not 'results' in response['data']:
+            return
+
+        self.specimen_menu['menu'].delete(0, 'end')
+        for result in response['data']['results']:
+            self.specimen_dict[result['specimen_description']] = result['id']
+        for specimen in sorted(self.specimen_dict.keys()):
+            self.specimen_menu['menu'].add_command(
+                label=specimen,
+                command=lambda value=specimen:
+                    self.specimen_selection.set(value))
+
+    def load_stimulations(self):
+        response = None
+        try:
+            response = rest.get_stimulations(self.host, self.token)
+        except Exception, e:
+            print e
+
+        if not 'results' in response['data']:
+            return
+
+        self.stimulation_menu['menu'].delete(0, 'end')
+        for result in response['data']['results']:
+            self.stimulation_dict[result['stimulation_name']] = result['id']
+        for stimulation in sorted(self.stimulation_dict.keys()):
+            self.stimulation_menu['menu'].add_command(
+                label=stimulation,
+                command=lambda value=stimulation:
+                    self.stimulation_selection.set(value))
 
     def load_site_panels(self):
-        if self.site_list_box.curselection():
-            selected_site_name = self.site_list_box.get(
-                self.site_list_box.curselection())
+        if self.site_menu.curselection():
+            selected_site_name = self.site_menu.get(
+                self.site_menu.curselection())
         else:
             return
 
@@ -748,6 +719,9 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
+        if not 'results' in response['data']:
+            return
+
         self.site_panel_list_box.delete(0, 'end')
         self.site_panel_dict.clear()
         for result in response['data']:
@@ -755,29 +729,23 @@ class Application(Tkinter.Frame):
         for panel_name in sorted(self.site_panel_dict.keys()):
             self.site_panel_list_box.insert('end', panel_name)
 
-    def update_metadata(self, event=None):
+    def update_metadata(*args, **kwargs):
+        self = args[0]
 
-        selected_project_name = self.project_list_box.get(
-            self.project_list_box.curselection())
+        option_value = self.project_selection.get()
 
-        if selected_project_name in self.project_dict:
-            self.load_project_sites(self.project_dict[selected_project_name])
-            self.load_project_subjects(self.project_dict[selected_project_name])
-            self.load_project_visits(self.project_dict[selected_project_name])
+        if option_value in self.project_dict:
+            self.load_project_sites(self.project_dict[option_value])
+            self.load_project_subjects(self.project_dict[option_value])
+            self.load_project_visits(self.project_dict[option_value])
 
-        self.update_upload_button_state()
-
-    def site_selection_changed(self, event=None):
         self.update_upload_button_state()
 
     def update_upload_button_state(self, event=None):
         active = True
-        site_selection = self.site_list_box.curselection()
-        subject_selection = self.subject_list_box.curselection()
-        visit_selection = self.visit_list_box.curselection()
-        specimen_selection = self.specimen_list_box.curselection()
 
-        if not site_selection or not subject_selection or not visit_selection or not specimen_selection:
+        if not self.site_selection or not self.subject_selection or \
+                not self.visit_selection or not self.specimen_selection:
             active = False
         if hasattr(self, 'file_list_box'):
             if len(self.file_list_box.get(0, 'end')) == 0:
@@ -795,19 +763,19 @@ class Application(Tkinter.Frame):
             foreground=ERROR_FOREGROUND_COLOR)
 
     def upload_files(self):
-        subject_selection = self.subject_list_box.get(
-            self.subject_list_box.curselection())
-        site_selection = self.site_list_box.get(
-            self.site_list_box.curselection())
-        visit_selection = self.visit_list_box.get(
-            self.visit_list_box.curselection())
-        specimen_selection = self.specimen_list_box.get(
-            self.specimen_list_box.curselection())
+        subject_selection = self.subject_menu.get(
+            self.subject_menu.curselection())
+        site_selection = self.site_menu.get(
+            self.site_menu.curselection())
+        visit_selection = self.visit_menu.get(
+            self.visit_menu.curselection())
+        specimen_selection = self.specimen_menu.get(
+            self.specimen_menu.curselection())
 
-        if self.simulation_list_box.curselection():
+        if self.stimulation_menu.curselection():
             sample_group_pk = str(
-                self.stimulation_dict[self.simulation_list_box.get(
-                    self.simulation_list_box.curselection())])
+                self.stimulation_dict[self.stimulation_menu.get(
+                    self.stimulation_menu.curselection())])
         else:
             sample_group_pk = None
 
