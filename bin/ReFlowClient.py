@@ -81,28 +81,40 @@ class Application(Tkinter.Frame):
 
         self.file_list = list()  # list of ChosenFile objects
 
+        self.project_menu = None
         self.project_selection = Tkinter.StringVar()
         self.project_selection.trace("w", self.update_metadata)
 
+        self.site_menu = None
         self.site_selection = Tkinter.StringVar()
         # TODO: site selection needs to update the site panel menu
         self.site_selection.trace("w", self.update_add_to_queue_button_state)
 
+        self.subject_menu = None
         self.subject_selection = Tkinter.StringVar()
         self.subject_selection.trace(
             "w",
             self.update_add_to_queue_button_state)
 
+        self.visit_menu = None
         self.visit_selection = Tkinter.StringVar()
         self.visit_selection.trace("w", self.update_add_to_queue_button_state)
 
+        self.specimen_menu = None
         self.specimen_selection = Tkinter.StringVar()
         self.specimen_selection.trace(
             "w",
             self.update_add_to_queue_button_state)
 
+        self.stimulation_menu = None
         self.stimulation_selection = Tkinter.StringVar()
         self.stimulation_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.site_panel_menu = None
+        self.site_panel_selection = Tkinter.StringVar()
+        self.site_panel_selection.trace(
             "w",
             self.update_add_to_queue_button_state)
 
@@ -115,6 +127,11 @@ class Application(Tkinter.Frame):
 
         self.menu_bar = Tkinter.Menu(master)
         self.master.config(menu=self.menu_bar)
+
+        self.upload_log_text = None
+        self.upload_progress_bar = None
+        self.add_to_queue_button = None
+        self.file_list_canvas = None
 
         self.s = ttk.Style()
         self.s.map(
@@ -234,9 +251,13 @@ class Application(Tkinter.Frame):
             pady=PAD_MEDIUM)
         top_frame.config(text="Choose & Categorize Files")
 
-
         bottom_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
-        bottom_frame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
+        bottom_frame.pack(
+            fill='both',
+            expand=False,
+            anchor='n',
+            padx=0,
+            pady=0)
 
         # Metadata frame - for choosing project/subject/site etc.
         metadata_frame = Tkinter.Frame(
@@ -423,9 +444,39 @@ class Application(Tkinter.Frame):
 
         stimulation_frame.pack(side='top', fill='x', expand=True)
 
+        # overall site_panel frame
+        site_panel_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # site_panel label frame (top of site_panel chooser frame)
+        site_panel_chooser_label_frame = Tkinter.Frame(
+            site_panel_frame,
+            bg=BACKGROUND_COLOR)
+        site_panel_chooser_label = Tkinter.Label(
+            site_panel_chooser_label_frame,
+            text='Site Panel:',
+            bg=BACKGROUND_COLOR)
+        site_panel_chooser_label.pack(side='left')
+        site_panel_chooser_label_frame.pack(fill='x')
+
+        # site_panel chooser listbox frame
+        # (bottom of site_panel chooser frame)
+        site_panel_chooser_frame = Tkinter.Frame(
+            site_panel_frame,
+            bg=BACKGROUND_COLOR)
+        self.site_panel_menu = Tkinter.OptionMenu(
+            site_panel_chooser_frame,
+            self.site_panel_selection,
+            '')
+        self.site_panel_menu.config(bg=BACKGROUND_COLOR)
+        self.site_panel_menu.pack(fill='x', expand=True)
+        site_panel_chooser_frame.pack(fill='x', expand=True)
+
+        site_panel_frame.pack(side='top', fill='x', expand=True)
+
         self.load_user_projects()
         self.load_specimens()
-        self.load_stimulations()
 
         metadata_frame.pack(
             fill='x',
@@ -607,7 +658,6 @@ class Application(Tkinter.Frame):
         self.update_add_to_queue_button_state()
 
     def load_user_projects(self):
-        response = None
         try:
             response = rest.get_projects(self.host, self.token)
         except Exception, e:
@@ -627,7 +677,7 @@ class Application(Tkinter.Frame):
             self.project_menu['menu'].add_command(
                 label=project_name,
                 command=lambda value=project_name:
-                    self.project_selection.set(value))
+                self.project_selection.set(value))
 
     def load_project_sites(self, project_id):
         response = None
@@ -650,7 +700,7 @@ class Application(Tkinter.Frame):
             self.site_menu['menu'].add_command(
                 label=site_name,
                 command=lambda value=site_name:
-                    self.site_selection.set(value))
+                self.site_selection.set(value))
 
     def load_project_subjects(self, project_id):
         response = None
@@ -673,7 +723,7 @@ class Application(Tkinter.Frame):
             self.subject_menu['menu'].add_command(
                 label=subject_code,
                 command=lambda value=subject_code:
-                    self.subject_selection.set(value))
+                self.subject_selection.set(value))
 
     def load_project_visits(self, project_id):
         response = None
@@ -696,10 +746,9 @@ class Application(Tkinter.Frame):
             self.visit_menu['menu'].add_command(
                 label=visit_type_name,
                 command=lambda value=visit_type_name:
-                    self.visit_selection.set(value))
+                self.visit_selection.set(value))
 
     def load_specimens(self):
-        response = None
         try:
             response = rest.get_specimens(self.host, self.token)
         except Exception, e:
@@ -716,14 +765,14 @@ class Application(Tkinter.Frame):
             self.specimen_menu['menu'].add_command(
                 label=specimen,
                 command=lambda value=specimen:
-                    self.specimen_selection.set(value))
+                self.specimen_selection.set(value))
 
     def load_stimulations(self):
-        response = None
         try:
             response = rest.get_stimulations(self.host, self.token)
         except Exception, e:
             print e
+            return
 
         if not 'results' in response['data']:
             return
@@ -735,34 +784,34 @@ class Application(Tkinter.Frame):
             self.stimulation_menu['menu'].add_command(
                 label=stimulation,
                 command=lambda value=stimulation:
-                    self.stimulation_selection.set(value))
+                self.stimulation_selection.set(value))
 
     def load_site_panels(self):
-        if self.site_menu.curselection():
-            selected_site_name = self.site_menu.get(
-                self.site_menu.curselection())
-        else:
+        if not self.site_selection:
             return
 
         panel_args = [self.host, self.token]
-        panel_kwargs = {'site_pk': self.site_dict[selected_site_name]}
-        response = None
+        panel_kwargs = {'site_pk': self.site_selection}
         try:
             response = rest.get_site_panels(*panel_args, **panel_kwargs)
         except Exception, e:
             print e
+            return
 
         if not 'results' in response['data']:
             return
 
-        self.site_panel_list_box.delete(0, 'end')
+        self.site_panel_menu['menu'].delete(0, 'end')
         self.site_panel_dict.clear()
         for result in response['data']:
             self.site_panel_dict[result['panel_name']] = result['id']
         for panel_name in sorted(self.site_panel_dict.keys()):
-            self.site_panel_list_box.insert('end', panel_name)
+            self.site_panel_menu['menu'].add_command(
+                label=panel_name,
+                command=lambda value=panel_name:
+                self.site_panel_selection.set(value))
 
-    def update_metadata(*args, **kwargs):
+    def update_metadata(*args):
         self = args[0]
 
         option_value = self.project_selection.get()
@@ -778,14 +827,14 @@ class Application(Tkinter.Frame):
     def update_add_to_queue_button_state(self, event=None):
         active = True
 
-        if not self.site_selection or not self.subject_selection or \
-                not self.visit_selection or not self.specimen_selection:
+        if not self.site_selection.get() or \
+                not self.subject_selection.get() or \
+                not self.visit_selection.get() or \
+                not self.specimen_selection.get():
             active = False
-        if hasattr(self, 'file_list_box'):
-            if len(self.file_list_canvas.get(0, 'end')) == 0:
-                active = False
-        else:
+        if len(self.file_list_canvas.children) == 0:
             active = False
+
         if active:
             self.add_to_queue_button.config(state='active')
         else:
@@ -801,40 +850,25 @@ class Application(Tkinter.Frame):
             foreground=ERROR_FOREGROUND_COLOR)
 
     def upload_files(self):
-        subject_selection = self.subject_menu.get(
-            self.subject_menu.curselection())
-        site_selection = self.site_menu.get(
-            self.site_menu.curselection())
-        visit_selection = self.visit_menu.get(
-            self.visit_menu.curselection())
-        specimen_selection = self.specimen_menu.get(
-            self.specimen_menu.curselection())
-
-        if self.stimulation_menu.curselection():
-            sample_group_pk = str(
-                self.stimulation_dict[self.stimulation_menu.get(
-                    self.stimulation_menu.curselection())])
-        else:
-            sample_group_pk = None
-
-        upload_file_list = self.file_list_canvas.get(0, 'end')
+        # TODO: get list of files to upload from the upload queue
+        upload_file_list = None
         self.upload_progress_bar.config(maximum=len(upload_file_list))
 
-        for i, file_path in enumerate(upload_file_list):
+        for f in self.file_list:
             response_dict = rest.post_sample(
                 self.host,
                 self.token,
-                file_path,
-                subject_pk=str(self.subject_dict[subject_selection]),
-                site_pk=str(self.site_dict[site_selection]),
-                visit_type_pk=str(self.visit_dict[visit_selection]),
-                specimen_pk=str(self.specimen_dict[specimen_selection]),
-                sample_group_pk=sample_group_pk
+                f.name,
+                subject_pk=str(f.subject),
+                site_panel_pk=str(f.site_panel),
+                visit_type_pk=str(f.visit),
+                specimen_pk=str(f.specimen),
+                stimulation_pk=str(f.stimulation)
             )
 
             log_text = ''.join(
                 [
-                    file_path,
+                    f.name,
                     ' (',
                     str(response_dict['status']),
                     ': ',
@@ -846,17 +880,18 @@ class Application(Tkinter.Frame):
             )
             self.upload_log_text.config(state='normal')
 
+            # TODO: update to color the queue row on success or failure
             if response_dict['status'] == 201:
-                self.file_list_canvas.itemconfig(
-                    i,
-                    fg=SUCCESS_FOREGROUND_COLOR,
-                    selectforeground=SUCCESS_FOREGROUND_COLOR)
+                #self.file_list_canvas.itemconfig(
+                #    i,
+                #    fg=SUCCESS_FOREGROUND_COLOR,
+                #    selectforeground=SUCCESS_FOREGROUND_COLOR)
                 self.upload_log_text.insert('end', log_text)
             elif response_dict['status'] == 400:
-                self.file_list_canvas.itemconfig(
-                    i,
-                    fg=ERROR_FOREGROUND_COLOR,
-                    selectforeground=ERROR_FOREGROUND_COLOR)
+                #self.file_list_canvas.itemconfig(
+                #    i,
+                #    fg=ERROR_FOREGROUND_COLOR,
+                #    selectforeground=ERROR_FOREGROUND_COLOR)
                 self.upload_log_text.insert('end', log_text, 'error')
             self.upload_log_text.config(state='disabled')
 
