@@ -47,6 +47,18 @@ PAD_LARGE = 12
 PAD_EXTRA_LARGE = 15
 
 
+class ChosenFile(object):
+    def __init__(self, f):
+        self.file = f
+        self.file_path = f.name
+        self.file_name = os.path.basename(f.name)
+        self.subject = None
+        self.visit = None
+        self.specimen = None
+        self.stimulation = None
+        self.site_panel = None
+
+
 class Application(Tkinter.Frame):
 
     def __init__(self, master):
@@ -67,6 +79,8 @@ class Application(Tkinter.Frame):
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
 
+        self.file_list = list()  # list of ChosenFile objects
+
         self.project_selection = Tkinter.StringVar()
         self.project_selection.trace("w", self.update_metadata)
 
@@ -75,16 +89,22 @@ class Application(Tkinter.Frame):
         self.site_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.subject_selection = Tkinter.StringVar()
-        self.subject_selection.trace("w", self.update_add_to_queue_button_state)
+        self.subject_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
 
         self.visit_selection = Tkinter.StringVar()
         self.visit_selection.trace("w", self.update_add_to_queue_button_state)
 
         self.specimen_selection = Tkinter.StringVar()
-        self.specimen_selection.trace("w", self.update_add_to_queue_button_state)
+        self.specimen_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
 
         self.stimulation_selection = Tkinter.StringVar()
-        self.stimulation_selection.trace("w", self.update_add_to_queue_button_state)
+        self.stimulation_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
 
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
@@ -105,8 +125,8 @@ class Application(Tkinter.Frame):
 
         self.login_frame = Tkinter.Frame(bg=BACKGROUND_COLOR)
         self.logo_image = ImageTk.PhotoImage(Image.open(LOGO_PATH))
-        self.load_login_frame()
-        #self.load_main_frame()
+        #self.load_login_frame()
+        self.load_main_frame()
 
     def load_login_frame(self):
 
@@ -522,47 +542,68 @@ class Application(Tkinter.Frame):
 
         file_list_frame = Tkinter.Frame(
             file_chooser_frame,
-            bg=BACKGROUND_COLOR)
-        file_scroll_bar = Tkinter.Scrollbar(
-            file_list_frame,
-            orient='vertical')
-        self.file_list_box = Tkinter.Listbox(
-            file_list_frame,
-            yscrollcommand=file_scroll_bar.set,
-            relief='flat',
-            borderwidth=0,
+            bg=BACKGROUND_COLOR,
             highlightcolor=HIGHLIGHT_COLOR,
             highlightbackground=BORDER_COLOR,
             highlightthickness=1)
-        file_scroll_bar.config(command=self.file_list_box.yview)
+        file_scroll_bar = Tkinter.Scrollbar(
+            file_list_frame,
+            orient='vertical')
+        self.file_list_canvas = Tkinter.Canvas(
+            file_list_frame,
+            yscrollcommand=file_scroll_bar.set,
+            relief='flat',
+            borderwidth=0)
+        file_scroll_bar.config(command=self.file_list_canvas.yview)
         file_scroll_bar.pack(side='right', fill='y')
-        self.file_list_box.pack(fill='both', expand=True)
-        file_list_frame.pack(fill='both', expand=True)
+        self.file_list_canvas.pack(
+            fill='both',
+            expand=True
+        )
+        file_list_frame.pack(
+            fill='both',
+            expand=True)
         file_chooser_frame.pack(
             fill='both',
             expand=True,
             anchor='n')
 
     def clear_selected_files(self):
-        for i in self.file_list_box.curselection():
-            self.file_list_box.delete(i)
+        for i in self.file_list_canvas.curselection():
+            self.file_list_canvas.delete(i)
         self.update_add_to_queue_button_state()
 
     def clear_all_files(self):
-        self.file_list_box.delete(0, 'end')
+        self.file_list_canvas.delete(0, 'end')
         self.update_add_to_queue_button_state()
 
     def select_files(self):
         selected_files = tkFileDialog.askopenfiles('r')
         sorted_file_list = list()
-        for f in selected_files:
+
+        # clear the canvas
+        self.file_list_canvas.delete(Tkinter.ALL)
+        for i, f in enumerate(selected_files):
             sorted_file_list.append(f.name)
+            chosen_file = ChosenFile(f)
+            self.file_list.append(chosen_file)
+            cb = Tkinter.Checkbutton(
+                self.file_list_canvas,
+                text=chosen_file.file_name
+            )
+            self.file_list_canvas.create_window(
+                10,
+                (20 * i),
+                anchor='nw',
+                window=cb
+            )
+
+        # update scroll region
+        self.file_list_canvas.config(
+            scrollregion=(0, 0, 1000, len(selected_files)*20))
+
         sorted_file_list.sort()
-        self.file_list_box.delete(0, 'end')
-        for i, f in enumerate(sorted_file_list):
-            self.file_list_box.insert(i, f)
-            if i % 2:
-                self.file_list_box.itemconfig(i, bg=ROW_ALT_COLOR)
+
         self.update_add_to_queue_button_state()
 
     def load_user_projects(self):
@@ -741,7 +782,7 @@ class Application(Tkinter.Frame):
                 not self.visit_selection or not self.specimen_selection:
             active = False
         if hasattr(self, 'file_list_box'):
-            if len(self.file_list_box.get(0, 'end')) == 0:
+            if len(self.file_list_canvas.get(0, 'end')) == 0:
                 active = False
         else:
             active = False
@@ -776,7 +817,7 @@ class Application(Tkinter.Frame):
         else:
             sample_group_pk = None
 
-        upload_file_list = self.file_list_box.get(0, 'end')
+        upload_file_list = self.file_list_canvas.get(0, 'end')
         self.upload_progress_bar.config(maximum=len(upload_file_list))
 
         for i, file_path in enumerate(upload_file_list):
@@ -806,13 +847,13 @@ class Application(Tkinter.Frame):
             self.upload_log_text.config(state='normal')
 
             if response_dict['status'] == 201:
-                self.file_list_box.itemconfig(
+                self.file_list_canvas.itemconfig(
                     i,
                     fg=SUCCESS_FOREGROUND_COLOR,
                     selectforeground=SUCCESS_FOREGROUND_COLOR)
                 self.upload_log_text.insert('end', log_text)
             elif response_dict['status'] == 400:
-                self.file_list_box.itemconfig(
+                self.file_list_canvas.itemconfig(
                     i,
                     fg=ERROR_FOREGROUND_COLOR,
                     selectforeground=ERROR_FOREGROUND_COLOR)
