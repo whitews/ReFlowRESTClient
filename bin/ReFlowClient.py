@@ -100,8 +100,7 @@ class Application(Tkinter.Frame):
 
         self.site_menu = None
         self.site_selection = Tkinter.StringVar()
-        # TODO: site selection needs to update the site panel menu
-        self.site_selection.trace("w", self.update_add_to_queue_button_state)
+        self.site_selection.trace("w", self.load_site_panels)
 
         self.subject_menu = None
         self.subject_selection = Tkinter.StringVar()
@@ -155,8 +154,8 @@ class Application(Tkinter.Frame):
 
         self.login_frame = Tkinter.Frame(bg=BACKGROUND_COLOR)
         self.logo_image = ImageTk.PhotoImage(Image.open(LOGO_PATH))
-        #self.load_login_frame()
-        self.load_main_frame()
+        self.load_login_frame()
+        #self.load_main_frame()
 
     def load_login_frame(self):
 
@@ -785,9 +784,12 @@ class Application(Tkinter.Frame):
                 command=lambda value=specimen:
                 self.specimen_selection.set(value))
 
-    def load_stimulations(self):
+    def load_stimulations(self, project_id):
         try:
-            response = rest.get_stimulations(self.host, self.token)
+            response = rest.get_stimulations(
+                self.host,
+                self.token,
+                project_pk=project_id)
         except Exception, e:
             print e
             return
@@ -804,12 +806,12 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
-    def load_site_panels(self):
+    def load_site_panels(self, *args, **kwargs):
         if not self.site_selection:
             return
-
+        site_pk = self.site_dict[self.site_selection.get()]
         panel_args = [self.host, self.token]
-        panel_kwargs = {'site_pk': self.site_selection}
+        panel_kwargs = {'site_pk': site_pk}
         try:
             response = rest.get_site_panels(*panel_args, **panel_kwargs)
         except Exception, e:
@@ -821,8 +823,8 @@ class Application(Tkinter.Frame):
 
         self.site_panel_menu['menu'].delete(0, 'end')
         self.site_panel_dict.clear()
-        for result in response['data']:
-            self.site_panel_dict[result['panel_name']] = result['id']
+        for result in response['data']['results']:
+            self.site_panel_dict[result['name']] = result['id']
         for panel_name in sorted(self.site_panel_dict.keys()):
             self.site_panel_menu['menu'].add_command(
                 label=panel_name,
@@ -838,11 +840,11 @@ class Application(Tkinter.Frame):
             self.load_project_sites(self.project_dict[option_value])
             self.load_project_subjects(self.project_dict[option_value])
             self.load_project_visits(self.project_dict[option_value])
-            # TODO: add stimulations here and site panel
+            self.load_stimulations(self.project_dict[option_value])
 
-        self.update_upload_button_state()
+        self.update_add_to_queue_button_state()
 
-    def update_add_to_queue_button_state(self, event=None):
+    def update_add_to_queue_button_state(self, *args, **kwargs):
         active = True
 
         if not self.site_selection.get() or \
