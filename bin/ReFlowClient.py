@@ -59,6 +59,19 @@ class ChosenFile(object):
         self.site_panel = None
 
 
+class MyCheckbutton(Tkinter.Checkbutton):
+    def __init__(self, *args, **kwargs):
+        self.var = kwargs.get('variable',Tkinter.IntVar())
+        kwargs['variable'] = self.var
+        Tkinter.Checkbutton.__init__(self, *args, **kwargs)
+
+    def is_checked(self):
+        return self.var.get()
+
+    def mark_checked(self):
+        self.var.set(1)
+
+
 class Application(Tkinter.Frame):
 
     def __init__(self, master):
@@ -566,15 +579,15 @@ class Application(Tkinter.Frame):
         file_chooser_button = ttk.Button(
             file_chooser_button_frame,
             text='Choose FCS Files...',
-            command=self.select_files)
+            command=self.choose_files)
         file_clear_selection_button = ttk.Button(
             file_chooser_button_frame,
             text='Clear Selected',
             command=self.clear_selected_files)
         file_clear_all_button = ttk.Button(
             file_chooser_button_frame,
-            text='Clear All',
-            command=self.clear_all_files)
+            text='Select All',
+            command=self.select_all_files)
         self.add_to_queue_button = ttk.Button(
             file_chooser_button_frame,
             text='Add to Upload Queue',
@@ -620,15 +633,20 @@ class Application(Tkinter.Frame):
             anchor='n')
 
     def clear_selected_files(self):
-        for i in self.file_list_canvas.curselection():
-            self.file_list_canvas.delete(i)
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                if v.is_checked():
+                    v.destroy()
+
         self.update_add_to_queue_button_state()
 
-    def clear_all_files(self):
-        self.file_list_canvas.delete(0, 'end')
+    def select_all_files(self):
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                v.mark_checked()
         self.update_add_to_queue_button_state()
 
-    def select_files(self):
+    def choose_files(self):
         selected_files = tkFileDialog.askopenfiles('r')
         sorted_file_list = list()
 
@@ -638,7 +656,7 @@ class Application(Tkinter.Frame):
             sorted_file_list.append(f.name)
             chosen_file = ChosenFile(f)
             self.file_list.append(chosen_file)
-            cb = Tkinter.Checkbutton(
+            cb = MyCheckbutton(
                 self.file_list_canvas,
                 text=chosen_file.file_name
             )
