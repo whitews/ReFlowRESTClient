@@ -2,6 +2,7 @@ import Tkinter
 import ttk
 import tkMessageBox
 import tkFileDialog
+import tkFont
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 import json
@@ -46,12 +47,23 @@ PAD_MEDIUM = 6
 PAD_LARGE = 12
 PAD_EXTRA_LARGE = 15
 
+# Headers for the upload queue tree view
+QUEUE_HEADERS = [
+    'File',
+    'Project',
+    'Subject',
+    'Visit',
+    'Specimen',
+    'Stimulation',
+    'Site Panel'
+]
 
 class ChosenFile(object):
     def __init__(self, f):
         self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
+        self.project = None
         self.subject = None
         self.visit = None
         self.specimen = None
@@ -605,19 +617,8 @@ class Application(Tkinter.Frame):
             pady=PAD_MEDIUM)
 
         # using a Treeview to mimic a table, no table in Tkinter/ttk
-
-        # first the header text
-        queue_headers = [
-            'File',
-            'Project',
-            'Subject',
-            'Visit',
-            'Specimen',
-            'Stimulation',
-            'Site Panel'
-        ]
         self.queue_tree = ttk.Treeview(
-            columns=queue_headers,
+            columns=QUEUE_HEADERS,
             show="headings")
         queue_vertical_scroll_bar = ttk.Scrollbar(
             orient="vertical",
@@ -636,7 +637,7 @@ class Application(Tkinter.Frame):
             in_=upload_queue_frame)
         upload_queue_frame.grid_columnconfigure(0, weight=1)
         upload_queue_frame.grid_rowconfigure(0, weight=1)
-        for header in queue_headers:
+        for header in QUEUE_HEADERS:
             self.queue_tree.heading(header, text=header.title())
             self.queue_tree.column(header, width=25)
 
@@ -898,9 +899,37 @@ class Application(Tkinter.Frame):
         for k, v in self.file_list_canvas.children.items():
             if isinstance(v, MyCheckbutton):
                 if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
-                    print self.file_dict[v['text']]
+                    # populate the ChosenFile attributes
+                    chosen_file = self.file_dict[v['text']]
+                    chosen_file.project = self.project_selection.get()
+                    chosen_file.subject = self.subject_selection.get()
+                    chosen_file.visit = self.visit_selection.get()
+                    chosen_file.specimen = self.specimen_selection.get()
+                    chosen_file.stimulation = self.stimulation_selection.get()
+                    chosen_file.site_panel = self.site_panel_selection.get()
+
+                    # Populate our tree item,
+                    item = list()
+                    item.append(chosen_file.file_name)
+                    item.append(chosen_file.project)
+                    item.append(chosen_file.subject)
+                    item.append(chosen_file.visit)
+                    item.append(chosen_file.specimen)
+                    item.append(chosen_file.stimulation)
+                    item.append(chosen_file.site_panel)
+
+                    # add item to the tree, and auto set the column widths
+                    self.queue_tree.insert('', 'end', values=item)
+                    for i, value in enumerate(item):
+                        col_width = tkFont.Font().measure(value)
+                        header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
+                        # don't make the column smaller than the header text
+                        if header_width > col_width:
+                            col_width = header_width
+                        self.queue_tree.column(QUEUE_HEADERS[i], width=col_width+10)
+
+                    # finally, disable our checkboxes
                     v.config(state=Tkinter.DISABLED)
-        # TODO: implement this after creating the upload queue frame/widgets
 
     def set_log_text_styles(self):
         self.upload_log_text.tag_config(
