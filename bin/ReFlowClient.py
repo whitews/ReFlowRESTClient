@@ -629,7 +629,7 @@ class Application(Tkinter.Frame):
             yscrollcommand=file_scroll_bar.set,
             relief='flat',
             borderwidth=0)
-        self.file_list_canvas.bind_all('<MouseWheel>', self._on_mousewheel)
+        self.file_list_canvas.bind('<MouseWheel>', self._on_mousewheel)
         file_scroll_bar.config(command=self.file_list_canvas.yview)
         file_scroll_bar.pack(side='right', fill='y')
         self.file_list_canvas.pack(
@@ -645,7 +645,7 @@ class Application(Tkinter.Frame):
             anchor='n')
 
     def _on_mousewheel(self, event):
-        self.file_list_canvas.yview_scroll(event.delta, "units")
+        self.file_list_canvas.yview_scroll(-event.delta, "units")
 
     def clear_selected_files(self):
         for k, v in self.file_list_canvas.children.items():
@@ -675,6 +675,10 @@ class Application(Tkinter.Frame):
                 self.file_list_canvas,
                 text=chosen_file.file_name
             )
+
+            # tkinter so funky, have to bind to our canvas mouse function
+            # to keep scrolling working when the mouse is over a checkbox
+            cb.bind('<MouseWheel>', self._on_mousewheel)
             self.file_list_canvas.create_window(
                 10,
                 (20 * i),
