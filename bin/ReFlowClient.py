@@ -58,17 +58,30 @@ QUEUE_HEADERS = [
     'Site Panel'
 ]
 
+
 class ChosenFile(object):
     def __init__(self, f):
         self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
+
         self.project = None
+        self.project_pk = None
+
         self.subject = None
+        self.subject_pk = None
+
         self.visit = None
+        self.visit_pk = None
+
         self.specimen = None
+        self.specimen_pk = None
+
         self.stimulation = None
+        self.stimulation_pk = None
+
         self.site_panel = None
+        self.site_panel_pk = None
 
 
 class MyCheckbutton(Tkinter.Checkbutton):
@@ -85,7 +98,14 @@ class MyCheckbutton(Tkinter.Checkbutton):
 
 
 class Application(Tkinter.Frame):
+
     def __init__(self, master):
+
+        style = ttk.Style()
+        style.configure(
+            'Treeview',
+            borderwidth=1,
+            font=('TkDefaultFont', 12, 'normal'))
 
         self.host = None
         self.username = None
@@ -145,14 +165,14 @@ class Application(Tkinter.Frame):
         Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=954, height=580)
+        self.master.minsize(width=960, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.menu_bar = Tkinter.Menu(master)
         self.master.config(menu=self.menu_bar)
 
+        self.upload_button = None
         self.queue_tree = None
-        self.upload_log_text = None
         self.upload_progress_bar = None
         self.add_to_queue_button = None
         self.file_list_canvas = None
@@ -608,7 +628,7 @@ class Application(Tkinter.Frame):
             expand=True,
             anchor='n')
 
-        # session log text box
+        # start upload queue stuff
         upload_queue_frame = Tkinter.LabelFrame(
             bottom_frame,
             bg=BACKGROUND_COLOR,
@@ -616,27 +636,40 @@ class Application(Tkinter.Frame):
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
+        upload_queue_button_frame = Tkinter.Frame(
+            upload_queue_frame,
+            bg=BACKGROUND_COLOR)
+        self.upload_button = ttk.Button(
+            upload_queue_button_frame,
+            text='Upload',
+            command=self.upload_files)
+        self.upload_button.pack(side='left', expand=False)
+        upload_queue_button_frame.pack(
+            fill='x',
+            expand=False,
+            anchor='n',
+            padx=0,
+            pady=PAD_SMALL)
+
         # using a Treeview to mimic a table, no table in Tkinter/ttk
         self.queue_tree = ttk.Treeview(
+            upload_queue_frame,
             columns=QUEUE_HEADERS,
             show="headings")
         queue_vertical_scroll_bar = ttk.Scrollbar(
+            upload_queue_frame,
             orient="vertical",
             command=self.queue_tree.yview)
-        self.queue_tree.configure(
+        self.queue_tree.config(
             yscrollcommand=queue_vertical_scroll_bar.set)
-        self.queue_tree.grid(
-            column=0,
-            row=0,
-            sticky='nsew',
-            in_=upload_queue_frame)
-        queue_vertical_scroll_bar.grid(
-            column=1,
-            row=0,
-            sticky='ns',
-            in_=upload_queue_frame)
-        upload_queue_frame.grid_columnconfigure(0, weight=1)
-        upload_queue_frame.grid_rowconfigure(0, weight=1)
+        self.queue_tree.pack(
+            side='left',
+            fill='both',
+            expand=True,
+            anchor='w')
+        queue_vertical_scroll_bar.pack(
+            side='right',
+            fill='y')
         for header in QUEUE_HEADERS:
             self.queue_tree.heading(header, text=header.title())
             self.queue_tree.column(header, width=25)
@@ -644,11 +677,10 @@ class Application(Tkinter.Frame):
         upload_queue_frame.pack(
             fill='both',
             expand=True,
-            anchor='s',
             padx=PAD_MEDIUM,
             pady=0)
 
-        # upload button, upload progress bar
+        # Progress bar
         progress_frame = Tkinter.Frame(bottom_frame, bg=BACKGROUND_COLOR)
         self.upload_progress_bar = ttk.Progressbar(progress_frame)
         self.upload_progress_bar.pack(side='bottom', fill='x', expand=True)
@@ -900,62 +932,109 @@ class Application(Tkinter.Frame):
             if isinstance(v, MyCheckbutton):
                 if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
                     # populate the ChosenFile attributes
-                    chosen_file = self.file_dict[v['text']]
-                    chosen_file.project = self.project_selection.get()
-                    chosen_file.subject = self.subject_selection.get()
-                    chosen_file.visit = self.visit_selection.get()
-                    chosen_file.specimen = self.specimen_selection.get()
-                    chosen_file.stimulation = self.stimulation_selection.get()
-                    chosen_file.site_panel = self.site_panel_selection.get()
+                    c_file = self.file_dict[v['text']]
+
+                    c_file.project = self.project_selection.get()
+                    c_file.project_pk = self.project_dict[c_file.project]
+
+                    c_file.subject = self.subject_selection.get()
+                    c_file.subject_pk = self.subject_dict[c_file.subject]
+
+                    c_file.visit = self.visit_selection.get()
+                    c_file.visit_pk = self.visit_dict[c_file.visit]
+
+                    c_file.specimen = self.specimen_selection.get()
+                    c_file.specimen_pk = self.specimen_dict[c_file.specimen]
+
+                    c_file.stimulation = self.stimulation_selection.get()
+                    c_file.stimulation_pk = self.stimulation_dict[c_file.stimulation]
+
+                    c_file.site_panel = self.site_panel_selection.get()
+                    c_file.site_panel_pk = self.site_panel_dict[c_file.site_panel]
 
                     # Populate our tree item,
                     item = list()
-                    item.append(chosen_file.file_name)
-                    item.append(chosen_file.project)
-                    item.append(chosen_file.subject)
-                    item.append(chosen_file.visit)
-                    item.append(chosen_file.specimen)
-                    item.append(chosen_file.stimulation)
-                    item.append(chosen_file.site_panel)
+                    item.append(c_file.file_name)
+                    item.append(c_file.project)
+                    item.append(c_file.subject)
+                    item.append(c_file.visit)
+                    item.append(c_file.specimen)
+                    item.append(c_file.stimulation)
+                    item.append(c_file.site_panel)
 
-                    # add item to the tree, and auto set the column widths
+                    # add item to the tree
                     self.queue_tree.insert('', 'end', values=item)
+
+                    # auto set the column widths
+                    total_width = 0
+                    col_widths = []
                     for i, value in enumerate(item):
-                        col_width = tkFont.Font().measure(value)
+                        col_widths.append(tkFont.Font().measure(value))
                         header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
                         # don't make the column smaller than the header text
-                        if header_width > col_width:
-                            col_width = header_width
-                        self.queue_tree.column(QUEUE_HEADERS[i], width=col_width+10)
+                        if header_width > col_widths[i]:
+                            col_widths[i] = header_width
+                        total_width += col_widths[i]
+
+                    # get the tree's width
+                    tree_width = self.queue_tree.winfo_width()
+                    extra = 0
+                    if tree_width > total_width:
+                        extra = int(
+                            (tree_width - total_width)/len(col_widths))
+
+                    # apply our auto-generated column widths
+                    for i, value in enumerate(item):
+                        self.queue_tree.column(
+                            QUEUE_HEADERS[i],
+                            width=col_widths[i]+extra)
 
                     # finally, disable our checkboxes
                     v.config(state=Tkinter.DISABLED)
 
-    def set_log_text_styles(self):
-        self.upload_log_text.tag_config(
-            'error',
-            foreground=ERROR_FOREGROUND_COLOR)
-
     def upload_files(self):
-        # TODO: get list of files to upload from the upload queue
-        upload_file_list = None
-        self.upload_progress_bar.config(maximum=len(upload_file_list))
+        # get list of files to upload from the upload queue
+        tree_items = self.queue_tree.get_children()
+        file_names = []
 
-        for f in self.file_dict:
+        # the items are the tree rows
+        for item in tree_items:
+            # the row's values are in the order we created them in
+            # the file name is the first value
+            file_names.append(
+                self.queue_tree.item(item)['values'][0])
+
+        self.upload_progress_bar.config(maximum=len(file_names))
+
+        for name in file_names:
+            try:
+                chosen_file = self.file_dict[name]
+            except Exception, e:
+                print e
+
+            if not chosen_file.project or \
+                    not chosen_file.subject_pk or \
+                    not chosen_file.site_panel_pk or \
+                    not chosen_file.specimen_pk or \
+                    not chosen_file.file_path or \
+                    not chosen_file.stimulation_pk or \
+                    not chosen_file.visit_pk:
+                break
+
             response_dict = rest.post_sample(
                 self.host,
                 self.token,
-                f.name,
-                subject_pk=str(f.subject),
-                site_panel_pk=str(f.site_panel),
-                visit_type_pk=str(f.visit),
-                specimen_pk=str(f.specimen),
-                stimulation_pk=str(f.stimulation)
+                chosen_file.file_path,
+                subject_pk=str(chosen_file.subject_pk),
+                site_panel_pk=str(chosen_file.site_panel_pk),
+                visit_type_pk=str(chosen_file.visit_pk),
+                specimen_pk=str(chosen_file.specimen_pk),
+                stimulation_pk=str(chosen_file.stimulation_pk)
             )
 
             log_text = ''.join(
                 [
-                    f.name,
+                    chosen_file.file_name,
                     ' (',
                     str(response_dict['status']),
                     ': ',
@@ -965,7 +1044,8 @@ class Application(Tkinter.Frame):
                     '\n'
                 ]
             )
-            self.upload_log_text.config(state='normal')
+
+            print log_text
 
             # TODO: update to color the queue row on success or failure
             if response_dict['status'] == 201:
@@ -973,14 +1053,13 @@ class Application(Tkinter.Frame):
                 #    i,
                 #    fg=SUCCESS_FOREGROUND_COLOR,
                 #    selectforeground=SUCCESS_FOREGROUND_COLOR)
-                self.upload_log_text.insert('end', log_text)
+                print "success"
             elif response_dict['status'] == 400:
                 #self.file_list_canvas.itemconfig(
                 #    i,
                 #    fg=ERROR_FOREGROUND_COLOR,
                 #    selectforeground=ERROR_FOREGROUND_COLOR)
-                self.upload_log_text.insert('end', log_text, 'error')
-            self.upload_log_text.config(state='disabled')
+                print "failure"
 
             self.upload_progress_bar.step()
             self.upload_progress_bar.update()
