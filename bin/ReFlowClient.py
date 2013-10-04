@@ -629,6 +629,7 @@ class Application(Tkinter.Frame):
             yscrollcommand=file_scroll_bar.set,
             relief='flat',
             borderwidth=0)
+        self.file_list_canvas.bind_all('<MouseWheel>', self._on_mousewheel)
         file_scroll_bar.config(command=self.file_list_canvas.yview)
         file_scroll_bar.pack(side='right', fill='y')
         self.file_list_canvas.pack(
@@ -642,6 +643,9 @@ class Application(Tkinter.Frame):
             fill='both',
             expand=True,
             anchor='n')
+
+    def _on_mousewheel(self, event):
+        self.file_list_canvas.yview_scroll(event.delta, "units")
 
     def clear_selected_files(self):
         for k, v in self.file_list_canvas.children.items():
