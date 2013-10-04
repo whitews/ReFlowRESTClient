@@ -73,7 +73,6 @@ class MyCheckbutton(Tkinter.Checkbutton):
 
 
 class Application(Tkinter.Frame):
-
     def __init__(self, master):
 
         self.host = None
@@ -92,8 +91,8 @@ class Application(Tkinter.Frame):
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
 
-        self.file_list = list()  # list of ChosenFile objects
-
+        # dict of ChosenFile objects, key is file name, value is ChosenFile
+        self.file_dict = dict()
         self.project_menu = None
         self.project_selection = Tkinter.StringVar()
         self.project_selection.trace("w", self.update_metadata)
@@ -140,6 +139,7 @@ class Application(Tkinter.Frame):
         self.menu_bar = Tkinter.Menu(master)
         self.master.config(menu=self.menu_bar)
 
+        self.queue_tree = None
         self.upload_log_text = None
         self.upload_progress_bar = None
         self.add_to_queue_button = None
@@ -521,54 +521,6 @@ class Application(Tkinter.Frame):
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
-        # session log text box
-        log_frame = Tkinter.LabelFrame(
-            bottom_frame,
-            bg=BACKGROUND_COLOR,
-            text='Upload Queue')
-        log_vertical_scroll_bar = Tkinter.Scrollbar(
-            log_frame,
-            orient='vertical')
-        log_horizontal_scroll_bar = Tkinter.Scrollbar(
-            log_frame,
-            orient='horizontal')
-        self.upload_log_text = Tkinter.Text(
-            log_frame,
-            xscrollcommand=log_horizontal_scroll_bar.set,
-            yscrollcommand=log_vertical_scroll_bar.set,
-            height=14,
-            borderwidth=0,
-            highlightthickness=0,
-            highlightbackground=BORDER_COLOR,
-            background=BACKGROUND_COLOR,
-            takefocus=False,
-            state='disabled')
-        log_vertical_scroll_bar.config(
-            command=self.upload_log_text.yview)
-        log_horizontal_scroll_bar.config(
-            command=self.upload_log_text.xview)
-        log_vertical_scroll_bar.pack(side='right', fill='y')
-        log_horizontal_scroll_bar.pack(side='bottom', fill='x')
-        self.set_log_text_styles()
-        self.upload_log_text.pack(fill='both', expand=True)
-        log_frame.pack(
-            fill='both',
-            expand=True,
-            anchor='s',
-            padx=PAD_MEDIUM,
-            pady=0)
-
-        # upload button, upload progress bar
-        progress_frame = Tkinter.Frame(bottom_frame, bg=BACKGROUND_COLOR)
-        self.upload_progress_bar = ttk.Progressbar(progress_frame)
-        self.upload_progress_bar.pack(side='bottom', fill='x', expand=True)
-        progress_frame.pack(
-            fill='x',
-            expand=False,
-            anchor='s',
-            padx=PAD_MEDIUM,
-            pady=PAD_SMALL)
-
         file_upload_frame = Tkinter.Frame(
             right_frame,
             bg=BACKGROUND_COLOR)
@@ -644,13 +596,75 @@ class Application(Tkinter.Frame):
             expand=True,
             anchor='n')
 
+        # session log text box
+        upload_queue_frame = Tkinter.LabelFrame(
+            bottom_frame,
+            bg=BACKGROUND_COLOR,
+            text='Upload Queue',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+
+        # using a Treeview to mimic a table, no table in Tkinter/ttk
+
+        # first the header text
+        queue_headers = [
+            'File',
+            'Project',
+            'Subject',
+            'Visit',
+            'Specimen',
+            'Stimulation',
+            'Site Panel'
+        ]
+        self.queue_tree = ttk.Treeview(
+            columns=queue_headers,
+            show="headings")
+        queue_vertical_scroll_bar = ttk.Scrollbar(
+            orient="vertical",
+            command=self.queue_tree.yview)
+        self.queue_tree.configure(
+            yscrollcommand=queue_vertical_scroll_bar.set)
+        self.queue_tree.grid(
+            column=0,
+            row=0,
+            sticky='nsew',
+            in_=upload_queue_frame)
+        queue_vertical_scroll_bar.grid(
+            column=1,
+            row=0,
+            sticky='ns',
+            in_=upload_queue_frame)
+        upload_queue_frame.grid_columnconfigure(0, weight=1)
+        upload_queue_frame.grid_rowconfigure(0, weight=1)
+        for header in queue_headers:
+            self.queue_tree.heading(header, text=header.title())
+            self.queue_tree.column(header, width=25)
+
+        upload_queue_frame.pack(
+            fill='both',
+            expand=True,
+            anchor='s',
+            padx=PAD_MEDIUM,
+            pady=0)
+
+        # upload button, upload progress bar
+        progress_frame = Tkinter.Frame(bottom_frame, bg=BACKGROUND_COLOR)
+        self.upload_progress_bar = ttk.Progressbar(progress_frame)
+        self.upload_progress_bar.pack(side='bottom', fill='x', expand=True)
+        progress_frame.pack(
+            fill='x',
+            expand=False,
+            anchor='s',
+            padx=PAD_MEDIUM,
+            pady=PAD_SMALL)
+
     def _on_mousewheel(self, event):
         self.file_list_canvas.yview_scroll(-event.delta, "units")
 
     def clear_selected_files(self):
         for k, v in self.file_list_canvas.children.items():
             if isinstance(v, MyCheckbutton):
-                if v.is_checked():
+                if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
                     v.destroy()
 
         self.update_add_to_queue_button_state()
@@ -663,14 +677,14 @@ class Application(Tkinter.Frame):
 
     def choose_files(self):
         selected_files = tkFileDialog.askopenfiles('r')
-        sorted_file_list = list()
 
         # clear the canvas
         self.file_list_canvas.delete(Tkinter.ALL)
         for i, f in enumerate(selected_files):
-            sorted_file_list.append(f.name)
             chosen_file = ChosenFile(f)
-            self.file_list.append(chosen_file)
+
+            self.file_dict[chosen_file.file_name] = chosen_file
+
             cb = MyCheckbutton(
                 self.file_list_canvas,
                 text=chosen_file.file_name
@@ -689,8 +703,6 @@ class Application(Tkinter.Frame):
         # update scroll region
         self.file_list_canvas.config(
             scrollregion=(0, 0, 1000, len(selected_files)*20))
-
-        sorted_file_list.sort()
 
         self.update_add_to_queue_button_state()
 
@@ -870,7 +882,9 @@ class Application(Tkinter.Frame):
         if not self.site_selection.get() or \
                 not self.subject_selection.get() or \
                 not self.visit_selection.get() or \
-                not self.specimen_selection.get():
+                not self.specimen_selection.get() or \
+                not self.stimulation_selection.get() or \
+                not self.site_panel_selection.get():
             active = False
         if len(self.file_list_canvas.children) == 0:
             active = False
@@ -881,7 +895,11 @@ class Application(Tkinter.Frame):
             self.add_to_queue_button.config(state='disabled')
 
     def add_to_upload_queue(self):
-        pass
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
+                    print self.file_dict[v['text']]
+                    v.config(state=Tkinter.DISABLED)
         # TODO: implement this after creating the upload queue frame/widgets
 
     def set_log_text_styles(self):
@@ -894,7 +912,7 @@ class Application(Tkinter.Frame):
         upload_file_list = None
         self.upload_progress_bar.config(maximum=len(upload_file_list))
 
-        for f in self.file_list:
+        for f in self.file_dict:
             response_dict = rest.post_sample(
                 self.host,
                 self.token,
