@@ -134,7 +134,7 @@ class Application(Tkinter.Frame):
         Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=954, height=640)
+        self.master.minsize(width=954, height=580)
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.menu_bar = Tkinter.Menu(master)
@@ -266,7 +266,7 @@ class Application(Tkinter.Frame):
         bottom_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
         bottom_frame.pack(
             fill='both',
-            expand=False,
+            expand=True,
             anchor='n',
             padx=0,
             pady=0)
@@ -293,9 +293,11 @@ class Application(Tkinter.Frame):
         project_chooser_label = Tkinter.Label(
             project_chooser_label_frame,
             text='Project:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         project_chooser_label.pack(side='left')
-        project_chooser_label_frame.pack(fill='x')
+        project_chooser_label_frame.pack(side='left', fill='x')
 
         # project chooser listbox frame (bottom of project chooser frame)
         project_chooser_frame = Tkinter.Frame(
@@ -323,9 +325,11 @@ class Application(Tkinter.Frame):
         site_chooser_label = Tkinter.Label(
             site_chooser_label_frame,
             text='Site:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         site_chooser_label.pack(side='left')
-        site_chooser_label_frame.pack(fill='x')
+        site_chooser_label_frame.pack(side='left', fill='x')
 
         # site chooser listbox frame (bottom of site chooser frame)
         site_chooser_frame = Tkinter.Frame(
@@ -351,9 +355,11 @@ class Application(Tkinter.Frame):
         subject_chooser_label = Tkinter.Label(
             subject_chooser_label_frame,
             text='Subject:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         subject_chooser_label.pack(side='left')
-        subject_chooser_label_frame.pack(fill='x')
+        subject_chooser_label_frame.pack(side='left', fill='x')
 
         # subject chooser listbox frame (bottom of subject chooser frame)
         subject_chooser_frame = Tkinter.Frame(
@@ -379,9 +385,11 @@ class Application(Tkinter.Frame):
         visit_chooser_label = Tkinter.Label(
             visit_chooser_label_frame,
             text='Visit:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         visit_chooser_label.pack(side='left')
-        visit_chooser_label_frame.pack(fill='x')
+        visit_chooser_label_frame.pack(side='left', fill='x')
 
         # visit chooser listbox frame (bottom of visit chooser frame)
         visit_chooser_frame = Tkinter.Frame(visit_frame, bg=BACKGROUND_COLOR)
@@ -407,9 +415,11 @@ class Application(Tkinter.Frame):
         specimen_chooser_label = Tkinter.Label(
             specimen_chooser_label_frame,
             text='Specimen:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         specimen_chooser_label.pack(side='left')
-        specimen_chooser_label_frame.pack(fill='x')
+        specimen_chooser_label_frame.pack(side='left', fill='x')
 
         # specimen chooser listbox frame (bottom of specimen chooser frame)
         specimen_chooser_frame = Tkinter.Frame(
@@ -437,9 +447,11 @@ class Application(Tkinter.Frame):
         stimulation_chooser_label = Tkinter.Label(
             stimulation_chooser_label_frame,
             text='Stimulation:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         stimulation_chooser_label.pack(side='left')
-        stimulation_chooser_label_frame.pack(fill='x')
+        stimulation_chooser_label_frame.pack(side='left', fill='x')
 
         # stimulation chooser listbox frame
         # (bottom of stimulation chooser frame)
@@ -468,9 +480,11 @@ class Application(Tkinter.Frame):
         site_panel_chooser_label = Tkinter.Label(
             site_panel_chooser_label_frame,
             text='Site Panel:',
-            bg=BACKGROUND_COLOR)
+            bg=BACKGROUND_COLOR,
+            width=10,
+            anchor=Tkinter.E)
         site_panel_chooser_label.pack(side='left')
-        site_panel_chooser_label_frame.pack(fill='x')
+        site_panel_chooser_label_frame.pack(side='left', fill='x')
 
         # site_panel chooser listbox frame
         # (bottom of site_panel chooser frame)
@@ -522,7 +536,7 @@ class Application(Tkinter.Frame):
             log_frame,
             xscrollcommand=log_horizontal_scroll_bar.set,
             yscrollcommand=log_vertical_scroll_bar.set,
-            height=10,
+            height=14,
             borderwidth=0,
             highlightthickness=0,
             highlightbackground=BORDER_COLOR,
@@ -539,7 +553,7 @@ class Application(Tkinter.Frame):
         self.upload_log_text.pack(fill='both', expand=True)
         log_frame.pack(
             fill='both',
-            expand=False,
+            expand=True,
             anchor='s',
             padx=PAD_MEDIUM,
             pady=0)
@@ -563,9 +577,7 @@ class Application(Tkinter.Frame):
             fill='both',
             expand=True,
             anchor='n',
-            side='right',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
+            side='right')
 
         # action buttons along the top of the window
         file_chooser_frame = Tkinter.Frame(
@@ -577,7 +589,7 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         file_chooser_button = ttk.Button(
             file_chooser_button_frame,
-            text='Choose FCS Files...',
+            text='Choose Files...',
             command=self.choose_files)
         file_clear_selection_button = ttk.Button(
             file_chooser_button_frame,
@@ -589,7 +601,7 @@ class Application(Tkinter.Frame):
             command=self.select_all_files)
         self.add_to_queue_button = ttk.Button(
             file_chooser_button_frame,
-            text='Add to Upload Queue',
+            text='Add to Queue',
             state='disabled',
             style='Inactive.TButton',
             command=self.add_to_upload_queue)
@@ -601,7 +613,7 @@ class Application(Tkinter.Frame):
             anchor='n',
             fill='x',
             expand=False,
-            pady=PAD_SMALL)
+        )
 
         file_list_frame = Tkinter.Frame(
             file_chooser_frame,
