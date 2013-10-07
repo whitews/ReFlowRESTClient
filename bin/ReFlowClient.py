@@ -56,6 +56,7 @@ QUEUE_HEADERS = [
     'Specimen',
     'Stimulation',
     'Site Panel',
+    'Compensation',
     'Status'
 ]
 
@@ -85,6 +86,9 @@ class ChosenFile(object):
 
         self.site_panel = None
         self.site_panel_pk = None
+
+        self.compensation = None
+        self.compensation_pk = None
 
 
 class MyCheckbutton(Tkinter.Checkbutton):
@@ -125,6 +129,7 @@ class Application(Tkinter.Frame):
         self.site_panel_dict = dict()
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
+        self.compensation_dict = dict()
 
         # dict of ChosenFile objects, key is file name, value is ChosenFile
         self.file_dict = dict()
@@ -134,7 +139,7 @@ class Application(Tkinter.Frame):
 
         self.site_menu = None
         self.site_selection = Tkinter.StringVar()
-        self.site_selection.trace("w", self.load_site_panels)
+        self.site_selection.trace("w", self.load_site_metadata)
 
         self.subject_menu = None
         self.subject_selection = Tkinter.StringVar()
@@ -163,6 +168,9 @@ class Application(Tkinter.Frame):
         self.site_panel_selection.trace(
             "w",
             self.update_add_to_queue_button_state)
+
+        self.compensation_menu = None
+        self.compensation_selection = Tkinter.StringVar()
 
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
@@ -310,11 +318,6 @@ class Application(Tkinter.Frame):
         metadata_frame = Tkinter.Frame(
             top_frame,
             bg=BACKGROUND_COLOR)
-        # Start metadata choices, including:
-        #    - project
-        #    - site
-        #    - subject
-        #    - visit
 
         # overall project frame (on bottom left of main window)
         project_frame = Tkinter.Frame(
@@ -329,7 +332,7 @@ class Application(Tkinter.Frame):
             project_chooser_label_frame,
             text='Project:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         project_chooser_label.pack(side='left')
         project_chooser_label_frame.pack(side='left', fill='x')
@@ -361,7 +364,7 @@ class Application(Tkinter.Frame):
             site_chooser_label_frame,
             text='Site:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         site_chooser_label.pack(side='left')
         site_chooser_label_frame.pack(side='left', fill='x')
@@ -391,7 +394,7 @@ class Application(Tkinter.Frame):
             subject_chooser_label_frame,
             text='Subject:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         subject_chooser_label.pack(side='left')
         subject_chooser_label_frame.pack(side='left', fill='x')
@@ -421,7 +424,7 @@ class Application(Tkinter.Frame):
             visit_chooser_label_frame,
             text='Visit:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         visit_chooser_label.pack(side='left')
         visit_chooser_label_frame.pack(side='left', fill='x')
@@ -451,7 +454,7 @@ class Application(Tkinter.Frame):
             specimen_chooser_label_frame,
             text='Specimen:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         specimen_chooser_label.pack(side='left')
         specimen_chooser_label_frame.pack(side='left', fill='x')
@@ -483,7 +486,7 @@ class Application(Tkinter.Frame):
             stimulation_chooser_label_frame,
             text='Stimulation:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         stimulation_chooser_label.pack(side='left')
         stimulation_chooser_label_frame.pack(side='left', fill='x')
@@ -516,7 +519,7 @@ class Application(Tkinter.Frame):
             site_panel_chooser_label_frame,
             text='Site Panel:',
             bg=BACKGROUND_COLOR,
-            width=10,
+            width=12,
             anchor=Tkinter.E)
         site_panel_chooser_label.pack(side='left')
         site_panel_chooser_label_frame.pack(side='left', fill='x')
@@ -536,6 +539,39 @@ class Application(Tkinter.Frame):
 
         site_panel_frame.pack(side='top', fill='x', expand=True)
 
+        # overall compensation frame
+        compensation_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # compensation label frame (top of compensation chooser frame)
+        compensation_chooser_label_frame = Tkinter.Frame(
+            compensation_frame,
+            bg=BACKGROUND_COLOR)
+        compensation_chooser_label = Tkinter.Label(
+            compensation_chooser_label_frame,
+            text='Compensation:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        compensation_chooser_label.pack(side='left')
+        compensation_chooser_label_frame.pack(side='left', fill='x')
+
+        # compensation chooser listbox frame
+        # (bottom of compensation chooser frame)
+        compensation_chooser_frame = Tkinter.Frame(
+            compensation_frame,
+            bg=BACKGROUND_COLOR)
+        self.compensation_menu = Tkinter.OptionMenu(
+            compensation_chooser_frame,
+            self.compensation_selection,
+            '')
+        self.compensation_menu.config(bg=BACKGROUND_COLOR)
+        self.compensation_menu.pack(fill='x', expand=True)
+        compensation_chooser_frame.pack(fill='x', expand=True)
+
+        compensation_frame.pack(side='top', fill='x', expand=True)
+
         self.load_user_projects()
         self.load_specimens()
 
@@ -547,28 +583,9 @@ class Application(Tkinter.Frame):
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
-        right_frame = Tkinter.Frame(top_frame, bg=BACKGROUND_COLOR)
-        right_frame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
-
-        file_upload_frame = Tkinter.Frame(
-            right_frame,
-            bg=BACKGROUND_COLOR)
-
-        file_upload_frame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right')
-
-        # action buttons along the top of the window
+        # start file chooser widgets
         file_chooser_frame = Tkinter.Frame(
-            file_upload_frame,
+            top_frame,
             bg=BACKGROUND_COLOR)
 
         file_chooser_button_frame = Tkinter.Frame(
@@ -629,7 +646,10 @@ class Application(Tkinter.Frame):
         file_chooser_frame.pack(
             fill='both',
             expand=True,
-            anchor='n')
+            anchor='n',
+            side='right',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
         # start upload queue stuff
         upload_queue_frame = Tkinter.LabelFrame(
@@ -756,6 +776,12 @@ class Application(Tkinter.Frame):
         self.site_menu['menu'].delete(0, 'end')
         self.subject_menu['menu'].delete(0, 'end')
         self.visit_menu['menu'].delete(0, 'end')
+        self.stimulation_menu['menu'].delete(0, 'end')
+        self.site_panel_menu['menu'].delete(0, 'end')
+        self.compensation_menu['menu'].delete(0, 'end')
+
+        # TODO: clear the dictionaries here as well???
+
         for result in response['data']['results']:
             self.project_dict[result['project_name']] = result['id']
         for project_name in sorted(self.project_dict.keys()):
@@ -779,6 +805,9 @@ class Application(Tkinter.Frame):
 
         self.site_menu['menu'].delete(0, 'end')
         self.site_dict.clear()
+
+        # TODO: should clear site_panel and compensation menus/dictionaries???
+
         for result in response['data']['results']:
             self.site_dict[result['site_name']] = result['id']
         for site_name in sorted(self.site_dict.keys()):
@@ -874,23 +903,24 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
-    def load_site_panels(self, *args, **kwargs):
+    def load_site_metadata(self, *args, **kwargs):
         if not self.site_selection:
             return
         site_pk = self.site_dict[self.site_selection.get()]
-        panel_args = [self.host, self.token]
-        panel_kwargs = {'site_pk': site_pk}
+        rest_args = [self.host, self.token]
+        rest_kwargs = {'site_pk': site_pk}
         try:
-            response = rest.get_site_panels(*panel_args, **panel_kwargs)
+            response = rest.get_site_panels(*rest_args, **rest_kwargs)
         except Exception, e:
             print e
             return
 
+        self.site_panel_menu['menu'].delete(0, 'end')
+        self.site_panel_dict.clear()
+
         if not 'results' in response['data']:
             return
 
-        self.site_panel_menu['menu'].delete(0, 'end')
-        self.site_panel_dict.clear()
         for result in response['data']['results']:
             self.site_panel_dict[result['name']] = result['id']
         for panel_name in sorted(self.site_panel_dict.keys()):
@@ -898,6 +928,26 @@ class Application(Tkinter.Frame):
                 label=panel_name,
                 command=lambda value=panel_name:
                 self.site_panel_selection.set(value))
+
+        try:
+            response = rest.get_compensations(*rest_args, **rest_kwargs)
+        except Exception, e:
+            print e
+            return
+
+        self.compensation_menu['menu'].delete(0, 'end')
+        self.compensation_dict.clear()
+
+        if not 'results' in response['data']:
+            return
+
+        for result in response['data']['results']:
+            self.compensation_dict[result['original_filename']] = result['id']
+        for comp_filename in sorted(self.compensation_dict.keys()):
+            self.compensation_menu['menu'].add_command(
+                label=comp_filename,
+                command=lambda value=comp_filename:
+                self.compensation_selection.set(value))
 
     def update_metadata(*args):
         self = args[0]
@@ -950,10 +1000,16 @@ class Application(Tkinter.Frame):
                     c_file.specimen_pk = self.specimen_dict[c_file.specimen]
 
                     c_file.stimulation = self.stimulation_selection.get()
-                    c_file.stimulation_pk = self.stimulation_dict[c_file.stimulation]
+                    c_file.stimulation_pk = \
+                        self.stimulation_dict[c_file.stimulation]
 
                     c_file.site_panel = self.site_panel_selection.get()
-                    c_file.site_panel_pk = self.site_panel_dict[c_file.site_panel]
+                    c_file.site_panel_pk = \
+                        self.site_panel_dict[c_file.site_panel]
+
+                    c_file.compensation = self.compensation_selection.get()
+                    c_file.compensation_pk = \
+                        self.compensation_dict[c_file.compensation]
 
                     # Populate our tree item,
                     item = list()
@@ -964,6 +1020,7 @@ class Application(Tkinter.Frame):
                     item.append(c_file.specimen)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
+                    item.append(c_file.compensation)
                     item.append(c_file.status)
 
                     # add item to the tree
@@ -1025,15 +1082,26 @@ class Application(Tkinter.Frame):
                     not chosen_file.visit_pk:
                 break
 
-            response_dict = rest.post_sample(
+            rest_args = [
                 self.host,
                 self.token,
-                chosen_file.file_path,
-                subject_pk=str(chosen_file.subject_pk),
-                site_panel_pk=str(chosen_file.site_panel_pk),
-                visit_type_pk=str(chosen_file.visit_pk),
-                specimen_pk=str(chosen_file.specimen_pk),
-                stimulation_pk=str(chosen_file.stimulation_pk)
+                chosen_file.file_path
+            ]
+            rest_kwargs = {
+                'subject_pk': str(chosen_file.subject_pk),
+                'site_panel_pk': str(chosen_file.site_panel_pk),
+                'visit_type_pk': str(chosen_file.visit_pk),
+                'specimen_pk': str(chosen_file.specimen_pk),
+                'stimulation_pk': str(chosen_file.stimulation_pk)
+            }
+
+            if chosen_file.compensation_pk:
+                rest_kwargs['compensation_pk'] = \
+                    str(chosen_file.compensation_pk)
+
+            response_dict = rest.post_sample(
+                *rest_args,
+                **rest_kwargs
             )
 
             log_text = ''.join(
