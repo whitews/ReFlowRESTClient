@@ -1039,10 +1039,22 @@ class Application(Tkinter.Frame):
 
                     # get the tree's width
                     tree_width = self.queue_tree.winfo_width()
+
+                    # see if there's any extra space leftover
+                    # and distribute equally across the columns
                     extra = 0
                     if tree_width > total_width:
                         extra = int(
                             (tree_width - total_width)/len(col_widths))
+                        # the extra width may not quite cover the whole
+                        # tree width if the column count doesn't evenly
+                        # divide the leftover space (we floored the value)
+                        # add the extra extra to the first column
+                        if tree_width > total_width + (extra * len(col_widths)):
+                            col_widths[0] = \
+                                tree_width - \
+                                total_width +  \
+                                (extra * len(col_widths))
 
                     # apply our auto-generated column widths
                     for i, value in enumerate(item):
