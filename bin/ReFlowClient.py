@@ -55,7 +55,8 @@ QUEUE_HEADERS = [
     'Visit',
     'Specimen',
     'Stimulation',
-    'Site Panel'
+    'Site Panel',
+    'Status'
 ]
 
 
@@ -64,6 +65,8 @@ class ChosenFile(object):
         self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
+        self.status = 'Pending'
+        self.error_msg = None
 
         self.project = None
         self.project_pk = None
@@ -86,7 +89,7 @@ class ChosenFile(object):
 
 class MyCheckbutton(Tkinter.Checkbutton):
     def __init__(self, *args, **kwargs):
-        self.var = kwargs.get('variable',Tkinter.IntVar())
+        self.var = kwargs.get('variable', Tkinter.IntVar())
         kwargs['variable'] = self.var
         Tkinter.Checkbutton.__init__(self, *args, **kwargs)
 
@@ -961,6 +964,7 @@ class Application(Tkinter.Frame):
                     item.append(c_file.specimen)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
+                    item.append(c_file.status)
 
                     # add item to the tree
                     self.queue_tree.insert('', 'end', values=item)
