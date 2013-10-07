@@ -62,11 +62,12 @@ QUEUE_HEADERS = [
 
 
 class ChosenFile(object):
-    def __init__(self, f):
+    def __init__(self, f, checkbox):
         self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
-        self.status = 'Pending'
+        self.checkbox = checkbox
+        self.status = 'Pending'  # other values are 'Error' and 'Complete'
         self.error_msg = None
 
         self.project = None
@@ -90,6 +91,35 @@ class ChosenFile(object):
         self.compensation = None
         self.compensation_pk = None
 
+    def reinitialize(self):
+        self.status = 'Pending'  # other values are 'Error' and 'Complete'
+        self.error_msg = None
+
+        self.project = None
+        self.project_pk = None
+
+        self.subject = None
+        self.subject_pk = None
+
+        self.visit = None
+        self.visit_pk = None
+
+        self.specimen = None
+        self.specimen_pk = None
+
+        self.stimulation = None
+        self.stimulation_pk = None
+
+        self.site_panel = None
+        self.site_panel_pk = None
+
+        self.compensation = None
+        self.compensation_pk = None
+
+        # re-activate the checkbox
+        self.checkbox.config(state=Tkinter.ACTIVE)
+        self.checkbox.mark_unchecked()
+
 
 class MyCheckbutton(Tkinter.Checkbutton):
     def __init__(self, *args, **kwargs):
@@ -102,6 +132,9 @@ class MyCheckbutton(Tkinter.Checkbutton):
 
     def mark_checked(self):
         self.var.set(1)
+
+    def mark_unchecked(self):
+        self.var.set(0)
 
 
 class Application(Tkinter.Frame):
@@ -183,6 +216,7 @@ class Application(Tkinter.Frame):
         self.master.config(menu=self.menu_bar)
 
         self.upload_button = None
+        self.clear_selected_queue_button = None
         self.queue_tree = None
         self.upload_progress_bar = None
         self.add_to_queue_button = None
@@ -667,6 +701,11 @@ class Application(Tkinter.Frame):
             text='Upload',
             command=self.upload_files)
         self.upload_button.pack(side='left', expand=False)
+        self.clear_selected_queue_button = ttk.Button(
+            upload_queue_button_frame,
+            text='Clear Selected',
+            command=self.clear_selected_queue)
+        self.clear_selected_queue_button.pack(side='left', expand=False)
         upload_queue_button_frame.pack(
             fill='x',
             expand=False,
@@ -696,6 +735,21 @@ class Application(Tkinter.Frame):
         for header in QUEUE_HEADERS:
             self.queue_tree.heading(header, text=header.title())
             self.queue_tree.column(header, width=25)
+
+        # setup Treeview tag styles, it's the only way to change colors/fonts
+        # Note: it changes the entire row, individual cells cannot be
+        # formatted
+        self.queue_tree.tag_configure(
+            tagname='pending',
+            font=('TkDefaultFont', 12, 'bold'))
+        self.queue_tree.tag_configure(
+            tagname='error',
+            font=('TkDefaultFont', 12, 'normal'),
+            foreground='red')
+        self.queue_tree.tag_configure(
+            tagname='complete',
+            font=('TkDefaultFont', 12, 'italic'),
+            foreground='grey')
 
         upload_queue_frame.pack(
             fill='both',
@@ -737,16 +791,11 @@ class Application(Tkinter.Frame):
         # clear the canvas
         self.file_list_canvas.delete(Tkinter.ALL)
         for i, f in enumerate(selected_files):
-            chosen_file = ChosenFile(f)
-
-            self.file_dict[chosen_file.file_name] = chosen_file
-
             cb = MyCheckbutton(
                 self.file_list_canvas,
-                text=chosen_file.file_name
+                text=os.path.basename(f.name)
             )
-
-            # tkinter so funky, have to bind to our canvas mouse function
+            # bind to our canvas mouse function
             # to keep scrolling working when the mouse is over a checkbox
             cb.bind('<MouseWheel>', self._on_mousewheel)
             self.file_list_canvas.create_window(
@@ -755,6 +804,10 @@ class Application(Tkinter.Frame):
                 anchor='nw',
                 window=cb
             )
+
+            chosen_file = ChosenFile(f, cb)
+
+            self.file_dict[chosen_file.file_name] = chosen_file
 
         # update scroll region
         self.file_list_canvas.config(
@@ -1024,7 +1077,11 @@ class Application(Tkinter.Frame):
                     item.append(c_file.status)
 
                     # add item to the tree
-                    self.queue_tree.insert('', 'end', values=item)
+                    self.queue_tree.insert(
+                        '',
+                        'end',
+                        values=item,
+                        tags='pending')
 
                     # auto set the column widths
                     total_width = 0
@@ -1065,25 +1122,49 @@ class Application(Tkinter.Frame):
                     # finally, disable our checkboxes
                     v.config(state=Tkinter.DISABLED)
 
+    def clear_selected_queue(self):
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.selection()
+
+        # the items are the tree rows
+        for item in tree_items:
+            # the row's values are in the order we created them in
+            # the status is the last column
+            # the file name is the first value
+            name = self.queue_tree.item(item)['values'][0]
+
+            try:
+                chosen_file = self.file_dict[name]
+            except Exception, e:
+                print e
+                break
+
+            chosen_file.reinitialize()
+            self.queue_tree.delete(item)
+
     def upload_files(self):
         t = Thread(target=self._upload_files)
         t.start()
 
     def _upload_files(self):
-        # get list of files to upload from the upload queue
+        # get_children returns a tuple of item IDs from the tree
         tree_items = self.queue_tree.get_children()
-        file_names = []
+
+        # use the item IDs as keys, file names as values
+        # we'll check the row's status value to upload only 'Pending' files
+        upload_dict = {}
 
         # the items are the tree rows
         for item in tree_items:
             # the row's values are in the order we created them in
-            # the file name is the first value
-            file_names.append(
-                self.queue_tree.item(item)['values'][0])
+            # the status is the last column
+            if self.queue_tree.item(item)['values'][-1] == 'Pending':
+                # the file name is the first value
+                upload_dict[item] = self.queue_tree.item(item)['values'][0]
 
-        self.upload_progress_bar.config(maximum=len(file_names))
+        self.upload_progress_bar.config(maximum=len(upload_dict))
 
-        for name in file_names:
+        for item, name in upload_dict.items():
             try:
                 chosen_file = self.file_dict[name]
             except Exception, e:
@@ -1135,19 +1216,21 @@ class Application(Tkinter.Frame):
 
             print log_text
 
-            # TODO: update to color the queue row on success or failure
+            status = None
             if response_dict['status'] == 201:
-                #self.file_list_canvas.itemconfig(
-                #    i,
-                #    fg=SUCCESS_FOREGROUND_COLOR,
-                #    selectforeground=SUCCESS_FOREGROUND_COLOR)
-                print "success"
+                status = 'Complete'
             elif response_dict['status'] == 400:
-                #self.file_list_canvas.itemconfig(
-                #    i,
-                #    fg=ERROR_FOREGROUND_COLOR,
-                #    selectforeground=ERROR_FOREGROUND_COLOR)
-                print "failure"
+                status = 'Error'
+
+            self.queue_tree.item(item, tags=status.lower())
+            # cannot set the values directly, must get them and reset
+            values = list(self.queue_tree.item(item, 'values'))
+            values[-1] = status
+            # re-populate the values
+            self.queue_tree.item(item, values=values)
+
+            # update our ChosenFile object
+            chosen_file.status = status
 
             self.upload_progress_bar.step()
             self.upload_progress_bar.update()
