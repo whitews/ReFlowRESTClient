@@ -172,7 +172,7 @@ class Application(Tkinter.Frame):
 
         self.site_menu = None
         self.site_selection = Tkinter.StringVar()
-        self.site_selection.trace("w", self.load_site_metadata)
+        self.site_selection.trace("w", self.update_site_metadata)
 
         self.subject_menu = None
         self.subject_selection = Tkinter.StringVar()
@@ -833,8 +833,6 @@ class Application(Tkinter.Frame):
         self.site_panel_menu['menu'].delete(0, 'end')
         self.compensation_menu['menu'].delete(0, 'end')
 
-        # TODO: clear the dictionaries here as well???
-
         for result in response['data']['results']:
             self.project_dict[result['project_name']] = result['id']
         for project_name in sorted(self.project_dict.keys()):
@@ -844,6 +842,10 @@ class Application(Tkinter.Frame):
                 self.project_selection.set(value))
 
     def load_project_sites(self, project_id):
+        self.site_menu['menu'].delete(0, 'end')
+        self.site_selection.set('')
+        self.site_dict.clear()
+
         response = None
         try:
             response = rest.get_sites(
@@ -856,11 +858,6 @@ class Application(Tkinter.Frame):
         if not 'results' in response['data']:
             return
 
-        self.site_menu['menu'].delete(0, 'end')
-        self.site_dict.clear()
-
-        # TODO: should clear site_panel and compensation menus/dictionaries???
-
         for result in response['data']['results']:
             self.site_dict[result['site_name']] = result['id']
         for site_name in sorted(self.site_dict.keys()):
@@ -870,6 +867,10 @@ class Application(Tkinter.Frame):
                 self.site_selection.set(value))
 
     def load_project_subjects(self, project_id):
+        self.subject_menu['menu'].delete(0, 'end')
+        self.subject_selection.set('')
+        self.subject_dict.clear()
+
         response = None
         try:
             response = rest.get_subjects(
@@ -882,8 +883,6 @@ class Application(Tkinter.Frame):
         if not 'results' in response['data']:
             return
 
-        self.subject_menu['menu'].delete(0, 'end')
-        self.subject_dict.clear()
         for result in response['data']['results']:
             self.subject_dict[result['subject_code']] = result['id']
         for subject_code in sorted(self.subject_dict.keys()):
@@ -893,6 +892,10 @@ class Application(Tkinter.Frame):
                 self.subject_selection.set(value))
 
     def load_project_visits(self, project_id):
+        self.visit_menu['menu'].delete(0, 'end')
+        self.visit_selection.set('')
+        self.visit_dict.clear()
+
         response = None
         try:
             response = rest.get_visit_types(
@@ -905,8 +908,6 @@ class Application(Tkinter.Frame):
         if not 'results' in response['data']:
             return
 
-        self.visit_menu['menu'].delete(0, 'end')
-        self.visit_dict.clear()
         for result in response['data']['results']:
             self.visit_dict[result['visit_type_name']] = result['id']
         for visit_type_name in sorted(self.visit_dict.keys()):
@@ -925,7 +926,6 @@ class Application(Tkinter.Frame):
         if not 'results' in response['data']:
             return
 
-        self.specimen_menu['menu'].delete(0, 'end')
         for result in response['data']['results']:
             self.specimen_dict[result['specimen_description']] = result['id']
         for specimen in sorted(self.specimen_dict.keys()):
@@ -935,6 +935,10 @@ class Application(Tkinter.Frame):
                 self.specimen_selection.set(value))
 
     def load_stimulations(self, project_id):
+        self.stimulation_menu['menu'].delete(0, 'end')
+        self.stimulation_selection.set('')
+        self.stimulation_dict.clear()
+
         try:
             response = rest.get_stimulations(
                 self.host,
@@ -947,7 +951,6 @@ class Application(Tkinter.Frame):
         if not 'results' in response['data']:
             return
 
-        self.stimulation_menu['menu'].delete(0, 'end')
         for result in response['data']['results']:
             self.stimulation_dict[result['stimulation_name']] = result['id']
         for stimulation in sorted(self.stimulation_dict.keys()):
@@ -956,8 +959,16 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
-    def load_site_metadata(self, *args, **kwargs):
-        if not self.site_selection:
+    def update_site_metadata(self, *args, **kwargs):
+        self.site_panel_menu['menu'].delete(0, 'end')
+        self.site_panel_selection.set('')
+        self.site_panel_dict.clear()
+
+        self.compensation_menu['menu'].delete(0, 'end')
+        self.compensation_selection.set('')
+        self.compensation_dict.clear()
+
+        if not self.site_selection.get():
             return
         site_pk = self.site_dict[self.site_selection.get()]
         rest_args = [self.host, self.token]
@@ -967,9 +978,6 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
             return
-
-        self.site_panel_menu['menu'].delete(0, 'end')
-        self.site_panel_dict.clear()
 
         if not 'results' in response['data']:
             return
@@ -987,9 +995,6 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
             return
-
-        self.compensation_menu['menu'].delete(0, 'end')
-        self.compensation_dict.clear()
 
         if not 'results' in response['data']:
             return
