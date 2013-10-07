@@ -8,7 +8,7 @@ import reflowrestclient.utils as rest
 import json
 import sys
 import os
-
+from threading import Thread
 VERSION = '0.11b'
 
 if hasattr(sys, '_MEIPASS'):
@@ -1066,6 +1066,10 @@ class Application(Tkinter.Frame):
                     v.config(state=Tkinter.DISABLED)
 
     def upload_files(self):
+        t = Thread(target=self._upload_files)
+        t.start()
+
+    def _upload_files(self):
         # get list of files to upload from the upload queue
         tree_items = self.queue_tree.get_children()
         file_names = []
