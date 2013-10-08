@@ -68,7 +68,7 @@ class ChosenFile(object):
         self.file_name = os.path.basename(f.name)
         self.checkbox = checkbox
         self.status = 'Pending'  # other values are 'Error' and 'Complete'
-        self.error_msg = None
+        self.error_msg = ""
 
         self.project = None
         self.project_pk = None
@@ -714,6 +714,11 @@ class Application(Tkinter.Frame):
             text='Clear Selected',
             command=self.clear_selected_queue)
         self.clear_selected_queue_button.pack(side='left', expand=False)
+        display_error_button = ttk.Button(
+            upload_queue_button_frame,
+            text='View Errors',
+            command=self.display_error)
+        display_error_button.pack(side='left', expand=False)
         upload_queue_button_frame.pack(
             fill='x',
             expand=False,
@@ -752,7 +757,7 @@ class Application(Tkinter.Frame):
             font=('TkDefaultFont', 12, 'bold'))
         self.queue_tree.tag_configure(
             tagname='error',
-            font=('TkDefaultFont', 12, 'normal'),
+            font=('TkDefaultFont', 12, 'bold'),
             foreground='red')
         self.queue_tree.tag_configure(
             tagname='complete',
@@ -1192,6 +1197,52 @@ class Application(Tkinter.Frame):
                 del(self.file_dict[item])
             self.queue_tree.delete(item)
 
+    def display_error(self):
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.selection()
+        message_list = []
+
+        # the items are the tree rows
+        for item in tree_items:
+           # the items are the row IDs, which we set as the file's full path
+            try:
+                chosen_file = self.file_dict[item]
+            except Exception, e:
+                print e
+                break
+
+            if chosen_file.error_msg:
+                message_list.append(
+                    "%s:\n\t%s" % (chosen_file.file_name, chosen_file.error_msg)
+                )
+        if len(tree_items) == 0:
+            message_list.append("No items selected")
+        elif len(message_list) == 0:
+            message_list.append("No errors")
+
+        message_win = Tkinter.Toplevel()
+        message_win.title('Errors')
+        message_win.minsize(width=480, height=320)
+        message_win.config(bg=BACKGROUND_COLOR)
+
+        message_label = Tkinter.Label(
+            message_win,
+            text="\n\n".join(message_list),
+            bg=BACKGROUND_COLOR,
+            justify=Tkinter.LEFT)
+        message_label.pack(
+            anchor='nw',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM
+        )
+
+        # make sure there's a way to destroy the dialog
+        message_button = ttk.Button(
+            message_win,
+            text='OK',
+            command=message_win.destroy)
+        message_button.pack()
+
     def upload_files(self):
         t = Thread(target=self._upload_files)
         t.start()
@@ -1270,6 +1321,8 @@ class Application(Tkinter.Frame):
             if response_dict['status'] == 201:
                 status = 'Complete'
             elif response_dict['status'] == 400:
+                chosen_file.error_msg = "\n".join(
+                    json.loads(response_dict['data']).values()[0])
                 status = 'Error'
 
             self.queue_tree.item(item, tags=status.lower())
