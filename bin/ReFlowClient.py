@@ -123,6 +123,12 @@ class ChosenFile(object):
 
 class MyCheckbutton(Tkinter.Checkbutton):
     def __init__(self, *args, **kwargs):
+        # We need to save the full path to populate the tree item later
+        # Pop the value b/c the parent init is not expecting the kwarg
+        self.file_path = kwargs.pop('file_path')
+
+        # we create checkboxes dynamically and need to control the value
+        # so we need to access the widget's value using our own attribute
         self.var = kwargs.get('variable', Tkinter.IntVar())
         kwargs['variable'] = self.var
         Tkinter.Checkbutton.__init__(self, *args, **kwargs)
@@ -164,8 +170,10 @@ class Application(Tkinter.Frame):
         self.stimulation_dict = dict()
         self.compensation_dict = dict()
 
-        # dict of ChosenFile objects, key is file name, value is ChosenFile
+        # dict of ChosenFile objects, key is file path, value is ChosenFile
         self.file_dict = dict()
+
+        # start the metadata menus
         self.project_menu = None
         self.project_selection = Tkinter.StringVar()
         self.project_selection.trace("w", self.update_metadata)
@@ -749,7 +757,7 @@ class Application(Tkinter.Frame):
         self.queue_tree.tag_configure(
             tagname='complete',
             font=('TkDefaultFont', 12, 'italic'),
-            foreground='grey')
+            foreground='#555555')
 
         upload_queue_frame.pack(
             fill='both',
@@ -772,10 +780,30 @@ class Application(Tkinter.Frame):
         self.file_list_canvas.yview_scroll(-event.delta, "units")
 
     def clear_selected_files(self):
-        for k, v in self.file_list_canvas.children.items():
-            if isinstance(v, MyCheckbutton):
-                if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
-                    v.destroy()
+        cb_to_delete = []
+        for k, cb in self.file_list_canvas.children.items():
+            if isinstance(cb, MyCheckbutton):
+                if cb.is_checked() and cb.cget('state') != Tkinter.DISABLED:
+                    cb_to_delete.append(cb)
+
+        if len(cb_to_delete) == 0:
+            self.update_add_to_queue_button_state()
+            return
+
+        for cb in cb_to_delete:
+            cb.destroy()
+
+        # and re-order items to not leave blank spaces
+        i = 0
+        for k, cb in self.file_list_canvas.children.items():
+            if isinstance(cb, MyCheckbutton):
+                self.file_list_canvas.create_window(
+                    10,
+                    (20 * i),
+                    anchor='nw',
+                    window=cb
+                )
+                i += 1
 
         self.update_add_to_queue_button_state()
 
@@ -788,12 +816,19 @@ class Application(Tkinter.Frame):
     def choose_files(self):
         selected_files = tkFileDialog.askopenfiles('r')
 
+        if len(selected_files) < 1:
+            return
+
         # clear the canvas
         self.file_list_canvas.delete(Tkinter.ALL)
+        for k in self.file_list_canvas.children.keys():
+            del(self.file_list_canvas.children[k])
+
         for i, f in enumerate(selected_files):
             cb = MyCheckbutton(
                 self.file_list_canvas,
-                text=os.path.basename(f.name)
+                text=os.path.basename(f.name),
+                file_path=f.name
             )
             # bind to our canvas mouse function
             # to keep scrolling working when the mouse is over a checkbox
@@ -807,7 +842,7 @@ class Application(Tkinter.Frame):
 
             chosen_file = ChosenFile(f, cb)
 
-            self.file_dict[chosen_file.file_name] = chosen_file
+            self.file_dict[chosen_file.file_path] = chosen_file
 
         # update scroll region
         self.file_list_canvas.config(
@@ -1043,7 +1078,7 @@ class Application(Tkinter.Frame):
             if isinstance(v, MyCheckbutton):
                 if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
                     # populate the ChosenFile attributes
-                    c_file = self.file_dict[v['text']]
+                    c_file = self.file_dict[v.file_path]
 
                     c_file.project = self.project_selection.get()
                     c_file.project_pk = self.project_dict[c_file.project]
@@ -1081,12 +1116,20 @@ class Application(Tkinter.Frame):
                     item.append(c_file.compensation)
                     item.append(c_file.status)
 
-                    # add item to the tree
+                    # check if the item is already in the queue
+                    # and remove it if it is
+                    if self.queue_tree.exists(c_file.file_path):
+                        self.queue_tree.delete(c_file.file_path)
+
+                    # add item to the tree, the id will be the file's
+                    # full path so we can identify tree items with the same
+                    # file name
                     self.queue_tree.insert(
                         '',
                         'end',
                         values=item,
-                        tags='pending')
+                        tags='pending',
+                        iid=c_file.file_path)
 
                     # auto set the column widths
                     total_width = 0
@@ -1133,18 +1176,20 @@ class Application(Tkinter.Frame):
 
         # the items are the tree rows
         for item in tree_items:
-            # the row's values are in the order we created them in
-            # the status is the last column
-            # the file name is the first value
-            name = self.queue_tree.item(item)['values'][0]
-
+            # the items are the row IDs, which we set as the file's full path
             try:
-                chosen_file = self.file_dict[name]
+                chosen_file = self.file_dict[item]
             except Exception, e:
                 print e
                 break
 
-            chosen_file.reinitialize()
+            # user may have cleared the checkbox by now,
+            # if so, we'll delete this file from our list,
+            # if not, re-initialize the checkbox
+            if chosen_file.checkbox in self.file_list_canvas.children.values():
+                chosen_file.reinitialize()
+            else:
+                del(self.file_dict[item])
             self.queue_tree.delete(item)
 
     def upload_files(self):
@@ -1157,21 +1202,21 @@ class Application(Tkinter.Frame):
 
         # use the item IDs as keys, file names as values
         # we'll check the row's status value to upload only 'Pending' files
-        upload_dict = {}
+        upload_list = []
 
         # the items are the tree rows
         for item in tree_items:
             # the row's values are in the order we created them in
             # the status is the last column
             if self.queue_tree.item(item)['values'][-1] == 'Pending':
-                # the file name is the first value
-                upload_dict[item] = self.queue_tree.item(item)['values'][0]
+                # the file path is the item
+                upload_list.append(item)
 
-        self.upload_progress_bar.config(maximum=len(upload_dict))
+        self.upload_progress_bar.config(maximum=len(upload_list))
 
-        for item, name in upload_dict.items():
+        for item in upload_list:
             try:
-                chosen_file = self.file_dict[name]
+                chosen_file = self.file_dict[item]
             except Exception, e:
                 print e
 
