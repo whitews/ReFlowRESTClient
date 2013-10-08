@@ -1317,12 +1317,13 @@ class Application(Tkinter.Frame):
 
             print log_text
 
-            status = None
             if response_dict['status'] == 201:
                 status = 'Complete'
             elif response_dict['status'] == 400:
                 chosen_file.error_msg = "\n".join(
                     json.loads(response_dict['data']).values()[0])
+                status = 'Error'
+            else:
                 status = 'Error'
 
             self.queue_tree.item(item, tags=status.lower())
