@@ -109,7 +109,6 @@ def login(host, username, password):
 def get_projects(host, token, project_name=None):
     url = '%s%s%s' % (METHOD, host, URLS['PROJECTS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if project_name is not None:
         filter_params['project_name'] = project_name
@@ -135,7 +134,6 @@ def get_project(host, token, project_pk):
 def get_specimens(host, token, specimen_name=None):
     url = '%s%s%s' % (METHOD, host, URLS['SPECIMENS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if specimen_name is not None:
         filter_params['specimen_name'] = specimen_name
@@ -146,7 +144,6 @@ def get_specimens(host, token, specimen_name=None):
 def get_subject_groups(host, token, group_name=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SUBJECT_GROUPS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if group_name is not None:
         filter_params['group_name'] = group_name
@@ -160,7 +157,6 @@ def get_subject_groups(host, token, group_name=None, project_pk=None):
 def get_visit_types(host, token, visit_type_name=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['VISIT_TYPES'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if visit_type_name is not None:
         filter_params['visit_type_name'] = visit_type_name
@@ -189,7 +185,6 @@ def get_visit_type(host, token, visit_type_pk):
 def get_sites(host, token, site_name=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SITES'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if site_name is not None:
         filter_params['site_name'] = site_name
@@ -218,7 +213,6 @@ def get_site(host, token, site_pk):
 def get_subjects(host, token, subject_code=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SUBJECTS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if subject_code is not None:
         filter_params['subject_code'] = subject_code
@@ -247,7 +241,6 @@ def get_subject(host, token, subject_pk):
 def get_project_panels(host, token, panel_name=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['PROJECT_PANELS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if panel_name is not None:
         filter_params['panel_name'] = panel_name
@@ -277,7 +270,6 @@ def get_site_panels(
         host, token, project_panel_pk=None, site_pk=None, project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SITE_PANELS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if site_pk is not None:
         filter_params['site'] = site_pk
@@ -314,7 +306,6 @@ def get_compensations(
         project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if original_filename is not None:
         filter_params['original_filename'] = original_filename
@@ -346,7 +337,6 @@ def get_compensation(host, token, compensation_pk):
 def get_stimulations(host, token, project_pk=None, stimulation_name=None):
     url = '%s%s%s' % (METHOD, host, URLS['STIMULATIONS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if project_pk is not None:
         filter_params['project'] = project_pk
@@ -387,7 +377,6 @@ def get_samples(
         subject_code=None):
     url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if subject_pk is not None:
         filter_params['subject'] = subject_pk
@@ -552,7 +541,6 @@ def post_sample(
 def get_processes(host, token, process_name=None):
     url = '%s%s%s' % (METHOD, host, URLS['PROCESSES'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if process_name is not None:
         filter_params['process_name'] = process_name
@@ -563,7 +551,6 @@ def get_processes(host, token, process_name=None):
 def get_workers(host, token, worker_name=None):
     url = '%s%s%s' % (METHOD, host, URLS['WORKERS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if worker_name is not None:
         filter_params['worker_name'] = worker_name
@@ -579,7 +566,6 @@ def get_process_requests(
         request_user_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['PROCESS_REQUESTS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if process_pk is not None:
         filter_params['process'] = process_pk
@@ -606,7 +592,6 @@ def get_viable_process_requests(
     """
     url = '%s%s%s' % (METHOD, host, URLS['VIABLE_PROCESS_REQUESTS'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if process_pk is not None:
         filter_params['process'] = process_pk
@@ -692,7 +677,6 @@ def verify_process_request_assignment(host, token, process_request_pk):
         process_request_pk,
         'verify_assignment')
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if process_request_pk is not None:
         filter_params['process_request'] = process_request_pk
@@ -711,7 +695,6 @@ def revoke_process_request_assignment(host, token, process_request_pk):
         process_request_pk,
         'revoke_assignment')
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     if process_request_pk is not None:
         filter_params['process_request'] = process_request_pk
@@ -725,6 +708,5 @@ def verify_worker(host, token):
     """
     url = '%s%s%s' % (METHOD, host, URLS['VERIFY_WORKER'])
     filter_params = dict()
-    filter_params['paginate_by'] = '0'
 
     return get_request(token, url, filter_params)

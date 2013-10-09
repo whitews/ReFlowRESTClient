@@ -862,7 +862,7 @@ class Application(Tkinter.Frame):
             print e
             return
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
         self.project_menu['menu'].delete(0, 'end')
@@ -873,7 +873,7 @@ class Application(Tkinter.Frame):
         self.site_panel_menu['menu'].delete(0, 'end')
         self.compensation_menu['menu'].delete(0, 'end')
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.project_dict[result['project_name']] = result['id']
         for project_name in sorted(self.project_dict.keys()):
             self.project_menu['menu'].add_command(
@@ -895,10 +895,10 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.site_dict[result['site_name']] = result['id']
         for site_name in sorted(self.site_dict.keys()):
             self.site_menu['menu'].add_command(
@@ -920,10 +920,10 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.subject_dict[result['subject_code']] = result['id']
         for subject_code in sorted(self.subject_dict.keys()):
             self.subject_menu['menu'].add_command(
@@ -945,10 +945,10 @@ class Application(Tkinter.Frame):
         except Exception, e:
             print e
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.visit_dict[result['visit_type_name']] = result['id']
         for visit_type_name in sorted(self.visit_dict.keys()):
             self.visit_menu['menu'].add_command(
@@ -963,10 +963,10 @@ class Application(Tkinter.Frame):
             print e
             return
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.specimen_dict[result['specimen_description']] = result['id']
         for specimen in sorted(self.specimen_dict.keys()):
             self.specimen_menu['menu'].add_command(
@@ -988,10 +988,10 @@ class Application(Tkinter.Frame):
             print e
             return
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.stimulation_dict[result['stimulation_name']] = result['id']
         for stimulation in sorted(self.stimulation_dict.keys()):
             self.stimulation_menu['menu'].add_command(
@@ -1019,10 +1019,10 @@ class Application(Tkinter.Frame):
             print e
             return
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.site_panel_dict[result['name']] = result['id']
         for panel_name in sorted(self.site_panel_dict.keys()):
             self.site_panel_menu['menu'].add_command(
@@ -1036,10 +1036,10 @@ class Application(Tkinter.Frame):
             print e
             return
 
-        if not 'results' in response['data']:
+        if not 'data' in response:
             return
 
-        for result in response['data']['results']:
+        for result in response['data']:
             self.compensation_dict[result['original_filename']] = result['id']
         for comp_filename in sorted(self.compensation_dict.keys()):
             self.compensation_menu['menu'].add_command(
