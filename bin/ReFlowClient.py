@@ -800,7 +800,8 @@ class Application(Tkinter.Frame):
 
         # and re-order items to not leave blank spaces
         i = 0
-        for k, cb in self.file_list_canvas.children.items():
+        cb_dict = self.file_list_canvas.children
+        for cb in sorted(cb_dict.values(), key=lambda x: x.cget('text')):
             if isinstance(cb, MyCheckbutton):
                 self.file_list_canvas.create_window(
                     10,
