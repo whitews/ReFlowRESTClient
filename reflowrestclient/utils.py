@@ -382,7 +382,7 @@ def get_samples(
         filter_params['subject'] = subject_pk
 
     if site_pk is not None:
-        filter_params['site'] = site_pk
+        filter_params['site_panel__site'] = site_pk
 
     if project_pk is not None:
         filter_params['subject__project'] = project_pk
