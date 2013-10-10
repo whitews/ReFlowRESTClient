@@ -1137,44 +1137,60 @@ class Application(Tkinter.Frame):
                         tags='pending',
                         iid=c_file.file_path)
 
-                    # auto set the column widths
-                    total_width = 0
-                    col_widths = []
-                    for i, value in enumerate(item):
-                        col_widths.append(tkFont.Font().measure(value))
-                        header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
-                        # don't make the column smaller than the header text
-                        if header_width > col_widths[i]:
-                            col_widths[i] = header_width
-                        total_width += col_widths[i]
-
-                    # get the tree's width
-                    tree_width = self.queue_tree.winfo_width()
-
-                    # see if there's any extra space leftover
-                    # and distribute equally across the columns
-                    extra = 0
-                    if tree_width > total_width:
-                        extra = int(
-                            (tree_width - total_width)/len(col_widths))
-                        # the extra width may not quite cover the whole
-                        # tree width if the column count doesn't evenly
-                        # divide the leftover space (we floored the value)
-                        # add the extra extra to the first column
-                        if tree_width > total_width + (extra * len(col_widths)):
-                            col_widths[0] = \
-                                tree_width - \
-                                total_width +  \
-                                (extra * len(col_widths))
-
-                    # apply our auto-generated column widths
-                    for i, value in enumerate(item):
-                        self.queue_tree.column(
-                            QUEUE_HEADERS[i],
-                            width=col_widths[i]+extra)
-
                     # finally, disable our checkboxes
                     v.config(state=Tkinter.DISABLED)
+
+        self._auto_resize_queue_columns()
+
+    def _auto_resize_queue_columns(self):
+        """
+        automagically set the column widths
+        """
+
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.get_children()
+
+        total_width = 0
+        col_widths = {}
+        for i, value in enumerate(QUEUE_HEADERS):
+            col_widths[i] = 0
+
+        for item in tree_items:
+            for i, value in enumerate(self.queue_tree.item(item)['values']):
+                width = tkFont.Font().measure(value)
+                header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
+                # don't make the column smaller than the header text
+                if header_width > width:
+                    width = header_width
+                if width > col_widths[i]:
+                    col_widths[i] = width
+
+        total_width = sum(col_widths.values())
+
+        # get the tree's width
+        tree_width = self.queue_tree.winfo_width()
+
+        # see if there's any extra space leftover
+        # and distribute equally across the columns
+        extra = 0
+        if tree_width > total_width:
+            extra = int(
+                (tree_width - total_width)/len(col_widths))
+            # the extra width may not quite cover the whole
+            # tree width if the column count doesn't evenly
+            # divide the leftover space (we floored the value)
+            # add the extra extra to the first column
+            if tree_width > total_width + (extra * len(col_widths)):
+                col_widths[0] = \
+                    col_widths[0] + \
+                    tree_width - \
+                    (total_width + (extra * len(col_widths)))
+
+        # apply our auto-generated column widths
+        for i, value in enumerate(tree_items):
+            self.queue_tree.column(
+                QUEUE_HEADERS[i],
+                width=col_widths[i]+extra)
 
     def clear_selected_queue(self):
         # get_children returns a tuple of item IDs from the tree
