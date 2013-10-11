@@ -2,8 +2,7 @@ import getpass
 import sys
 from reflowrestclient.utils import *
 
-host = "localhost:8000"
-
+host = raw_input('Host: ')
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
@@ -17,3 +16,4 @@ else:
     sys.exit()
 
 response_dict = download_sample(host, token, sample_pk=1)
+print response_dict
