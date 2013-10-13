@@ -1,14 +1,15 @@
-import Tkinter as tk
+import Tkinter
 import ttk
 import tkMessageBox
 import tkFileDialog
+import tkFont
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 import json
 import sys
 import os
-
-VERSION = '0.10b'
+from threading import Thread
+VERSION = '0.11b'
 
 if hasattr(sys, '_MEIPASS'):
     # for PyInstaller 2.0
@@ -31,6 +32,7 @@ elif sys.platform == 'darwin':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.icns')
 else:
     sys.exit("Your operating system is not supported.")
+
 BACKGROUND_COLOR = '#ededed'
 INACTIVE_BACKGROUND_COLOR = '#e2e2e2'
 INACTIVE_FOREGROUND_COLOR = '#767676'
@@ -45,767 +47,1281 @@ PAD_MEDIUM = 6
 PAD_LARGE = 12
 PAD_EXTRA_LARGE = 15
 
-FUNCTION_DICT = {
-    '0': 'Upload Files',
-    '1': 'Apply Panel',
-}
+# Headers for the upload queue tree view
+QUEUE_HEADERS = [
+    'File',
+    'Project',
+    'Subject',
+    'Visit',
+    'Specimen',
+    'Stimulation',
+    'Site Panel',
+    'Compensation',
+    'Status'
+]
 
 
-class Application(tk.Frame):
+class ChosenFile(object):
+    def __init__(self, f, checkbox):
+        self.file = f
+        self.file_path = f.name
+        self.file_name = os.path.basename(f.name)
+        self.checkbox = checkbox
+        self.status = 'Pending'  # other values are 'Error' and 'Complete'
+        self.error_msg = ""
+
+        self.project = None
+        self.project_pk = None
+
+        self.subject = None
+        self.subject_pk = None
+
+        self.visit = None
+        self.visit_pk = None
+
+        self.specimen = None
+        self.specimen_pk = None
+
+        self.stimulation = None
+        self.stimulation_pk = None
+
+        self.site_panel = None
+        self.site_panel_pk = None
+
+        self.compensation = None
+        self.compensation_pk = None
+
+    def reinitialize(self):
+        self.status = 'Pending'  # other values are 'Error' and 'Complete'
+        self.error_msg = None
+
+        self.project = None
+        self.project_pk = None
+
+        self.subject = None
+        self.subject_pk = None
+
+        self.visit = None
+        self.visit_pk = None
+
+        self.specimen = None
+        self.specimen_pk = None
+
+        self.stimulation = None
+        self.stimulation_pk = None
+
+        self.site_panel = None
+        self.site_panel_pk = None
+
+        self.compensation = None
+        self.compensation_pk = None
+
+        # re-activate the checkbox
+        self.checkbox.config(state=Tkinter.ACTIVE)
+        self.checkbox.mark_unchecked()
+
+
+class MyCheckbutton(Tkinter.Checkbutton):
+    def __init__(self, *args, **kwargs):
+        # We need to save the full path to populate the tree item later
+        # Pop the value b/c the parent init is not expecting the kwarg
+        self.file_path = kwargs.pop('file_path')
+
+        # we create checkboxes dynamically and need to control the value
+        # so we need to access the widget's value using our own attribute
+        self.var = kwargs.get('variable', Tkinter.IntVar())
+        kwargs['variable'] = self.var
+        Tkinter.Checkbutton.__init__(self, *args, **kwargs)
+
+    def is_checked(self):
+        return self.var.get()
+
+    def mark_checked(self):
+        self.var.set(1)
+
+    def mark_unchecked(self):
+        self.var.set(0)
+
+
+class Application(Tkinter.Frame):
 
     def __init__(self, master):
-        # a bit weird, but we'll use the names (project, site, etc.) as the key, pk as the value
-        # for the four choice dictionaries below.
-        # we need the names to be unique (and they should be) and
-        # it's more convenient to lookup by key using the name to find the selection.
-        self.projectDict = dict()
-        self.siteDict = dict()
-        self.subjectDict = dict()
-        self.visitDict = dict()
-        self.panelDict = dict()
-        self.specimenDict = dict()
-        self.sampleGroupDict = dict()
-        self.matchingPanelSamplesDict = dict()
+
+        style = ttk.Style()
+        style.configure(
+            'Treeview',
+            borderwidth=1,
+            font=('TkDefaultFont', 12, 'normal'))
+
+        self.host = None
+        self.username = None
+        self.token = None
+
+        # Using the names (project, site, etc.) as the key, pk as the value
+        # for the choice dictionaries below.
+        # The names need to be unique (and they should be) and
+        # it's more convenient to lookup by key using the name.
+        self.project_dict = dict()
+        self.site_dict = dict()
+        self.subject_dict = dict()
+        self.visit_dict = dict()
+        self.site_panel_dict = dict()
+        self.specimen_dict = dict()
+        self.stimulation_dict = dict()
+        self.compensation_dict = dict()
+
+        # dict of ChosenFile objects, key is file path, value is ChosenFile
+        self.file_dict = dict()
+
+        # start the metadata menus
+        self.project_menu = None
+        self.project_selection = Tkinter.StringVar()
+        self.project_selection.trace("w", self.update_metadata)
+
+        self.site_menu = None
+        self.site_selection = Tkinter.StringVar()
+        self.site_selection.trace("w", self.update_site_metadata)
+
+        self.subject_menu = None
+        self.subject_selection = Tkinter.StringVar()
+        self.subject_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.visit_menu = None
+        self.visit_selection = Tkinter.StringVar()
+        self.visit_selection.trace("w", self.update_add_to_queue_button_state)
+
+        self.specimen_menu = None
+        self.specimen_selection = Tkinter.StringVar()
+        self.specimen_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.stimulation_menu = None
+        self.stimulation_selection = Tkinter.StringVar()
+        self.stimulation_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.site_panel_menu = None
+        self.site_panel_selection = Tkinter.StringVar()
+        self.site_panel_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.compensation_menu = None
+        self.compensation_selection = Tkinter.StringVar()
 
         # can't call super on old-style class, call parent init directly
-        tk.Frame.__init__(self, master)
+        Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=954, height=640)
+        self.master.minsize(width=960, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
 
-        self.menuBar = tk.Menu(master)
-        self.master.config(menu=self.menuBar)
+        self.menu_bar = Tkinter.Menu(master)
+        self.master.config(menu=self.menu_bar)
+
+        self.upload_button = None
+        self.clear_selected_queue_button = None
+        self.queue_tree = None
+        self.upload_progress_bar = None
+        self.add_to_queue_button = None
+        self.file_list_canvas = None
 
         self.s = ttk.Style()
-        self.s.map('Inactive.TButton', foreground=[('disabled', INACTIVE_FOREGROUND_COLOR)])
+        self.s.map(
+            'Inactive.TButton',
+            foreground=[('disabled', INACTIVE_FOREGROUND_COLOR)])
 
         self.pack()
-        self.loadLoginFrame()
-        #self.loadMainFrame()
 
-    def loadLoginFrame(self):
-        self.loginFrame = tk.Frame(bg=BACKGROUND_COLOR)
+        self.login_frame = Tkinter.Frame(bg=BACKGROUND_COLOR)
+        self.logo_image = ImageTk.PhotoImage(Image.open(LOGO_PATH))
+        self.load_login_frame()
+        #self.load_main_frame()
 
-        self.logoImage = ImageTk.PhotoImage(Image.open(LOGO_PATH))
-        self.logoLabel = tk.Label(self.loginFrame, image=self.logoImage)
-        self.logoLabel.config(bg=BACKGROUND_COLOR)
-        self.logoLabel.pack(side='top', pady=PAD_EXTRA_LARGE)
+    def load_login_frame(self):
 
-        self.hostEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.hostLabel = tk.Label(
-            self.hostEntryFrame,
+        def login():
+            self.host = host_entry.get()
+            self.username = user_entry.get()
+            password = password_entry.get()
+            try:
+                self.token = rest.login(self.host, self.username, password)
+            except Exception, e:
+                print e
+            if not self.token:
+                tkMessageBox.showwarning(
+                    'Login Failed',
+                    'Are the hostname, username, and password are correct?')
+                return
+            self.login_frame.destroy()
+            self.load_main_frame()
+
+        logo_label = Tkinter.Label(self.login_frame, image=self.logo_image)
+        logo_label.config(bg=BACKGROUND_COLOR)
+        logo_label.pack(side='top', pady=PAD_EXTRA_LARGE)
+
+        host_entry_frame = Tkinter.Frame(self.login_frame, bg=BACKGROUND_COLOR)
+        host_label = Tkinter.Label(
+            host_entry_frame,
             text='Hostname',
             bg=BACKGROUND_COLOR,
             width=8,
             anchor='e')
-        self.hostLabel.pack(side='left')
-        self.hostEntry = tk.Entry(
-            self.hostEntryFrame,
+        host_label.pack(side='left')
+        host_entry = Tkinter.Entry(
+            host_entry_frame,
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.hostEntry.pack(padx=PAD_SMALL)
-        self.hostEntryFrame.pack(pady=PAD_SMALL)
+        host_entry.pack(padx=PAD_SMALL)
+        host_entry_frame.pack(pady=PAD_SMALL)
 
-        self.userEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.userLabel = tk.Label(
-            self.userEntryFrame,
+        user_entry_frame = Tkinter.Frame(self.login_frame, bg=BACKGROUND_COLOR)
+        user_label = Tkinter.Label(
+            user_entry_frame,
             text='Username',
             bg=BACKGROUND_COLOR,
             width=8,
             anchor='e')
-        self.userLabel.pack(side='left')
-        self.userEntry = tk.Entry(
-            self.userEntryFrame,
+        user_label.pack(side='left')
+        user_entry = Tkinter.Entry(
+            user_entry_frame,
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.userEntry.pack(padx=PAD_SMALL)
-        self.userEntryFrame.pack(pady=PAD_SMALL)
+        user_entry.pack(padx=PAD_SMALL)
+        user_entry_frame.pack(pady=PAD_SMALL)
 
-        self.passwordEntryFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.passwordLabel = tk.Label(
-            self.passwordEntryFrame,
+        password_entry_frame = Tkinter.Frame(
+            self.login_frame,
+            bg=BACKGROUND_COLOR)
+        password_label = Tkinter.Label(
+            password_entry_frame,
             text='Password',
             bg=BACKGROUND_COLOR,
             width=8,
             anchor='e')
-        self.passwordLabel.pack(side='left')
-        self.passwordEntry = tk.Entry(
-            self.passwordEntryFrame,
+        password_label.pack(side='left')
+        password_entry = Tkinter.Entry(
+            password_entry_frame,
             show='*',
             highlightbackground=BACKGROUND_COLOR,
             width=24)
-        self.passwordEntry.pack(padx=PAD_SMALL)
-        self.passwordEntryFrame.pack(pady=PAD_SMALL)
+        password_entry.pack(padx=PAD_SMALL)
+        password_entry_frame.pack(pady=PAD_SMALL)
 
-        self.loginButtonFrame = tk.Frame(self.loginFrame, bg=BACKGROUND_COLOR)
-        self.loginButtonLabel = tk.Label(self.loginButtonFrame, bg=BACKGROUND_COLOR)
-        self.loginButton = ttk.Button(
-            self.loginButtonLabel,
+        login_button_frame = Tkinter.Frame(
+            self.login_frame,
+            bg=BACKGROUND_COLOR)
+        login_button_label = Tkinter.Label(
+            login_button_frame,
+            bg=BACKGROUND_COLOR)
+        login_button = ttk.Button(
+            login_button_label,
             text='Login',
-            command=self.login)
-        self.loginButton.pack()
-        self.loginButtonLabel.pack(side='right')
-        self.loginButtonFrame.pack(fill='x')
+            command=login)
+        login_button.pack()
+        login_button_label.pack(side='right')
+        login_button_frame.pack(fill='x')
 
-        self.loginFrame.place(in_=self.master, anchor='c', relx=.5, rely=.5)
+        self.login_frame.place(in_=self.master, anchor='c', relx=.5, rely=.5)
 
-    def login(self):
-        self.token = None
-        self.host = self.hostEntry.get()
-        self.username = self.userEntry.get()
-        password = self.passwordEntry.get()
-        try:
-            self.token = rest.login(self.host, self.username, password)
-        except Exception, e:
-            print e
-        if not self.token:
-            tkMessageBox.showwarning(
-                'Login Failed',
-                ' Check that the hostname, username, and password are correct')
-            return
-        self.loginFrame.destroy()
-        self.loadMainFrame()
-
-    def loadMainFrame(self):
-        self.mainFrame = tk.Frame(self.master, bg=BACKGROUND_COLOR)
-        self.mainFrame.pack(
+    def load_main_frame(self):
+        main_frame = Tkinter.Frame(self.master, bg=BACKGROUND_COLOR)
+        main_frame.pack(
             fill='both',
             expand=True,
             anchor='n',
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
-        self.topFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
-        self.topFrame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
-
-        self.middleFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
-        self.middleFrame.pack(fill='both', expand=True, anchor='n', padx=0, pady=0)
-
-        self.bottomFrame = tk.Frame(self.mainFrame, bg=BACKGROUND_COLOR)
-        self.bottomFrame.pack(fill='both', expand=False, anchor='n', padx=0, pady=0)
-
-        # Metadata frame - for choosing project/subject/site etc.
-        self.metadataFrame = tk.Frame(self.topFrame, bg=BACKGROUND_COLOR)
-        # Start metadata choices, including:
-        #    - project
-        #    - site
-        #    - subject
-        #    - visit
-
-        # overall project frame (on bottom left of main window)
-        self.projectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # project label frame (top of project chooser frame)
-        self.projectChooserLabelFrame = tk.Frame(self.projectFrame, bg=BACKGROUND_COLOR)
-        self.projectChooserLabel = tk.Label(
-            self.projectChooserLabelFrame,
-            text='Choose Project',
+        top_frame = Tkinter.LabelFrame(
+            main_frame,
             bg=BACKGROUND_COLOR)
-        self.projectChooserLabel.pack(side='left')
-        self.projectChooserLabelFrame.pack(fill='x')
-
-        # project chooser listbox frame (bottom of project chooser frame)
-        self.projectChooserFrame = tk.Frame(self.projectFrame, bg=BACKGROUND_COLOR)
-        self.projectScrollBar = tk.Scrollbar(self.projectChooserFrame, orient='vertical')
-        self.projectListBox = tk.Listbox(
-            self.projectChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.projectScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.projectListBox.bind('<<ListboxSelect>>', self.updateMetadata)
-        self.projectScrollBar.config(command=self.projectListBox.yview)
-        self.projectScrollBar.pack(side='right', fill='y')
-        self.projectListBox.pack(fill='x', expand=True)
-        self.projectChooserFrame.pack(fill='x', expand=True)
-
-        self.projectFrame.pack(side='left', fill='x', expand=True)
-
-        # overall site frame (on bottom, 2nd from left of main window
-        self.siteFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # site label frame (top of site chooser frame)
-        self.siteChooserLabelFrame = tk.Frame(self.siteFrame, bg=BACKGROUND_COLOR)
-        self.siteChooserLabel = tk.Label(
-            self.siteChooserLabelFrame,
-            text='Choose Site',
-            bg=BACKGROUND_COLOR)
-        self.siteChooserLabel.pack(side='left')
-        self.siteChooserLabelFrame.pack(fill='x')
-
-        # site chooser listbox frame (bottom of site chooser frame)
-        self.siteChooserFrame = tk.Frame(self.siteFrame, bg=BACKGROUND_COLOR)
-        self.siteScrollBar = tk.Scrollbar(self.siteChooserFrame, orient='vertical')
-        self.siteListBox = tk.Listbox(
-            self.siteChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.siteScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.siteListBox.bind('<<ListboxSelect>>', self.siteSelectionChanged)
-        self.siteScrollBar.config(command=self.siteListBox.yview)
-        self.siteScrollBar.pack(side='right', fill='y')
-        self.siteListBox.pack(fill='x', expand=True)
-        self.siteChooserFrame.pack(fill='x', expand=True)
-
-        self.siteFrame.pack(side='left', fill='x', expand=True)
-
-        # overall subject frame (on bottom, 2nd from left of main window
-        self.subjectFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # subject label frame (top of subject chooser frame)
-        self.subjectChooserLabelFrame = tk.Frame(self.subjectFrame, bg=BACKGROUND_COLOR)
-        self.subjectChooserLabel = tk.Label(
-            self.subjectChooserLabelFrame,
-            text='Choose Subject',
-            bg=BACKGROUND_COLOR)
-        self.subjectChooserLabel.pack(side='left')
-        self.subjectChooserLabelFrame.pack(fill='x')
-
-        # subject chooser listbox frame (bottom of subject chooser frame)
-        self.subjectChooserFrame = tk.Frame(self.subjectFrame, bg=BACKGROUND_COLOR)
-        self.subjectScrollBar = tk.Scrollbar(self.subjectChooserFrame, orient='vertical')
-        self.subjectListBox = tk.Listbox(
-            self.subjectChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.subjectScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.subjectListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
-        self.subjectScrollBar.config(command=self.subjectListBox.yview)
-        self.subjectScrollBar.pack(side='right', fill='y')
-        self.subjectListBox.pack(fill='x', expand=True)
-        self.subjectChooserFrame.pack(fill='x', expand=True)
-
-        self.subjectFrame.pack(side='left', fill='x', expand=True)
-
-        # overall visit frame
-        self.visitFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # visit label frame (top of visit chooser frame)
-        self.visitChooserLabelFrame = tk.Frame(self.visitFrame, bg=BACKGROUND_COLOR)
-        self.visitChooserLabel = tk.Label(
-            self.visitChooserLabelFrame,
-            text='Choose Visit',
-            bg=BACKGROUND_COLOR)
-        self.visitChooserLabel.pack(side='left')
-        self.visitChooserLabelFrame.pack(fill='x')
-
-        # visit chooser listbox frame (bottom of visit chooser frame)
-        self.visitChooserFrame = tk.Frame(self.visitFrame, bg=BACKGROUND_COLOR)
-        self.visitScrollBar = tk.Scrollbar(self.visitChooserFrame, orient='vertical')
-        self.visitListBox = tk.Listbox(
-            self.visitChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.visitScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.visitListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
-        self.visitScrollBar.config(command=self.visitListBox.yview)
-        self.visitScrollBar.pack(side='right', fill='y')
-        self.visitListBox.pack(fill='x', expand=True)
-        self.visitChooserFrame.pack(fill='x', expand=True)
-
-        self.visitFrame.pack(side='left', fill='x', expand=True)
-
-        # overall specimen frame
-        self.specimenFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # specimen label frame (top of specimen chooser frame)
-        self.specimenChooserLabelFrame = tk.Frame(self.specimenFrame, bg=BACKGROUND_COLOR)
-        self.specimenChooserLabel = tk.Label(
-            self.specimenChooserLabelFrame,
-            text='Choose Specimen',
-            bg=BACKGROUND_COLOR)
-        self.specimenChooserLabel.pack(side='left')
-        self.specimenChooserLabelFrame.pack(fill='x')
-
-        # specimen chooser listbox frame (bottom of specimen chooser frame)
-        self.specimenChooserFrame = tk.Frame(self.specimenFrame, bg=BACKGROUND_COLOR)
-        self.specimenScrollBar = tk.Scrollbar(self.specimenChooserFrame, orient='vertical')
-        self.specimenListBox = tk.Listbox(
-            self.specimenChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.specimenScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.specimenListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
-        self.specimenScrollBar.config(command=self.specimenListBox.yview)
-        self.specimenScrollBar.pack(side='right', fill='y')
-        self.specimenListBox.pack(fill='x', expand=True)
-        self.specimenChooserFrame.pack(fill='x', expand=True)
-
-        self.specimenFrame.pack(side='left', fill='x', expand=True)
-
-        # overall sampleGroup frame
-        self.sampleGroupFrame = tk.Frame(self.metadataFrame, bg=BACKGROUND_COLOR)
-
-        # sampleGroup label frame (top of sampleGroup chooser frame)
-        self.sampleGroupChooserLabelFrame = tk.Frame(self.sampleGroupFrame, bg=BACKGROUND_COLOR)
-        self.sampleGroupChooserLabel = tk.Label(
-            self.sampleGroupChooserLabelFrame,
-            text='Choose Sample Group',
-            bg=BACKGROUND_COLOR)
-        self.sampleGroupChooserLabel.pack(side='left')
-        self.sampleGroupChooserLabelFrame.pack(fill='x')
-
-        # sampleGroup chooser listbox frame (bottom of sampleGroup chooser frame)
-        self.sampleGroupChooserFrame = tk.Frame(self.sampleGroupFrame, bg=BACKGROUND_COLOR)
-        self.sampleGroupScrollBar = tk.Scrollbar(self.sampleGroupChooserFrame, orient='vertical')
-        self.sampleGroupListBox = tk.Listbox(
-            self.sampleGroupChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.sampleGroupScrollBar.set,
-            relief='flat',
-            width=16,
-            height=3,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.sampleGroupListBox.bind('<<ListboxSelect>>', self.updateUploadButtonState)
-        self.sampleGroupScrollBar.config(command=self.sampleGroupListBox.yview)
-        self.sampleGroupScrollBar.pack(side='right', fill='y')
-        self.sampleGroupListBox.pack(fill='x', expand=True)
-        self.sampleGroupChooserFrame.pack(fill='x', expand=True)
-
-        self.sampleGroupFrame.pack(side='left', fill='x', expand=True)
-
-        self.loadUserProjects()
-        self.loadSpecimens()
-        self.loadSampleGroups()
-
-        self.metadataFrame.pack(
-            fill='x',
-            expand=False,
+        top_frame.pack(
+            fill='both',
+            expand=True,
             anchor='n',
             padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+        top_frame.config(text="Choose & Categorize Files")
+
+        bottom_frame = Tkinter.Frame(main_frame, bg=BACKGROUND_COLOR)
+        bottom_frame.pack(
+            fill='both',
+            expand=True,
+            anchor='n',
+            padx=0,
             pady=0)
 
-        self.leftFrame = tk.Frame(self.middleFrame, bg=BACKGROUND_COLOR)
-        self.leftFrame.pack(
-            fill='y',
+        # Metadata frame - for choosing project/subject/site etc.
+        metadata_frame = Tkinter.Frame(
+            top_frame,
+            bg=BACKGROUND_COLOR)
+
+        # overall project frame (on bottom left of main window)
+        project_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # project label frame (top of project chooser frame)
+        project_chooser_label_frame = Tkinter.Frame(
+            project_frame,
+            bg=BACKGROUND_COLOR)
+        project_chooser_label = Tkinter.Label(
+            project_chooser_label_frame,
+            text='Project:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        project_chooser_label.pack(side='left')
+        project_chooser_label_frame.pack(side='left', fill='x')
+
+        # project chooser listbox frame (bottom of project chooser frame)
+        project_chooser_frame = Tkinter.Frame(
+            project_frame,
+            bg=BACKGROUND_COLOR)
+        self.project_menu = Tkinter.OptionMenu(
+            project_chooser_frame,
+            self.project_selection,
+            '')
+        self.project_menu.config(
+            bg=BACKGROUND_COLOR,
+            width=36)
+        self.project_menu.pack(fill='x', expand=True)
+        project_chooser_frame.pack(fill='x', expand=True)
+
+        project_frame.pack(side='top', fill='x', expand=True)
+
+        # overall site frame (on bottom, 2nd from left of main window
+        site_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
+
+        # site label frame (top of site chooser frame)
+        site_chooser_label_frame = Tkinter.Frame(
+            site_frame,
+            bg=BACKGROUND_COLOR)
+        site_chooser_label = Tkinter.Label(
+            site_chooser_label_frame,
+            text='Site:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        site_chooser_label.pack(side='left')
+        site_chooser_label_frame.pack(side='left', fill='x')
+
+        # site chooser listbox frame (bottom of site chooser frame)
+        site_chooser_frame = Tkinter.Frame(
+            site_frame,
+            bg=BACKGROUND_COLOR)
+        self.site_menu = Tkinter.OptionMenu(
+            site_chooser_frame,
+            self.site_selection,
+            '')
+        self.site_menu.config(bg=BACKGROUND_COLOR)
+        self.site_menu.pack(fill='x', expand=True)
+        site_chooser_frame.pack(fill='x', expand=True)
+
+        site_frame.pack(side='top', fill='x', expand=True)
+
+        # overall subject frame (on bottom, 2nd from left of main window
+        subject_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
+
+        # subject label frame (top of subject chooser frame)
+        subject_chooser_label_frame = Tkinter.Frame(
+            subject_frame,
+            bg=BACKGROUND_COLOR)
+        subject_chooser_label = Tkinter.Label(
+            subject_chooser_label_frame,
+            text='Subject:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        subject_chooser_label.pack(side='left')
+        subject_chooser_label_frame.pack(side='left', fill='x')
+
+        # subject chooser listbox frame (bottom of subject chooser frame)
+        subject_chooser_frame = Tkinter.Frame(
+            subject_frame,
+            bg=BACKGROUND_COLOR)
+        self.subject_menu = Tkinter.OptionMenu(
+            subject_chooser_frame,
+            self.subject_selection,
+            '')
+        self.subject_menu.config(bg=BACKGROUND_COLOR)
+        self.subject_menu.pack(fill='x', expand=True)
+        subject_chooser_frame.pack(fill='x', expand=True)
+
+        subject_frame.pack(side='top', fill='x', expand=True)
+
+        # overall visit frame
+        visit_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
+
+        # visit label frame (top of visit chooser frame)
+        visit_chooser_label_frame = Tkinter.Frame(
+            visit_frame,
+            bg=BACKGROUND_COLOR)
+        visit_chooser_label = Tkinter.Label(
+            visit_chooser_label_frame,
+            text='Visit:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        visit_chooser_label.pack(side='left')
+        visit_chooser_label_frame.pack(side='left', fill='x')
+
+        # visit chooser listbox frame (bottom of visit chooser frame)
+        visit_chooser_frame = Tkinter.Frame(visit_frame, bg=BACKGROUND_COLOR)
+        self.visit_menu = Tkinter.OptionMenu(
+            visit_chooser_frame,
+            self.visit_selection,
+            '')
+        self.visit_menu.config(bg=BACKGROUND_COLOR)
+        self.visit_menu.pack(fill='x', expand=True)
+        visit_chooser_frame.pack(fill='x', expand=True)
+
+        visit_frame.pack(side='top', fill='x', expand=True)
+
+        # overall specimen frame
+        specimen_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # specimen label frame (top of specimen chooser frame)
+        specimen_chooser_label_frame = Tkinter.Frame(
+            specimen_frame,
+            bg=BACKGROUND_COLOR)
+        specimen_chooser_label = Tkinter.Label(
+            specimen_chooser_label_frame,
+            text='Specimen:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        specimen_chooser_label.pack(side='left')
+        specimen_chooser_label_frame.pack(side='left', fill='x')
+
+        # specimen chooser listbox frame (bottom of specimen chooser frame)
+        specimen_chooser_frame = Tkinter.Frame(
+            specimen_frame,
+            bg=BACKGROUND_COLOR)
+        self.specimen_menu = Tkinter.OptionMenu(
+            specimen_chooser_frame,
+            self.specimen_selection,
+            '')
+        self.specimen_menu.config(bg=BACKGROUND_COLOR)
+        self.specimen_menu.pack(fill='x', expand=True)
+        specimen_chooser_frame.pack(fill='x', expand=True)
+
+        specimen_frame.pack(side='top', fill='x', expand=True)
+
+        # overall stimulation frame
+        stimulation_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # stimulation label frame (top of stimulation chooser frame)
+        stimulation_chooser_label_frame = Tkinter.Frame(
+            stimulation_frame,
+            bg=BACKGROUND_COLOR)
+        stimulation_chooser_label = Tkinter.Label(
+            stimulation_chooser_label_frame,
+            text='Stimulation:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        stimulation_chooser_label.pack(side='left')
+        stimulation_chooser_label_frame.pack(side='left', fill='x')
+
+        # stimulation chooser listbox frame
+        # (bottom of stimulation chooser frame)
+        stimulation_chooser_frame = Tkinter.Frame(
+            stimulation_frame,
+            bg=BACKGROUND_COLOR)
+        self.stimulation_menu = Tkinter.OptionMenu(
+            stimulation_chooser_frame,
+            self.stimulation_selection,
+            '')
+        self.stimulation_menu.config(bg=BACKGROUND_COLOR)
+        self.stimulation_menu.pack(fill='x', expand=True)
+        stimulation_chooser_frame.pack(fill='x', expand=True)
+
+        stimulation_frame.pack(side='top', fill='x', expand=True)
+
+        # overall site_panel frame
+        site_panel_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # site_panel label frame (top of site_panel chooser frame)
+        site_panel_chooser_label_frame = Tkinter.Frame(
+            site_panel_frame,
+            bg=BACKGROUND_COLOR)
+        site_panel_chooser_label = Tkinter.Label(
+            site_panel_chooser_label_frame,
+            text='Site Panel:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        site_panel_chooser_label.pack(side='left')
+        site_panel_chooser_label_frame.pack(side='left', fill='x')
+
+        # site_panel chooser listbox frame
+        # (bottom of site_panel chooser frame)
+        site_panel_chooser_frame = Tkinter.Frame(
+            site_panel_frame,
+            bg=BACKGROUND_COLOR)
+        self.site_panel_menu = Tkinter.OptionMenu(
+            site_panel_chooser_frame,
+            self.site_panel_selection,
+            '')
+        self.site_panel_menu.config(bg=BACKGROUND_COLOR)
+        self.site_panel_menu.pack(fill='x', expand=True)
+        site_panel_chooser_frame.pack(fill='x', expand=True)
+
+        site_panel_frame.pack(side='top', fill='x', expand=True)
+
+        # overall compensation frame
+        compensation_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # compensation label frame (top of compensation chooser frame)
+        compensation_chooser_label_frame = Tkinter.Frame(
+            compensation_frame,
+            bg=BACKGROUND_COLOR)
+        compensation_chooser_label = Tkinter.Label(
+            compensation_chooser_label_frame,
+            text='Compensation:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        compensation_chooser_label.pack(side='left')
+        compensation_chooser_label_frame.pack(side='left', fill='x')
+
+        # compensation chooser listbox frame
+        # (bottom of compensation chooser frame)
+        compensation_chooser_frame = Tkinter.Frame(
+            compensation_frame,
+            bg=BACKGROUND_COLOR)
+        self.compensation_menu = Tkinter.OptionMenu(
+            compensation_chooser_frame,
+            self.compensation_selection,
+            '')
+        self.compensation_menu.config(bg=BACKGROUND_COLOR)
+        self.compensation_menu.pack(fill='x', expand=True)
+        compensation_chooser_frame.pack(fill='x', expand=True)
+
+        compensation_frame.pack(side='top', fill='x', expand=True)
+
+        self.load_user_projects()
+        self.load_specimens()
+
+        metadata_frame.pack(
+            fill='x',
             expand=False,
             anchor='n',
             side='left',
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
 
-        self.rightFrame = tk.Frame(self.middleFrame, bg=BACKGROUND_COLOR)
-        self.rightFrame.pack(
+        # start file chooser widgets
+        file_chooser_frame = Tkinter.Frame(
+            top_frame,
+            bg=BACKGROUND_COLOR)
+
+        file_chooser_button_frame = Tkinter.Frame(
+            file_chooser_frame,
+            bg=BACKGROUND_COLOR)
+        file_chooser_button = ttk.Button(
+            file_chooser_button_frame,
+            text='Choose Files...',
+            command=self.choose_files)
+        file_clear_selection_button = ttk.Button(
+            file_chooser_button_frame,
+            text='Clear Selected',
+            command=self.clear_selected_files)
+        file_clear_all_button = ttk.Button(
+            file_chooser_button_frame,
+            text='Select All',
+            command=self.select_all_files)
+        self.add_to_queue_button = ttk.Button(
+            file_chooser_button_frame,
+            text='Add to Queue',
+            state='disabled',
+            style='Inactive.TButton',
+            command=self.add_to_upload_queue)
+        file_chooser_button.pack(side='left')
+        file_clear_selection_button.pack(side='left')
+        file_clear_all_button.pack(side='left')
+        self.add_to_queue_button.pack(side='right')
+        file_chooser_button_frame.pack(
+            anchor='n',
+            fill='x',
+            expand=False,
+        )
+
+        file_list_frame = Tkinter.Frame(
+            file_chooser_frame,
+            bg=BACKGROUND_COLOR,
+            highlightcolor=HIGHLIGHT_COLOR,
+            highlightbackground=BORDER_COLOR,
+            highlightthickness=1)
+        file_scroll_bar = Tkinter.Scrollbar(
+            file_list_frame,
+            orient='vertical')
+        self.file_list_canvas = Tkinter.Canvas(
+            file_list_frame,
+            yscrollcommand=file_scroll_bar.set,
+            relief='flat',
+            borderwidth=0)
+        self.file_list_canvas.bind('<MouseWheel>', self._on_mousewheel)
+        file_scroll_bar.config(command=self.file_list_canvas.yview)
+        file_scroll_bar.pack(side='right', fill='y')
+        self.file_list_canvas.pack(
+            fill='both',
+            expand=True
+        )
+        file_list_frame.pack(
+            fill='both',
+            expand=True)
+        file_chooser_frame.pack(
             fill='both',
             expand=True,
             anchor='n',
             side='right',
             padx=PAD_MEDIUM,
             pady=PAD_MEDIUM)
-        self.innerRightFrame = tk.LabelFrame(self.rightFrame, bg=BACKGROUND_COLOR)
-        self.innerRightFrame.pack(
+
+        # start upload queue stuff
+        upload_queue_frame = Tkinter.LabelFrame(
+            bottom_frame,
+            bg=BACKGROUND_COLOR,
+            text='Upload Queue',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+
+        upload_queue_button_frame = Tkinter.Frame(
+            upload_queue_frame,
+            bg=BACKGROUND_COLOR)
+        self.upload_button = ttk.Button(
+            upload_queue_button_frame,
+            text='Upload',
+            command=self.upload_files)
+        self.upload_button.pack(side='left', expand=False)
+        self.clear_selected_queue_button = ttk.Button(
+            upload_queue_button_frame,
+            text='Clear Selected',
+            command=self.clear_selected_queue)
+        self.clear_selected_queue_button.pack(side='left', expand=False)
+        display_error_button = ttk.Button(
+            upload_queue_button_frame,
+            text='View Errors',
+            command=self.display_error)
+        display_error_button.pack(side='left', expand=False)
+        upload_queue_button_frame.pack(
+            fill='x',
+            expand=False,
+            anchor='n',
+            padx=0,
+            pady=PAD_SMALL)
+
+        # using a Treeview to mimic a table, no table in Tkinter/ttk
+        self.queue_tree = ttk.Treeview(
+            upload_queue_frame,
+            columns=QUEUE_HEADERS,
+            show="headings")
+        queue_vertical_scroll_bar = ttk.Scrollbar(
+            upload_queue_frame,
+            orient="vertical",
+            command=self.queue_tree.yview)
+        self.queue_tree.config(
+            yscrollcommand=queue_vertical_scroll_bar.set)
+        self.queue_tree.pack(
+            side='left',
             fill='both',
             expand=True,
-            anchor='n',
-            side='right')
-        self.functionLabelFrame = tk.LabelFrame(
-            self.leftFrame,
-            bg=BACKGROUND_COLOR,
-            text="Choose Function")
-        self.functionLabelFrame.pack(fill='y', expand=False, anchor='n', side='left')
+            anchor='w')
+        queue_vertical_scroll_bar.pack(
+            side='right',
+            fill='y')
+        for header in QUEUE_HEADERS:
+            self.queue_tree.heading(header, text=header.title())
+            self.queue_tree.column(header, width=25)
 
-        self.functionListFrame = tk.Frame(self.functionLabelFrame, bg=BACKGROUND_COLOR)
-        self.functionListScrollBar = tk.Scrollbar(self.functionListFrame, orient='vertical')
-        self.functionListBox = tk.Listbox(
-            self.functionListFrame,
-            yscrollcommand=self.functionListScrollBar.set,
-            relief='flat',
-            height=14,
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.functionListBox.bind('<<ListboxSelect>>', self.loadSelectedFunction)
-        self.functionListScrollBar.config(command=self.functionListBox.yview)
-        self.functionListScrollBar.pack(side='right', fill='y')
-        self.functionListBox.pack(fill='both', expand=True, padx=PAD_MEDIUM, pady=0)
-        self.functionListFrame.pack(fill='both', expand=True, pady=PAD_MEDIUM)
+        # setup Treeview tag styles, it's the only way to change colors/fonts
+        # Note: it changes the entire row, individual cells cannot be
+        # formatted
+        self.queue_tree.tag_configure(
+            tagname='pending',
+            font=('TkDefaultFont', 12, 'bold'))
+        self.queue_tree.tag_configure(
+            tagname='error',
+            font=('TkDefaultFont', 12, 'bold'),
+            foreground='red')
+        self.queue_tree.tag_configure(
+            tagname='complete',
+            font=('TkDefaultFont', 12, 'italic'),
+            foreground='#555555')
 
-        for key in FUNCTION_DICT:
-            self.functionListBox.insert(key, FUNCTION_DICT[key])
+        upload_queue_frame.pack(
+            fill='both',
+            expand=True,
+            padx=PAD_MEDIUM,
+            pady=0)
 
-        # session log text box
-        self.logFrame = tk.LabelFrame(self.bottomFrame, bg=BACKGROUND_COLOR, text='Session Log')
-        self.logVerticalScrollBar = tk.Scrollbar(self.logFrame, orient='vertical')
-        self.logHorizontalScrollBar = tk.Scrollbar(self.logFrame, orient='horizontal')
-        self.uploadLogText = tk.Text(
-            self.logFrame,
-            xscrollcommand=self.logHorizontalScrollBar.set,
-            yscrollcommand=self.logVerticalScrollBar.set,
-            height=10,
-            borderwidth=0,
-            highlightthickness=0,
-            highlightbackground=BORDER_COLOR,
-            background=BACKGROUND_COLOR,
-            takefocus=False,
-            state='disabled')
-        self.logVerticalScrollBar.config(command=self.uploadLogText.yview)
-        self.logHorizontalScrollBar.config(command=self.uploadLogText.xview)
-        self.logVerticalScrollBar.pack(side='right', fill='y')
-        self.logHorizontalScrollBar.pack(side='bottom', fill='x')
-        self.setLogTextStyles()
-        self.uploadLogText.pack(fill='both', expand=True)
-        self.logFrame.pack(fill='both', expand=False, anchor='s', padx=PAD_MEDIUM, pady=0)
-
-        # upload button, upload progress bar
-        self.progressFrame = tk.Frame(self.bottomFrame, bg=BACKGROUND_COLOR)
-        self.uploadProgressBar = ttk.Progressbar(self.progressFrame)
-        self.uploadProgressBar.pack(side='bottom', fill='x', expand=True)
-        self.progressFrame.pack(
+        # Progress bar
+        progress_frame = Tkinter.Frame(bottom_frame, bg=BACKGROUND_COLOR)
+        self.upload_progress_bar = ttk.Progressbar(progress_frame)
+        self.upload_progress_bar.pack(side='bottom', fill='x', expand=True)
+        progress_frame.pack(
             fill='x',
             expand=False,
             anchor='s',
             padx=PAD_MEDIUM,
             pady=PAD_SMALL)
 
-        self.functionListBox.selection_set(0, 0)
-        self.loadSelectedFunction()
+    def _on_mousewheel(self, event):
+        self.file_list_canvas.yview_scroll(-event.delta, "units")
 
-    def deselectMetadata(self):
-        self.subjectListBox.selection_clear(0, 'end')
-        self.siteListBox.selection_clear(0, 'end')
-        self.visitListBox.selection_clear(0, 'end')
-        self.specimenListBox.selection_clear(0, 'end')
-        self.sampleGroupListBox.selection_clear(0, 'end')
+    def clear_selected_files(self):
+        cb_to_delete = []
+        for k, cb in self.file_list_canvas.children.items():
+            if isinstance(cb, MyCheckbutton):
+                if cb.is_checked() and cb.cget('state') != Tkinter.DISABLED:
+                    cb_to_delete.append(cb)
 
-    def loadSelectedFunction(self, event=None):
-        selectedFunction = self.functionListBox.curselection()
+        if len(cb_to_delete) == 0:
+            self.update_add_to_queue_button_state()
+            return
 
-        for widget in self.innerRightFrame.pack_slaves():
-            widget.pack_forget()
+        for cb in cb_to_delete:
+            cb.destroy()
 
-        if selectedFunction[0] in FUNCTION_DICT:
-            if selectedFunction[0] == '0':
-                if hasattr(self, 'fileUploadFrame'):
-                    self.innerRightFrame.config(text="Upload Files")
-                    self.fileUploadFrame.pack(
-                        fill='both',
-                        expand=True,
-                        anchor='n',
-                        padx=PAD_MEDIUM,
-                        pady=PAD_MEDIUM)
-                else:
-                    self.loadFileUploadFrame()
-            elif selectedFunction[0] == '1':
-                if hasattr(self, 'applyPanelFrame'):
-                    self.innerRightFrame.config(text="Apply Panel to Samples")
-                    self.applyPanelFrame.pack(
-                        fill='both',
-                        expand=True,
-                        anchor='n',
-                        padx=PAD_MEDIUM,
-                        pady=PAD_MEDIUM)
-                    self.updateApplyPanelData()
-                else:
-                    self.loadApplyPanelFrame()
+        # and re-order items to not leave blank spaces
+        i = 0
+        cb_dict = self.file_list_canvas.children
+        for cb in sorted(cb_dict.values(), key=lambda x: x.cget('text')):
+            if isinstance(cb, MyCheckbutton):
+                self.file_list_canvas.create_window(
+                    10,
+                    (20 * i),
+                    anchor='nw',
+                    window=cb
+                )
+                i += 1
 
-        self.deselectMetadata()
-        self.update_idletasks()
+        self.update_add_to_queue_button_state()
 
-    def loadFileUploadFrame(self):
-        self.innerRightFrame.config(text="Upload Files")
-        if hasattr(self, 'fileUploadFrame'):
-            pass
-        else:
-            self.fileUploadFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
+    def select_all_files(self):
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                v.mark_checked()
+        self.update_add_to_queue_button_state()
 
-        self.fileUploadFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
+    def choose_files(self):
+        selected_files = tkFileDialog.askopenfiles('r')
 
-        # action buttons along the top of the window
-        self.fileChooserFrame = tk.Frame(
-            self.fileUploadFrame,
-            bg=BACKGROUND_COLOR)
+        if len(selected_files) < 1:
+            return
 
-        self.fileChooserButtonFrame = tk.Frame(self.fileChooserFrame, bg=BACKGROUND_COLOR)
-        self.fileChooserButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Choose FCS Files...',
-            command=self.selectFiles)
-        self.fileClearSelectionButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear Selected',
-            command=self.clearSelectedFiles)
-        self.fileClearAllButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Clear All',
-            command=self.clearAllFiles)
-        self.refreshButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Refresh from Server',
-            command=self.loadUserProjects)
-        self.uploadButton = ttk.Button(
-            self.fileChooserButtonFrame,
-            text='Upload Files',
-            state='disabled',
-            style='Inactive.TButton',
-            command=self.uploadFiles)
-        self.fileChooserButton.pack(side='left')
-        self.fileClearSelectionButton.pack(side='left')
-        self.fileClearAllButton.pack(side='left')
-        self.uploadButton.pack(side='right')
-        self.refreshButton.pack(side='right')
-        self.fileChooserButtonFrame.pack(anchor='n', fill='x', expand=False)
+        # clear the canvas
+        self.file_list_canvas.delete(Tkinter.ALL)
+        for k in self.file_list_canvas.children.keys():
+            del(self.file_list_canvas.children[k])
 
-        self.fileListFrame = tk.Frame(
-            self.fileChooserFrame,
-            bg=BACKGROUND_COLOR)
-        self.fileScrollBar = tk.Scrollbar(self.fileListFrame, orient='vertical')
-        self.fileListBox = tk.Listbox(
-            self.fileListFrame,
-            yscrollcommand=self.fileScrollBar.set,
-            relief='flat',
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.fileScrollBar.config(command=self.fileListBox.yview)
-        self.fileScrollBar.pack(side='right', fill='y')
-        self.fileListBox.pack(fill='both', expand=True)
-        self.fileListFrame.pack(fill='both', expand=True)
-        self.fileChooserFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n')
+        for i, f in enumerate(selected_files):
+            cb = MyCheckbutton(
+                self.file_list_canvas,
+                text=os.path.basename(f.name),
+                file_path=f.name
+            )
+            # bind to our canvas mouse function
+            # to keep scrolling working when the mouse is over a checkbox
+            cb.bind('<MouseWheel>', self._on_mousewheel)
+            self.file_list_canvas.create_window(
+                10,
+                (20 * i),
+                anchor='nw',
+                window=cb
+            )
 
-    def clearSelectedFiles(self):
-        for i in self.fileListBox.curselection():
-            self.fileListBox.delete(i)
-        self.updateUploadButtonState()
+            chosen_file = ChosenFile(f, cb)
 
-    def clearAllFiles(self):
-        self.fileListBox.delete(0, 'end')
-        self.updateUploadButtonState()
+            self.file_dict[chosen_file.file_path] = chosen_file
 
-    def selectFiles(self):
-        selectedFiles = tkFileDialog.askopenfiles('r')
-        sortedFileList = list()
-        for f in selectedFiles:
-            sortedFileList.append(f.name)
-        sortedFileList.sort()
-        self.fileListBox.delete(0, 'end')
-        for i, f in enumerate(sortedFileList):
-            self.fileListBox.insert(i, f)
-            if i % 2:
-                self.fileListBox.itemconfig(i, bg=ROW_ALT_COLOR)
-        self.deselectMetadata()
-        self.updateUploadButtonState()
+        # update scroll region
+        self.file_list_canvas.config(
+            scrollregion=(0, 0, 1000, len(selected_files)*20))
 
-    def loadUserProjects(self):
-        response = None
+        self.update_add_to_queue_button_state()
+
+    def load_user_projects(self):
         try:
             response = rest.get_projects(self.host, self.token)
         except Exception, e:
             print e
+            return
 
-        self.projectListBox.delete(0, 'end')
-        self.siteListBox.delete(0, 'end')
-        self.subjectListBox.delete(0, 'end')
-        self.visitListBox.delete(0, 'end')
+        if not 'data' in response:
+            return
+
+        self.project_menu['menu'].delete(0, 'end')
+        self.site_menu['menu'].delete(0, 'end')
+        self.subject_menu['menu'].delete(0, 'end')
+        self.visit_menu['menu'].delete(0, 'end')
+        self.stimulation_menu['menu'].delete(0, 'end')
+        self.site_panel_menu['menu'].delete(0, 'end')
+        self.compensation_menu['menu'].delete(0, 'end')
+
         for result in response['data']:
-            self.projectDict[result['project_name']] = result['id']
-        for project_name in sorted(self.projectDict.keys()):
-            self.projectListBox.insert('end', project_name)
+            self.project_dict[result['project_name']] = result['id']
+        for project_name in sorted(self.project_dict.keys()):
+            self.project_menu['menu'].add_command(
+                label=project_name,
+                command=lambda value=project_name:
+                self.project_selection.set(value))
 
-    def loadSpecimens(self):
+    def load_project_sites(self, project_id):
+        self.site_menu['menu'].delete(0, 'end')
+        self.site_selection.set('')
+        self.site_dict.clear()
+
         response = None
+        try:
+            response = rest.get_sites(
+                self.host,
+                self.token,
+                project_pk=project_id)
+        except Exception, e:
+            print e
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.site_dict[result['site_name']] = result['id']
+        for site_name in sorted(self.site_dict.keys()):
+            self.site_menu['menu'].add_command(
+                label=site_name,
+                command=lambda value=site_name:
+                self.site_selection.set(value))
+
+    def load_project_subjects(self, project_id):
+        self.subject_menu['menu'].delete(0, 'end')
+        self.subject_selection.set('')
+        self.subject_dict.clear()
+
+        response = None
+        try:
+            response = rest.get_subjects(
+                self.host,
+                self.token,
+                project_pk=project_id)
+        except Exception, e:
+            print e
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.subject_dict[result['subject_code']] = result['id']
+        for subject_code in sorted(self.subject_dict.keys()):
+            self.subject_menu['menu'].add_command(
+                label=subject_code,
+                command=lambda value=subject_code:
+                self.subject_selection.set(value))
+
+    def load_project_visits(self, project_id):
+        self.visit_menu['menu'].delete(0, 'end')
+        self.visit_selection.set('')
+        self.visit_dict.clear()
+
+        response = None
+        try:
+            response = rest.get_visit_types(
+                self.host,
+                self.token,
+                project_pk=project_id)
+        except Exception, e:
+            print e
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.visit_dict[result['visit_type_name']] = result['id']
+        for visit_type_name in sorted(self.visit_dict.keys()):
+            self.visit_menu['menu'].add_command(
+                label=visit_type_name,
+                command=lambda value=visit_type_name:
+                self.visit_selection.set(value))
+
+    def load_specimens(self):
         try:
             response = rest.get_specimens(self.host, self.token)
         except Exception, e:
             print e
-
-        self.specimenListBox.delete(0, 'end')
-        for result in response['data']:
-            self.specimenDict[result['specimen_name']] = result['id']
-        for specimen_name in sorted(self.specimenDict.keys()):
-            self.specimenListBox.insert('end', specimen_name)
-
-    def loadSampleGroups(self):
-        response = None
-        try:
-            response = rest.get_sample_groups(self.host, self.token)
-        except Exception, e:
-            print e
-
-        self.sampleGroupListBox.delete(0, 'end')
-        for result in response['data']:
-            self.sampleGroupDict[result['group_name']] = result['id']
-        for group_name in sorted(self.sampleGroupDict.keys()):
-            self.sampleGroupListBox.insert('end', group_name)
-
-    def loadProjectSites(self, project_id):
-        response = None
-        try:
-            response = rest.get_sites(self.host, self.token, project_pk=project_id)
-        except Exception, e:
-            print e
-
-        self.siteListBox.delete(0, 'end')
-        self.siteDict.clear()
-        for result in response['data']:
-            self.siteDict[result['site_name']] = result['id']
-        for site_name in sorted(self.siteDict.keys()):
-            self.siteListBox.insert('end', site_name)
-
-    def loadProjectSubjects(self, project_id):
-        response = None
-        try:
-            response = rest.get_subjects(self.host, self.token, project_pk=project_id)
-        except Exception, e:
-            print e
-
-        self.subjectListBox.delete(0, 'end')
-        self.subjectDict.clear()
-        for result in response['data']:
-            self.subjectDict[result['subject_id']] = result['id']
-        for subject_id in sorted(self.subjectDict.keys()):
-            self.subjectListBox.insert('end', subject_id)
-
-    def loadProjectVisits(self, project_id):
-        response = None
-        try:
-            response = rest.get_visit_types(self.host, self.token, project_pk=project_id)
-        except Exception, e:
-            print e
-
-        self.visitListBox.delete(0, 'end')
-        self.visitDict.clear()
-        for result in response['data']:
-            self.visitDict[result['visit_type_name']] = result['id']
-        for visit_type_name in sorted(self.visitDict.keys()):
-            self.visitListBox.insert('end', visit_type_name)
-
-    def loadProjectPanels(self):
-        if self.projectListBox.curselection():
-            selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
-        else:
             return
-        selectedSiteName = None
-        if self.siteListBox.curselection():
-            selectedSiteName = self.siteListBox.get(self.siteListBox.curselection())
 
-        panel_args = [self.host, self.token]
-        panel_kwargs = {'project_pk': self.projectDict[selectedProjectName]}
-        if selectedSiteName:
-            panel_kwargs['site_pk'] = self.siteDict[selectedSiteName]
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.specimen_dict[result['specimen_description']] = result['id']
+        for specimen in sorted(self.specimen_dict.keys()):
+            self.specimen_menu['menu'].add_command(
+                label=specimen,
+                command=lambda value=specimen:
+                self.specimen_selection.set(value))
+
+    def load_stimulations(self, project_id):
+        self.stimulation_menu['menu'].delete(0, 'end')
+        self.stimulation_selection.set('')
+        self.stimulation_dict.clear()
 
         try:
-            response = rest.get_panels(*panel_args, **panel_kwargs)
-        except Exception, e:
-            print e
-
-        self.panelListBox.delete(0, 'end')
-        self.panelDict.clear()
-        for result in response['data']:
-            self.panelDict[result['panel_name']] = result['id']
-        for panel_name in sorted(self.panelDict.keys()):
-            self.panelListBox.insert('end', panel_name)
-
-    def updateMetadata(self, event=None):
-
-        selectedProjectName = self.projectListBox.get(self.projectListBox.curselection())
-
-        if selectedProjectName in self.projectDict:
-            self.loadProjectSites(self.projectDict[selectedProjectName])
-            self.loadProjectSubjects(self.projectDict[selectedProjectName])
-            self.loadProjectVisits(self.projectDict[selectedProjectName])
-
-        self.updateUploadButtonState()
-        self.updateApplyPanelData()
-
-    def siteSelectionChanged(self, event=None):
-        self.updateUploadButtonState()
-        self.updateApplyPanelData()
-
-    def updateUploadButtonState(self, event=None):
-        active = True
-        site_selection = self.siteListBox.curselection()
-        subject_selection = self.subjectListBox.curselection()
-        visit_selection = self.visitListBox.curselection()
-        specimen_selection = self.specimenListBox.curselection()
-
-        if not site_selection or not subject_selection or not visit_selection or not specimen_selection:
-            active = False
-        if hasattr(self, 'fileListBox'):
-            if len(self.fileListBox.get(0, 'end')) == 0:
-                active = False
-        else:
-            active = False
-        if active:
-            self.uploadButton.config(state='active')
-        else:
-            self.uploadButton.config(state='disabled')
-
-    def setLogTextStyles(self):
-        self.uploadLogText.tag_config('error', foreground=ERROR_FOREGROUND_COLOR)
-
-    def uploadFiles(self):
-        subject_selection = self.subjectListBox.get(self.subjectListBox.curselection())
-        site_selection = self.siteListBox.get(self.siteListBox.curselection())
-        visit_selection = self.visitListBox.get(self.visitListBox.curselection())
-        specimen_selection = self.specimenListBox.get(self.specimenListBox.curselection())
-
-        if self.sampleGroupListBox.curselection():
-            sample_group_pk = str(self.sampleGroupDict[self.sampleGroupListBox.get(self.sampleGroupListBox.curselection())])
-        else:
-            sample_group_pk = None
-
-        uploadFileList = self.fileListBox.get(0, 'end')
-        self.uploadProgressBar.config(maximum=len(uploadFileList))
-
-        for i, file_path in enumerate(uploadFileList):
-            response_dict = rest.post_sample(
+            response = rest.get_stimulations(
                 self.host,
                 self.token,
-                file_path,
-                subject_pk=str(self.subjectDict[subject_selection]),
-                site_pk=str(self.siteDict[site_selection]),
-                visit_type_pk=str(self.visitDict[visit_selection]),
-                specimen_pk=str(self.specimenDict[specimen_selection]),
-                sample_group_pk=sample_group_pk
+                project_pk=project_id)
+        except Exception, e:
+            print e
+            return
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.stimulation_dict[result['stimulation_name']] = result['id']
+        for stimulation in sorted(self.stimulation_dict.keys()):
+            self.stimulation_menu['menu'].add_command(
+                label=stimulation,
+                command=lambda value=stimulation:
+                self.stimulation_selection.set(value))
+
+    def update_site_metadata(self, *args, **kwargs):
+        self.site_panel_menu['menu'].delete(0, 'end')
+        self.site_panel_selection.set('')
+        self.site_panel_dict.clear()
+
+        self.compensation_menu['menu'].delete(0, 'end')
+        self.compensation_selection.set('')
+        self.compensation_dict.clear()
+
+        if not self.site_selection.get():
+            return
+        site_pk = self.site_dict[self.site_selection.get()]
+        rest_args = [self.host, self.token]
+        rest_kwargs = {'site_pk': site_pk}
+        try:
+            response = rest.get_site_panels(*rest_args, **rest_kwargs)
+        except Exception, e:
+            print e
+            return
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.site_panel_dict[result['name']] = result['id']
+        for panel_name in sorted(self.site_panel_dict.keys()):
+            self.site_panel_menu['menu'].add_command(
+                label=panel_name,
+                command=lambda value=panel_name:
+                self.site_panel_selection.set(value))
+
+        try:
+            response = rest.get_compensations(*rest_args, **rest_kwargs)
+        except Exception, e:
+            print e
+            return
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.compensation_dict[result['original_filename']] = result['id']
+        for comp_filename in sorted(self.compensation_dict.keys()):
+            self.compensation_menu['menu'].add_command(
+                label=comp_filename,
+                command=lambda value=comp_filename:
+                self.compensation_selection.set(value))
+
+    def update_metadata(*args):
+        self = args[0]
+
+        option_value = self.project_selection.get()
+
+        if option_value in self.project_dict:
+            self.load_project_sites(self.project_dict[option_value])
+            self.load_project_subjects(self.project_dict[option_value])
+            self.load_project_visits(self.project_dict[option_value])
+            self.load_stimulations(self.project_dict[option_value])
+
+        self.update_add_to_queue_button_state()
+
+    def update_add_to_queue_button_state(self, *args, **kwargs):
+        active = True
+
+        if not self.site_selection.get() or \
+                not self.subject_selection.get() or \
+                not self.visit_selection.get() or \
+                not self.specimen_selection.get() or \
+                not self.stimulation_selection.get() or \
+                not self.site_panel_selection.get():
+            active = False
+        if len(self.file_list_canvas.children) == 0:
+            active = False
+
+        if active:
+            self.add_to_queue_button.config(state='active')
+        else:
+            self.add_to_queue_button.config(state='disabled')
+
+    def add_to_upload_queue(self):
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
+                    # populate the ChosenFile attributes
+                    c_file = self.file_dict[v.file_path]
+
+                    c_file.project = self.project_selection.get()
+                    c_file.project_pk = self.project_dict[c_file.project]
+
+                    c_file.subject = self.subject_selection.get()
+                    c_file.subject_pk = self.subject_dict[c_file.subject]
+
+                    c_file.visit = self.visit_selection.get()
+                    c_file.visit_pk = self.visit_dict[c_file.visit]
+
+                    c_file.specimen = self.specimen_selection.get()
+                    c_file.specimen_pk = self.specimen_dict[c_file.specimen]
+
+                    c_file.stimulation = self.stimulation_selection.get()
+                    c_file.stimulation_pk = \
+                        self.stimulation_dict[c_file.stimulation]
+
+                    c_file.site_panel = self.site_panel_selection.get()
+                    c_file.site_panel_pk = \
+                        self.site_panel_dict[c_file.site_panel]
+
+                    c_file.compensation = self.compensation_selection.get()
+                    c_file.compensation_pk = \
+                        self.compensation_dict[c_file.compensation]
+
+                    # Populate our tree item,
+                    item = list()
+                    item.append(c_file.file_name)
+                    item.append(c_file.project)
+                    item.append(c_file.subject)
+                    item.append(c_file.visit)
+                    item.append(c_file.specimen)
+                    item.append(c_file.stimulation)
+                    item.append(c_file.site_panel)
+                    item.append(c_file.compensation)
+                    item.append(c_file.status)
+
+                    # check if the item is already in the queue
+                    # and remove it if it is
+                    if self.queue_tree.exists(c_file.file_path):
+                        self.queue_tree.delete(c_file.file_path)
+
+                    # add item to the tree, the id will be the file's
+                    # full path so we can identify tree items with the same
+                    # file name
+                    self.queue_tree.insert(
+                        '',
+                        'end',
+                        values=item,
+                        tags='pending',
+                        iid=c_file.file_path)
+
+                    # finally, disable our checkboxes
+                    v.config(state=Tkinter.DISABLED)
+
+        self._auto_resize_queue_columns()
+
+    def _auto_resize_queue_columns(self):
+        """
+        automagically set the column widths
+        """
+
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.get_children()
+
+        total_width = 0
+        col_widths = {}
+        for i, value in enumerate(QUEUE_HEADERS):
+            col_widths[i] = 0
+
+        for item in tree_items:
+            for i, value in enumerate(self.queue_tree.item(item)['values']):
+                width = tkFont.Font().measure(value)
+                header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
+                # don't make the column smaller than the header text
+                if header_width > width:
+                    width = header_width
+                if width > col_widths[i]:
+                    col_widths[i] = width
+
+        total_width = sum(col_widths.values())
+
+        # get the tree's width
+        tree_width = self.queue_tree.winfo_width()
+
+        # see if there's any extra space leftover
+        # and distribute equally across the columns
+        extra = 0
+        if tree_width > total_width:
+            extra = int(
+                (tree_width - total_width)/len(col_widths))
+            # the extra width may not quite cover the whole
+            # tree width if the column count doesn't evenly
+            # divide the leftover space (we floored the value)
+            # add the extra extra to the first column
+            if tree_width > total_width + (extra * len(col_widths)):
+                col_widths[0] = \
+                    col_widths[0] + \
+                    tree_width - \
+                    (total_width + (extra * len(col_widths)))
+
+        # apply our auto-generated column widths
+        for i, value in enumerate(tree_items):
+            self.queue_tree.column(
+                QUEUE_HEADERS[i],
+                width=col_widths[i]+extra)
+
+    def clear_selected_queue(self):
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.selection()
+
+        # the items are the tree rows
+        for item in tree_items:
+            # the items are the row IDs, which we set as the file's full path
+            try:
+                chosen_file = self.file_dict[item]
+            except Exception, e:
+                print e
+                break
+
+            # user may have cleared the checkbox by now,
+            # if so, we'll delete this file from our list,
+            # if not, re-initialize the checkbox
+            if chosen_file.checkbox in self.file_list_canvas.children.values():
+                chosen_file.reinitialize()
+            else:
+                del(self.file_dict[item])
+            self.queue_tree.delete(item)
+
+    def display_error(self):
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.selection()
+        message_list = []
+
+        # the items are the tree rows
+        for item in tree_items:
+           # the items are the row IDs, which we set as the file's full path
+            try:
+                chosen_file = self.file_dict[item]
+            except Exception, e:
+                print e
+                break
+
+            if chosen_file.error_msg:
+                message_list.append(
+                    "%s:\n\t%s" % (chosen_file.file_name, chosen_file.error_msg)
+                )
+        if len(tree_items) == 0:
+            message_list.append("No items selected")
+        elif len(message_list) == 0:
+            message_list.append("No errors")
+
+        message_win = Tkinter.Toplevel()
+        message_win.title('Errors')
+        message_win.minsize(width=480, height=320)
+        message_win.config(bg=BACKGROUND_COLOR)
+
+        message_label = Tkinter.Label(
+            message_win,
+            text="\n\n".join(message_list),
+            bg=BACKGROUND_COLOR,
+            justify=Tkinter.LEFT)
+        message_label.pack(
+            anchor='nw',
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM
+        )
+
+        # make sure there's a way to destroy the dialog
+        message_button = ttk.Button(
+            message_win,
+            text='OK',
+            command=message_win.destroy)
+        message_button.pack()
+
+    def upload_files(self):
+        t = Thread(target=self._upload_files)
+        t.start()
+
+    def _upload_files(self):
+        # get_children returns a tuple of item IDs from the tree
+        tree_items = self.queue_tree.get_children()
+
+        # use the item IDs as keys, file names as values
+        # we'll check the row's status value to upload only 'Pending' files
+        upload_list = []
+
+        # the items are the tree rows
+        for item in tree_items:
+            # the row's values are in the order we created them in
+            # the status is the last column
+            if self.queue_tree.item(item)['values'][-1] == 'Pending':
+                # the file path is the item
+                upload_list.append(item)
+
+        self.upload_progress_bar.config(maximum=len(upload_list))
+
+        for item in upload_list:
+            try:
+                chosen_file = self.file_dict[item]
+            except Exception, e:
+                print e
+
+            if not chosen_file.project or \
+                    not chosen_file.subject_pk or \
+                    not chosen_file.site_panel_pk or \
+                    not chosen_file.specimen_pk or \
+                    not chosen_file.file_path or \
+                    not chosen_file.stimulation_pk or \
+                    not chosen_file.visit_pk:
+                break
+
+            rest_args = [
+                self.host,
+                self.token,
+                chosen_file.file_path
+            ]
+            rest_kwargs = {
+                'subject_pk': str(chosen_file.subject_pk),
+                'site_panel_pk': str(chosen_file.site_panel_pk),
+                'visit_type_pk': str(chosen_file.visit_pk),
+                'specimen_pk': str(chosen_file.specimen_pk),
+                'stimulation_pk': str(chosen_file.stimulation_pk)
+            }
+
+            if chosen_file.compensation_pk:
+                rest_kwargs['compensation_pk'] = \
+                    str(chosen_file.compensation_pk)
+
+            response_dict = rest.post_sample(
+                *rest_args,
+                **rest_kwargs
             )
 
             log_text = ''.join(
                 [
-                    file_path,
+                    chosen_file.file_name,
                     ' (',
                     str(response_dict['status']),
                     ': ',
@@ -815,239 +1331,32 @@ class Application(tk.Frame):
                     '\n'
                 ]
             )
-            self.uploadLogText.config(state='normal')
+
+            print log_text
 
             if response_dict['status'] == 201:
-                self.fileListBox.itemconfig(
-                    i,
-                    fg=SUCCESS_FOREGROUND_COLOR,
-                    selectforeground=SUCCESS_FOREGROUND_COLOR)
-                self.uploadLogText.insert('end', log_text)
+                status = 'Complete'
             elif response_dict['status'] == 400:
-                self.fileListBox.itemconfig(
-                    i,
-                    fg=ERROR_FOREGROUND_COLOR,
-                    selectforeground=ERROR_FOREGROUND_COLOR)
-                self.uploadLogText.insert('end', log_text, 'error')
-            self.uploadLogText.config(state='disabled')
-
-            self.uploadProgressBar.step()
-            self.uploadProgressBar.update()
-
-    def loadApplyPanelFrame(self):
-        self.innerRightFrame.config(text="Apply Panel to Samples")
-        if hasattr(self, 'applyPanelFrame'):
-            pass
-        else:
-            self.applyPanelFrame = tk.Frame(self.innerRightFrame, bg=BACKGROUND_COLOR)
-
-        self.applyPanelFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right',
-            padx=PAD_MEDIUM,
-            pady=PAD_MEDIUM)
-
-        self.applyPanelActionFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
-        self.applyPanelActionFrame.pack(
-            fill='x',
-            expand=False,
-            anchor='n')
-
-        # self.selectPanelOptionMenu = tk.OptionMenu(
-        #     self.applyPanelActionFrame,
-        #     tk.StringVar(value='Choose Panel'),
-        #     'one', 'two',
-        #     command=self.updateMatchingSamples)
-        # self.selectPanelOptionMenu.config(
-        #     bg=BACKGROUND_COLOR,
-        #     )
-        # self.selectPanelOptionMenu.pack(side='left')
-
-        self.applyPanelToSelectedButton = ttk.Button(
-            self.applyPanelActionFrame,
-            text='Apply Panel to Selected Samples',
-            style='Inactive.TButton',
-            command=self.applyPanelToSamples)
-        self.applyPanelToSelectedButton.pack(side='left')
-
-        self.applyPanelSelectorFrame = tk.Frame(self.applyPanelFrame, bg=BACKGROUND_COLOR)
-        self.applyPanelSelectorFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n')
-
-        self.applyPanelSelectorLeftFrame = tk.Frame(
-            self.applyPanelSelectorFrame,
-            bg=BACKGROUND_COLOR)
-        self.applyPanelSelectorLeftFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='left')
-
-        self.applyPanelSelectorRightFrame = tk.Frame(
-            self.applyPanelSelectorFrame,
-            bg=BACKGROUND_COLOR)
-        self.applyPanelSelectorRightFrame.pack(
-            fill='both',
-            expand=True,
-            anchor='n',
-            side='right')
-
-        # apply panel label frame
-        self.panelChooserLabelFrame = tk.Frame(
-            self.applyPanelSelectorLeftFrame,
-            bg=BACKGROUND_COLOR)
-        self.panelChooserLabel = tk.Label(
-            self.panelChooserLabelFrame,
-            text='Choose Panel',
-            bg=BACKGROUND_COLOR)
-        self.panelChooserLabel.pack(side='left')
-        self.panelChooserLabelFrame.pack(fill='x')
-
-        # apply panel chooser listbox frame
-        self.panelChooserFrame = tk.Frame(self.applyPanelSelectorLeftFrame, bg=BACKGROUND_COLOR)
-        self.panelScrollBar = tk.Scrollbar(self.panelChooserFrame, orient='vertical')
-        self.panelListBox = tk.Listbox(
-            self.panelChooserFrame,
-            exportselection=0,
-            yscrollcommand=self.panelScrollBar.set,
-            relief='flat',
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.panelListBox.bind('<<ListboxSelect>>', self.updateMatchingSamples)
-        self.panelScrollBar.config(command=self.panelListBox.yview)
-        self.panelScrollBar.pack(side='right', fill='y')
-        self.panelListBox.pack(fill='both', expand=True)
-        self.panelChooserFrame.pack(fill='both', expand=True)
-
-        # matching sample label frame
-        self.sampleChooserLabelFrame = tk.Frame(
-            self.applyPanelSelectorRightFrame,
-            bg=BACKGROUND_COLOR)
-        self.sampleChooserLabel = tk.Label(
-            self.sampleChooserLabelFrame,
-            text='Matching Samples',
-            bg=BACKGROUND_COLOR)
-        self.sampleChooserLabel.pack(side='left')
-        self.sampleChooserLabelFrame.pack(fill='x')
-
-        # apply panel sample chooser listbox frame
-        self.sampleChooserFrame = tk.Frame(
-            self.applyPanelSelectorRightFrame,
-            bg=BACKGROUND_COLOR)
-        self.sampleScrollBar = tk.Scrollbar(self.sampleChooserFrame, orient='vertical')
-        self.sampleListBox = tk.Listbox(
-            self.sampleChooserFrame,
-            selectmode='extended',
-            exportselection=0,
-            yscrollcommand=self.sampleScrollBar.set,
-            relief='flat',
-            borderwidth=0,
-            highlightcolor=HIGHLIGHT_COLOR,
-            highlightbackground=BORDER_COLOR,
-            highlightthickness=1)
-        self.sampleScrollBar.config(command=self.sampleListBox.yview)
-        self.sampleScrollBar.pack(side='right', fill='y')
-        self.sampleListBox.pack(fill='both', expand=True)
-        self.sampleChooserFrame.pack(fill='both', expand=True)
-
-        self.updateApplyPanelData()
-
-    def updateApplyPanelData(self):
-        # only update the apply panel frame if the function is selected
-        # ...it makes a REST call, so avoid it if not necessary
-        if self.functionListBox.curselection()[0] == '1':
-            self.matchingPanelSamplesDict.clear()
-            self.loadProjectPanels()
-            self.updateMatchingSamples()
-
-    def clearMatchingSamples(self):
-        self.matchingPanelSamplesDict.clear()
-        self.sampleListBox.delete(0, 'end')
-
-    def updateMatchingSamples(self, event=None):
-        if not self.panelListBox.curselection():
-            self.clearMatchingSamples()
-            return
-
-        panel_selection = self.panelListBox.get(self.panelListBox.curselection())
-        response = rest.get_panel(self.host, self.token, panel_pk=self.panelDict[panel_selection])
-        panel_params = response['data']['panelparameters']
-        site_pk = response['data']['site']['id']
-        matching_samples = None
-        if len(panel_params) > 0:
-            panel_params_csv_string = ','.join([i['fcs_text'] for i in panel_params])
-            matching_samples = rest.get_uncat_samples(
-                                    self.host,
-                                    self.token,
-                                    fcs_text=panel_params_csv_string,
-                                    parameter_count=len(panel_params),
-                                    site_pk=site_pk)
-        if matching_samples is None:
-            self.clearMatchingSamples()
-            return
-        if matching_samples.has_key('status'):
-            if matching_samples['status'] != 200:
-                self.clearMatchingSamples()
-                return
-
-        if matching_samples.has_key('data'):
-            for sample in matching_samples['data']:
-                dict_key = sample['original_filename'] + ' (id=' + str(sample['id']) + ')'
-                self.matchingPanelSamplesDict[dict_key] = sample['id']
-            for sample in sorted(self.matchingPanelSamplesDict.keys()):
-                self.sampleListBox.insert('end', sample)
-
-    def applyPanelToSamples(self):
-        if not self.panelListBox.curselection():
-            return
-        if not self.sampleListBox.curselection():
-            return
-
-        panel_selection = self.panelListBox.get(self.panelListBox.curselection())
-        sample_selection = self.sampleListBox.curselection()
-
-        panel_pk = self.panelDict[panel_selection]
-
-        for sample_index in sample_selection:
-            sample_selection = self.sampleListBox.get(sample_index)
-            sample_pk = self.matchingPanelSamplesDict[sample_selection]
-            response_dict = rest.patch_sample_with_panel(
-                self.host,
-                self.token,
-                sample_pk=str(sample_pk),
-                panel_pk=str(panel_pk)
-            )
-
-            log_text = ''.join(
-                [
-                    sample_selection,
-                    ' (',
-                    str(response_dict['status']),
-                    ': ',
-                    str(response_dict['reason']),
-                    ')\n',
-                    str(response_dict['data']),
-                    ')\n'
-                ]
-            )
-            self.uploadLogText.config(state='normal')
-
-            if response_dict['status'] == 201:
-                self.uploadLogText.insert('end', log_text)
+                chosen_file.error_msg = "\n".join(
+                    json.loads(response_dict['data']).values()[0])
+                status = 'Error'
             else:
-                self.uploadLogText.insert('end', log_text, 'error')
-            self.uploadLogText.config(state='disabled')
+                status = 'Error'
 
-        self.clearMatchingSamples()
-        self.updateMatchingSamples()
+            self.queue_tree.item(item, tags=status.lower())
+            # cannot set the values directly, must get them and reset
+            values = list(self.queue_tree.item(item, 'values'))
+            values[-1] = status
+            # re-populate the values
+            self.queue_tree.item(item, values=values)
+
+            # update our ChosenFile object
+            chosen_file.status = status
+
+            self.upload_progress_bar.step()
+            self.upload_progress_bar.update()
 
 
-root = tk.Tk()
+root = Tkinter.Tk()
 app = Application(root)
 app.mainloop()
