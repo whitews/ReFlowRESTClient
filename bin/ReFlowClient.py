@@ -6,6 +6,7 @@ import tkFont
 from PIL import Image, ImageTk
 import reflowrestclient.utils as rest
 import json
+import re
 import sys
 import os
 from threading import Thread
@@ -245,9 +246,14 @@ class Application(Tkinter.Frame):
     def load_login_frame(self):
 
         def login():
-            self.host = host_entry.get()
+            host_text = host_entry.get()
             self.username = user_entry.get()
             password = password_entry.get()
+
+            # remove 'http://' or trailing slash from host text if present
+            matches = re.search('^(https://)?([^/]+)(/)*', host_text)
+            self.host = matches.groups()[1]
+
             try:
                 self.token = rest.login(self.host, self.username, password)
             except Exception, e:
