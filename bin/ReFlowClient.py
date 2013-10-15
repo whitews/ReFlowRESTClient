@@ -713,11 +713,13 @@ class Application(Tkinter.Frame):
         self.upload_button = ttk.Button(
             upload_queue_button_frame,
             text='Upload',
+            style='Inactive.TButton',
             command=self.upload_files)
         self.upload_button.pack(side='left', expand=False)
         self.clear_selected_queue_button = ttk.Button(
             upload_queue_button_frame,
             text='Clear Selected',
+            style='Inactive.TButton',
             command=self.clear_selected_queue)
         self.clear_selected_queue_button.pack(side='left', expand=False)
         display_error_button = ttk.Button(
@@ -1288,7 +1290,9 @@ class Application(Tkinter.Frame):
                 upload_list.append(item)
 
         self.upload_progress_bar.config(maximum=len(upload_list))
-
+        self.add_to_queue_button.config(state='disabled')
+        self.upload_button.config(state='disabled')
+        self.clear_selected_queue_button.config(state='disabled')
         for item in upload_list:
             try:
                 chosen_file = self.file_dict[item]
@@ -1362,6 +1366,10 @@ class Application(Tkinter.Frame):
 
             self.upload_progress_bar.step()
             self.upload_progress_bar.update()
+
+        self.update_add_to_queue_button_state()
+        self.upload_button.config(state='active')
+        self.clear_selected_queue_button.config(state='active')
 
 
 root = Tkinter.Tk()
