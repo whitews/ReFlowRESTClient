@@ -1113,8 +1113,9 @@ class Application(Tkinter.Frame):
                         self.site_panel_dict[c_file.site_panel]
 
                     c_file.compensation = self.compensation_selection.get()
-                    c_file.compensation_pk = \
-                        self.compensation_dict[c_file.compensation]
+                    if c_file.compensation:
+                        c_file.compensation_pk = \
+                            self.compensation_dict[c_file.compensation]
 
                     # Populate our tree item,
                     item = list()
