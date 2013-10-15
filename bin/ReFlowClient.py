@@ -245,16 +245,16 @@ class Application(Tkinter.Frame):
 
     def load_login_frame(self):
 
-        def login():
+        def login(*args):
             host_text = host_entry.get()
             self.username = user_entry.get()
             password = password_entry.get()
 
             # remove 'http://' or trailing slash from host text if present
             matches = re.search('^(https://)?([^/]+)(/)*', host_text)
-            self.host = matches.groups()[1]
 
             try:
+                self.host = matches.groups()[1]
                 self.token = rest.login(self.host, self.username, password)
             except Exception, e:
                 print e
@@ -264,7 +264,10 @@ class Application(Tkinter.Frame):
                     'Are the hostname, username, and password are correct?')
                 return
             self.login_frame.destroy()
+            self.master.unbind('<Return>')
             self.load_main_frame()
+
+        self.master.bind('<Return>', login)
 
         logo_label = Tkinter.Label(self.login_frame, image=self.logo_image)
         logo_label.config(bg=BACKGROUND_COLOR)
