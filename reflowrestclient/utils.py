@@ -1,4 +1,5 @@
 import requests
+import grequests
 import os
 import re
 
@@ -456,6 +457,48 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
         'reason': r.reason,
         'data': data,
     }
+
+
+def download_samples(host, token, sample_pk_list, directory=None):
+    urls = []
+
+    for pk in sample_pk_list:
+        urls.append(
+            "%s%s/api/repository/samples/%d/download_as_pk/" %
+            (METHOD, host, pk))
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
+        rs = grequests.map(reqs, size=5)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    results = []
+
+    for r in rs:
+        if r.status_code == 200:
+            try:
+                filename = re.findall(
+                    "filename=([^']+)", r.headers['content-disposition'])[0]
+                if directory is None:
+                    directory = os.getcwd()
+
+                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
+                    fcs_file.write(r.content)
+            except Exception, e:
+                print e
+        else:
+            data = r.text
+
+        results.append({
+            'status': r.status_code,
+            'reason': r.reason,
+            'data': data,
+        })
+
+    return results
 
 
 def post_sample(
