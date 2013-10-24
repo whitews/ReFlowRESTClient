@@ -427,8 +427,37 @@ def get_sample(host, token, sample_pk):
     return get_request(token, url)
 
 
-def download_sample(host, token, sample_pk, filename=None, directory=None):
-    url = "%s%s/api/repository/samples/%d/download/" % (METHOD, host, sample_pk)
+def download_sample(
+        host,
+        token,
+        sample_pk,
+        data_format='npy',
+        filename=None,
+        directory=None):
+    """
+    Download sample data as FCS, CSV, or Numpy (npy)
+
+    Options:
+        'data_format': 'npy' (default), 'fcs, or 'csv'
+        'filename': filename to use for downloaded file
+                    (default is the PK.<format>, eg 42.npy)
+    """
+    if data_format == 'npy':
+        url = "%s%s/api/repository/samples/%d/npy/" % (METHOD, host, sample_pk)
+    elif data_format == 'csv':
+        url = "%s%s/api/repository/samples/%d/csv/" % (METHOD, host, sample_pk)
+    elif data_format == 'fcs':
+        url = "%s%s/api/repository/samples/%d/fcs/" % (METHOD, host, sample_pk)
+    else:
+        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
+            % data_format
+        return
+
+    if filename is None:
+        filename = str(sample_pk) + '.' + data_format
+    if directory is None:
+        directory = os.getcwd()
+
     headers = {'Authorization': "Token %s" % token}
     data = ''
     try:
@@ -439,14 +468,8 @@ def download_sample(host, token, sample_pk, filename=None, directory=None):
 
     if r.status_code == 200:
         try:
-            if filename is None:
-                filename = re.findall(
-                    "filename=([^']+)", r.headers['content-disposition'])[0]
-            if directory is None:
-                directory = os.getcwd()
-
-            with open("%s/%s" % (directory, filename), "wb") as fcs_file:
-                fcs_file.write(r.content)
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
         except Exception, e:
             print e
     else:
@@ -464,7 +487,7 @@ def download_samples(host, token, sample_pk_list, directory=None):
 
     for pk in sample_pk_list:
         urls.append(
-            "%s%s/api/repository/samples/%d/download_as_pk/" %
+            "%s%s/api/repository/samples/%d/fcs_as_pk/" %
             (METHOD, host, pk))
     headers = {'Authorization': "Token %s" % token}
     data = ''
