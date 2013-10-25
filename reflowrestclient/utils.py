@@ -6,25 +6,25 @@ import re
 METHOD = 'https://'
 
 URLS = {
-    'TOKEN': '/api/token-auth/',
-    'PROJECTS': '/api/repository/projects/',
-    'SPECIMENS': '/api/repository/specimens/',
+    'TOKEN':          '/api/token-auth/',
+    'PROJECTS':       '/api/repository/projects/',
+    'SPECIMENS':      '/api/repository/specimens/',
     'SUBJECT_GROUPS': '/api/repository/subject_groups/',
-    'SITES': '/api/repository/sites/',
-    'SUBJECTS': '/api/repository/subjects/',
+    'SITES':          '/api/repository/sites/',
+    'SUBJECTS':       '/api/repository/subjects/',
     'PROJECT_PANELS': '/api/repository/project_panels/',
-    'SITE_PANELS': '/api/repository/site_panels/',
-    'COMPENSATIONS': '/api/repository/compensations/',
-    'STIMULATIONS': '/api/repository/stimulations/',
-    'SAMPLES': '/api/repository/samples/',
+    'SITE_PANELS':    '/api/repository/site_panels/',
+    'COMPENSATIONS':  '/api/repository/compensations/',
+    'STIMULATIONS':   '/api/repository/stimulations/',
+    'SAMPLES':        '/api/repository/samples/',
     'CREATE_SAMPLES': '/api/repository/samples/add/',
-    'VISIT_TYPES': '/api/repository/visit_types/',
+    'VISIT_TYPES':    '/api/repository/visit_types/',
 
     # Process manager API URLs
-    'PROCESSES': '/api/process_manager/processes/',
-    'WORKERS': '/api/process_manager/workers/',
-    'VERIFY_WORKER': '/api/process_manager/verify_worker/',
-    'PROCESS_REQUESTS': '/api/process_manager/process_requests/',
+    'PROCESSES':               '/api/process_manager/processes/',
+    'WORKERS':                 '/api/process_manager/workers/',
+    'VERIFY_WORKER':           '/api/process_manager/verify_worker/',
+    'PROCESS_REQUESTS':        '/api/process_manager/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/process_manager/viable_process_requests/',
 }
 
@@ -65,12 +65,12 @@ def get_request(token, url, params=None):
     }
 
 
-def login(host, username, password):
+def get_token(host, username, password):
     """
     Login to host url using user credentials given.
 
     Returns the authenticating user's token (string) if successful,
-    returns None if login failed.
+    returns None if authentication failed.
     """
     url = '%s%s%s' % (METHOD, host, URLS['TOKEN'])
 
@@ -302,20 +302,24 @@ def get_site_panel(host, token, site_panel_pk):
 def get_compensations(
         host,
         token,
-        original_filename=None,
+        name=None,
+        site_panel_pk=None,
         site_pk=None,
         project_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
     filter_params = dict()
 
-    if original_filename is not None:
-        filter_params['original_filename'] = original_filename
+    if name is not None:
+        filter_params['original_filename'] = name
+
+    if site_panel_pk is not None:
+        filter_params['site_panel'] = site_panel_pk
 
     if site_pk is not None:
-        filter_params['site'] = site_pk
+        filter_params['site_panel__site'] = site_pk
 
     if project_pk is not None:
-        filter_params['site__project'] = project_pk
+        filter_params['site_panel__site__project'] = project_pk
 
     return get_request(token, url, filter_params)
 

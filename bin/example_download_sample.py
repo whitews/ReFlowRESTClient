@@ -9,7 +9,7 @@ username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 filename = 'test.fcs'
 
-token = rest.login(host, username, password)
+token = rest.get_token(host, username, password)
 
 if token:
     print "Authentication successful"

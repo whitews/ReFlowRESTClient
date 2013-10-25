@@ -8,7 +8,7 @@ host = raw_input('Host: ')
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
-token = rest.login(host, username, password)
+token = rest.get_token(host, username, password)
 
 if token:
     print "Authentication successful"

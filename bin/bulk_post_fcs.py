@@ -22,7 +22,7 @@ host = "localhost:8000"
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
-token = login(host, username, password)
+token = get_token(host, username, password)
 
 if token:
     print "Authentication successful"

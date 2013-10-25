@@ -1,7 +1,7 @@
 import getpass
 import sys
 import json
-from reflowrestclient.utils import login, post_sample
+from reflowrestclient.utils import get_token, post_sample
 
 host = "localhost:8000"
 auth_token_url = "/api-token-auth/"
@@ -10,7 +10,7 @@ url = "/api/samples/"
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
-token = login(host, username, password)
+token = get_token(host, username, password)
 
 if token:
     print "Got token!!!"
