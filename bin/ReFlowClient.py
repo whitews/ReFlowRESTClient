@@ -255,7 +255,7 @@ class Application(Tkinter.Frame):
 
             try:
                 self.host = matches.groups()[1]
-                self.token = rest.login(self.host, self.username, password)
+                self.token = rest.get_token(self.host, self.username, password)
             except Exception, e:
                 print e
             if not self.token:
