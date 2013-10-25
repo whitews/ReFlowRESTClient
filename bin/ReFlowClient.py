@@ -19,7 +19,7 @@ else:
     # for development
     RESOURCE_DIR = '../resources'
 
-LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.png')
+LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.gif')
 if sys.platform == 'win32':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.ico')
 
