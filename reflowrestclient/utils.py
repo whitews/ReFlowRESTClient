@@ -211,7 +211,12 @@ def get_site(host, token, site_pk):
     return get_request(token, url)
 
 
-def get_subjects(host, token, subject_code=None, project_pk=None):
+def get_subjects(
+        host,
+        token,
+        subject_code=None,
+        project_pk=None,
+        subject_group_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SUBJECTS'])
     filter_params = dict()
 
@@ -220,6 +225,9 @@ def get_subjects(host, token, subject_code=None, project_pk=None):
 
     if project_pk is not None:
         filter_params['project'] = project_pk
+
+    if subject_group_pk is not None:
+        filter_params['subject_group'] = subject_group_pk
 
     return get_request(token, url, filter_params)
 
