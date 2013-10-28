@@ -318,7 +318,7 @@ def get_compensations(
     filter_params = dict()
 
     if name is not None:
-        filter_params['original_filename'] = name
+        filter_params['name'] = name
 
     if site_panel_pk is not None:
         filter_params['site_panel'] = site_panel_pk
