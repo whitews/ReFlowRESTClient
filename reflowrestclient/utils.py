@@ -494,13 +494,23 @@ def download_sample(
     }
 
 
-def download_samples(host, token, sample_pk_list, directory=None):
+def download_samples(
+        host,
+        token,
+        sample_pk_list,
+        data_format='npy',
+        directory=None):
+    if data_format not in ['npy', 'csv', 'fcs']:
+        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
+            % data_format
+        return
+
     urls = []
 
     for pk in sample_pk_list:
         urls.append(
-            "%s%s/api/repository/samples/%d/fcs_as_pk/" %
-            (METHOD, host, pk))
+            "%s%s/api/repository/samples/%d/%s/" %
+            (METHOD, host, pk, data_format))
     headers = {'Authorization': "Token %s" % token}
     data = ''
     try:
