@@ -209,7 +209,7 @@ class Application(Tkinter.Frame):
         self.site_panel_selection = Tkinter.StringVar()
         self.site_panel_selection.trace(
             "w",
-            self.update_add_to_queue_button_state)
+            self.update_site_panel_metadata)
 
         self.compensation_menu = None
         self.compensation_selection = Tkinter.StringVar()
@@ -1011,6 +1011,34 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
+    def update_site_panel_metadata(self, *args, **kwargs):
+        self.compensation_menu['menu'].delete(0, 'end')
+        self.compensation_selection.set('')
+        self.compensation_dict.clear()
+
+        if not self.site_panel_selection.get():
+            return
+        site_panel_pk = self.site_panel_dict[self.site_panel_selection.get()]
+        rest_args = [self.host, self.token]
+        rest_kwargs = {'site_panel_pk': site_panel_pk}
+        try:
+            response = rest.get_compensations(*rest_args, **rest_kwargs)
+        except Exception, e:
+            print e
+            return
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.compensation_dict[result['name']] = result['id']
+        for comp_filename in sorted(self.compensation_dict.keys()):
+            self.compensation_menu['menu'].add_command(
+                label=comp_filename,
+                command=lambda value=comp_filename:
+                self.compensation_selection.set(value))
+
+
     def update_site_metadata(self, *args, **kwargs):
         self.site_panel_menu['menu'].delete(0, 'end')
         self.site_panel_selection.set('')
@@ -1041,23 +1069,6 @@ class Application(Tkinter.Frame):
                 label=panel_name,
                 command=lambda value=panel_name:
                 self.site_panel_selection.set(value))
-
-        try:
-            response = rest.get_compensations(*rest_args, **rest_kwargs)
-        except Exception, e:
-            print e
-            return
-
-        if not 'data' in response:
-            return
-
-        for result in response['data']:
-            self.compensation_dict[result['original_filename']] = result['id']
-        for comp_filename in sorted(self.compensation_dict.keys()):
-            self.compensation_menu['menu'].add_command(
-                label=comp_filename,
-                command=lambda value=comp_filename:
-                self.compensation_selection.set(value))
 
     def update_metadata(*args):
         self = args[0]
