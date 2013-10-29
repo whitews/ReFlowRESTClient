@@ -620,6 +620,60 @@ def post_sample(
     }
 
 
+def download_compensation(
+        host,
+        token,
+        compensation_pk,
+        data_format='npy',
+        filename=None,
+        directory=None):
+    """
+    Download sample data as CSV or Numpy (npy)
+
+    Options:
+        'data_format': 'npy' (default) or 'csv'
+        'filename': filename to use for downloaded file
+                    (default is the comp_<PK>.<format>, eg comp_42.npy)
+    """
+    if data_format == 'npy':
+        url = "%s%s/api/repository/compensations/%d/npy/" % (
+            METHOD, host, compensation_pk)
+    elif data_format == 'csv':
+        url = "%s%s/api/repository/compensations/%d/csv/" % (
+            METHOD, host, compensation_pk)
+    else:
+        print "Data format %s not supported, use 'npy' or 'csv'" \
+            % data_format
+        return
+
+    if filename is None:
+        filename = 'comp_' + str(compensation_pk) + '.' + data_format
+    if directory is None:
+        directory = os.getcwd()
+
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    if r.status_code == 200:
+        try:
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
 #######################################
 ### START PROCESS MANAGER FUNCTIONS ###
 ###    Note: Most of these require  ###
