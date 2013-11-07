@@ -218,7 +218,7 @@ class Application(Tkinter.Frame):
         Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=960, height=640)
+        self.master.minsize(width=1024, height=640)
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.menu_bar = Tkinter.Menu(master)
@@ -758,7 +758,11 @@ class Application(Tkinter.Frame):
             fill='y')
         for header in QUEUE_HEADERS:
             self.queue_tree.heading(header, text=header.title())
-            self.queue_tree.column(header, width=25)
+            self.queue_tree.column(
+                header,
+                minwidth=0,
+                width=25,
+                stretch=Tkinter.TRUE)
 
         # setup Treeview tag styles, it's the only way to change colors/fonts
         # Note: it changes the entire row, individual cells cannot be
@@ -1017,6 +1021,7 @@ class Application(Tkinter.Frame):
         self.compensation_dict.clear()
 
         if not self.site_panel_selection.get():
+            self.update_add_to_queue_button_state()
             return
         site_panel_pk = self.site_panel_dict[self.site_panel_selection.get()]
         rest_args = [self.host, self.token]
@@ -1025,9 +1030,11 @@ class Application(Tkinter.Frame):
             response = rest.get_compensations(*rest_args, **rest_kwargs)
         except Exception, e:
             print e
+            self.update_add_to_queue_button_state()
             return
 
         if not 'data' in response:
+            self.update_add_to_queue_button_state()
             return
 
         for result in response['data']:
@@ -1038,6 +1045,7 @@ class Application(Tkinter.Frame):
                 command=lambda value=comp_filename:
                 self.compensation_selection.set(value))
 
+        self.update_add_to_queue_button_state()
 
     def update_site_metadata(self, *args, **kwargs):
         self.site_panel_menu['menu'].delete(0, 'end')
@@ -1173,7 +1181,6 @@ class Application(Tkinter.Frame):
         # get_children returns a tuple of item IDs from the tree
         tree_items = self.queue_tree.get_children()
 
-        total_width = 0
         col_widths = {}
         for i, value in enumerate(QUEUE_HEADERS):
             col_widths[i] = 0
@@ -1183,8 +1190,10 @@ class Application(Tkinter.Frame):
                 width = tkFont.Font().measure(value)
                 header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
                 # don't make the column smaller than the header text
-                if header_width > width:
-                    width = header_width
+                if header_width + 3 > width:
+                    width = header_width + 3
+
+                # check if it's higher than the value we already have
                 if width > col_widths[i]:
                     col_widths[i] = width
 
@@ -1195,25 +1204,27 @@ class Application(Tkinter.Frame):
 
         # see if there's any extra space leftover
         # and distribute equally across the columns
-        extra = 0
-        if tree_width > total_width:
-            extra = int(
-                (tree_width - total_width)/len(col_widths))
-            # the extra width may not quite cover the whole
-            # tree width if the column count doesn't evenly
-            # divide the leftover space (we floored the value)
-            # add the extra extra to the first column
-            if tree_width > total_width + (extra * len(col_widths)):
-                col_widths[0] = \
-                    col_widths[0] + \
-                    tree_width - \
-                    (total_width + (extra * len(col_widths)))
+        extra = int((tree_width - total_width) / len(col_widths))
+
+        # the extra width may not quite cover the whole
+        # tree width if the column count doesn't evenly
+        # divide the leftover space (we floored the value)
+        # add the extra extra to the first column
+        if tree_width > (total_width + (extra * len(col_widths))):
+            col_widths[0] = \
+                col_widths[0] + \
+                tree_width - \
+                (total_width + (extra * len(col_widths)))
 
         # apply our auto-generated column widths
-        for i, value in enumerate(tree_items):
+        for i, value in enumerate(QUEUE_HEADERS):
             self.queue_tree.column(
-                QUEUE_HEADERS[i],
-                width=col_widths[i]+extra)
+                value,
+                minwidth=0,
+                width=col_widths[i] + extra,
+                stretch=Tkinter.TRUE)
+
+        print col_widths
 
     def clear_selected_queue(self):
         # get_children returns a tuple of item IDs from the tree
@@ -1299,7 +1310,8 @@ class Application(Tkinter.Frame):
         for item in tree_items:
             # the row's values are in the order we created them in
             # the status is the last column
-            if self.queue_tree.item(item)['values'][-1] == 'Pending':
+            # don't upload already uploaded files (status=="Complete")
+            if self.queue_tree.item(item)['values'][-1] != 'Complete':
                 # the file path is the item
                 upload_list.append(item)
 
