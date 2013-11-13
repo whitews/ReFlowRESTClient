@@ -11,8 +11,10 @@ setup(
     description='REST client for interacting with a ReFlow repository.',
     long_description=open('README.md').read(),
     install_requires=[
+        'numpy>=1.6.2',
+        'fcm>=0.9.1',
         'requests>=1.1.0',
         'grequests>=0.2.0',
-        'PIL>=1.1.7',
+        'Pillow>=2.0.0',
     ]
 )
