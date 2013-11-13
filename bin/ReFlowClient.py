@@ -26,7 +26,6 @@ if sys.platform == 'win32':
     # Hack for tkFileDialog bug in Windows in Python 2.7.5
     # to avoid IOError on erroneous parsing of file names
     # ...looks like the file names may be passed as Tcl lists???
-    import Tkinter
     Tkinter.wantobjects = 0
 
 elif sys.platform == 'darwin':
@@ -43,6 +42,9 @@ ROW_ALT_COLOR = '#f3f6fa'
 SUCCESS_FOREGROUND_COLOR = '#00cc00'
 ERROR_FOREGROUND_COLOR = '#ff0000'
 
+WINDOW_HEIGHT = 1024
+WINDOW_WIDTH = 640
+
 PAD_SMALL = 3
 PAD_MEDIUM = 6
 PAD_LARGE = 12
@@ -55,6 +57,8 @@ QUEUE_HEADERS = [
     'Subject',
     'Visit',
     'Specimen',
+    'Pre-treatment',
+    'Storage',
     'Stimulation',
     'Site Panel',
     'Compensation',
@@ -199,6 +203,18 @@ class Application(Tkinter.Frame):
             "w",
             self.update_add_to_queue_button_state)
 
+        self.pretreatment_menu = None
+        self.pretreatment_selection = Tkinter.StringVar()
+        self.pretreatment_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.storage_menu = None
+        self.storage_selection = Tkinter.StringVar()
+        self.storage_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
         self.stimulation_menu = None
         self.stimulation_selection = Tkinter.StringVar()
         self.stimulation_selection.trace(
@@ -218,7 +234,7 @@ class Application(Tkinter.Frame):
         Tkinter.Frame.__init__(self, master)
         self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=1024, height=640)
+        self.master.minsize(width=WINDOW_HEIGHT, height=WINDOW_WIDTH)
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.menu_bar = Tkinter.Menu(master)
@@ -524,6 +540,71 @@ class Application(Tkinter.Frame):
 
         specimen_frame.pack(side='top', fill='x', expand=True)
 
+        # overall pretreatment frame
+        pretreatment_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # pretreatment label frame (top of pretreatment chooser frame)
+        pretreatment_chooser_label_frame = Tkinter.Frame(
+            pretreatment_frame,
+            bg=BACKGROUND_COLOR)
+        pretreatment_chooser_label = Tkinter.Label(
+            pretreatment_chooser_label_frame,
+            text='Pre-treatment:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        pretreatment_chooser_label.pack(side='left')
+        pretreatment_chooser_label_frame.pack(side='left', fill='x')
+
+        # pretreatment chooser listbox frame
+        # (bottom of pretreatment chooser frame)
+        pretreatment_chooser_frame = Tkinter.Frame(
+            pretreatment_frame,
+            bg=BACKGROUND_COLOR)
+        self.pretreatment_menu = Tkinter.OptionMenu(
+            pretreatment_chooser_frame,
+            self.pretreatment_selection,
+            '')
+        self.pretreatment_menu.config(bg=BACKGROUND_COLOR)
+        self.pretreatment_menu.pack(fill='x', expand=True)
+        pretreatment_chooser_frame.pack(fill='x', expand=True)
+
+        pretreatment_frame.pack(side='top', fill='x', expand=True)
+
+        # overall storage frame
+        storage_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # storage label frame (top of storage chooser frame)
+        storage_chooser_label_frame = Tkinter.Frame(
+            storage_frame,
+            bg=BACKGROUND_COLOR)
+        storage_chooser_label = Tkinter.Label(
+            storage_chooser_label_frame,
+            text='Storage:',
+            bg=BACKGROUND_COLOR,
+            width=12,
+            anchor=Tkinter.E)
+        storage_chooser_label.pack(side='left')
+        storage_chooser_label_frame.pack(side='left', fill='x')
+
+        # storage chooser listbox frame (bottom of storage chooser frame)
+        storage_chooser_frame = Tkinter.Frame(
+            storage_frame,
+            bg=BACKGROUND_COLOR)
+        self.storage_menu = Tkinter.OptionMenu(
+            storage_chooser_frame,
+            self.storage_selection,
+            '')
+        self.storage_menu.config(bg=BACKGROUND_COLOR)
+        self.storage_menu.pack(fill='x', expand=True)
+        storage_chooser_frame.pack(fill='x', expand=True)
+
+        storage_frame.pack(side='top', fill='x', expand=True)
+
         # overall stimulation frame
         stimulation_frame = Tkinter.Frame(
             metadata_frame,
@@ -625,6 +706,8 @@ class Application(Tkinter.Frame):
 
         self.load_user_projects()
         self.load_specimens()
+        self.load_pretreatment()
+        self.load_storage()
 
         metadata_frame.pack(
             fill='x',
@@ -769,14 +852,14 @@ class Application(Tkinter.Frame):
         # formatted
         self.queue_tree.tag_configure(
             tagname='pending',
-            font=('TkDefaultFont', 12, 'bold'))
+            font=('TkDefaultFont', 11, 'bold'))
         self.queue_tree.tag_configure(
             tagname='error',
-            font=('TkDefaultFont', 12, 'bold'),
+            font=('TkDefaultFont', 11, 'bold'),
             foreground='red')
         self.queue_tree.tag_configure(
             tagname='complete',
-            font=('TkDefaultFont', 12, 'italic'),
+            font=('TkDefaultFont', 11, 'italic'),
             foreground='#555555')
 
         upload_queue_frame.pack(
@@ -990,6 +1073,24 @@ class Application(Tkinter.Frame):
                 command=lambda value=specimen:
                 self.specimen_selection.set(value))
 
+    def load_pretreatment(self):
+        pretreatment_list = ['In vitro', 'Ex vivo']
+        self.pretreatment_menu['menu'].delete(0, 'end')
+        for item in pretreatment_list:
+            self.pretreatment_menu['menu'].add_command(
+                label=item,
+                command=lambda value=item:
+                self.pretreatment_selection.set(value))
+
+    def load_storage(self):
+        storage_list = ['Fresh', 'Cryopreserved']
+        self.storage_menu['menu'].delete(0, 'end')
+        for item in storage_list:
+            self.storage_menu['menu'].add_command(
+                label=item,
+                command=lambda value=item:
+                self.storage_selection.set(value))
+
     def load_stimulations(self, project_id):
         self.stimulation_menu['menu'].delete(0, 'end')
         self.stimulation_selection.set('')
@@ -1098,6 +1199,8 @@ class Application(Tkinter.Frame):
                 not self.subject_selection.get() or \
                 not self.visit_selection.get() or \
                 not self.specimen_selection.get() or \
+                not self.pretreatment_selection.get() or \
+                not self.storage_selection.get() or \
                 not self.stimulation_selection.get() or \
                 not self.site_panel_selection.get():
             active = False
@@ -1128,6 +1231,10 @@ class Application(Tkinter.Frame):
                     c_file.specimen = self.specimen_selection.get()
                     c_file.specimen_pk = self.specimen_dict[c_file.specimen]
 
+                    c_file.pretreatment = self.pretreatment_selection.get()
+
+                    c_file.storage = self.storage_selection.get()
+
                     c_file.stimulation = self.stimulation_selection.get()
                     c_file.stimulation_pk = \
                         self.stimulation_dict[c_file.stimulation]
@@ -1148,6 +1255,8 @@ class Application(Tkinter.Frame):
                     item.append(c_file.subject)
                     item.append(c_file.visit)
                     item.append(c_file.specimen)
+                    item.append(c_file.pretreatment)
+                    item.append(c_file.storage)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
                     item.append(c_file.compensation)
@@ -1223,8 +1332,6 @@ class Application(Tkinter.Frame):
                 minwidth=0,
                 width=col_widths[i] + extra,
                 stretch=Tkinter.TRUE)
-
-        print col_widths
 
     def clear_selected_queue(self):
         # get_children returns a tuple of item IDs from the tree
@@ -1329,6 +1436,8 @@ class Application(Tkinter.Frame):
                     not chosen_file.subject_pk or \
                     not chosen_file.site_panel_pk or \
                     not chosen_file.specimen_pk or \
+                    not chosen_file.pretreatment or \
+                    not chosen_file.storage or \
                     not chosen_file.file_path or \
                     not chosen_file.stimulation_pk or \
                     not chosen_file.visit_pk:
@@ -1344,6 +1453,8 @@ class Application(Tkinter.Frame):
                 'site_panel_pk': str(chosen_file.site_panel_pk),
                 'visit_type_pk': str(chosen_file.visit_pk),
                 'specimen_pk': str(chosen_file.specimen_pk),
+                'pretreatment': str(chosen_file.pretreatment),
+                'storage': str(chosen_file.storage),
                 'stimulation_pk': str(chosen_file.stimulation_pk)
             }
 
@@ -1351,25 +1462,13 @@ class Application(Tkinter.Frame):
                 rest_kwargs['compensation_pk'] = \
                     str(chosen_file.compensation_pk)
 
-            response_dict = rest.post_sample(
-                *rest_args,
-                **rest_kwargs
-            )
-
-            log_text = ''.join(
-                [
-                    chosen_file.file_name,
-                    ' (',
-                    str(response_dict['status']),
-                    ': ',
-                    str(response_dict['reason']),
-                    ')\n',
-                    json.dumps(response_dict['data'], indent=4),
-                    '\n'
-                ]
-            )
-
-            print log_text
+            try:
+                response_dict = rest.post_sample(
+                    *rest_args,
+                    **rest_kwargs
+                )
+            except Exception, e:
+                print e
 
             if response_dict['status'] == 201:
                 status = 'Complete'

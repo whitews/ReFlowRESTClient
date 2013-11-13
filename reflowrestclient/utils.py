@@ -553,6 +553,8 @@ def post_sample(
         subject_pk,
         visit_type_pk,
         specimen_pk,
+        pretreatment,
+        storage,
         stimulation_pk,
         site_panel_pk,
         compensation_pk=None):
@@ -561,6 +563,8 @@ def post_sample(
         subject_pk      (required)
         visit_type_pk   (required)
         specimen_pk     (required)
+        pretreatment    (required)
+        storage         (required)
         stimulation_pk  (required)
         site_panel_pk   (required)
         compensation_pk (optional)
@@ -580,6 +584,8 @@ def post_sample(
         'subject': subject_pk,
         'visit': visit_type_pk,
         'specimen': specimen_pk,
+        'pretreatment': pretreatment,
+        'storage': storage,
         'stimulation': stimulation_pk,
         'site_panel': site_panel_pk
     }
