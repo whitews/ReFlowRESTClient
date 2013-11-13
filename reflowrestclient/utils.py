@@ -1,5 +1,5 @@
 import requests
-import grequests
+#import grequests
 import os
 import re
 
@@ -494,56 +494,56 @@ def download_sample(
     }
 
 
-def download_samples(
-        host,
-        token,
-        sample_pk_list,
-        data_format='npy',
-        directory=None):
-    if data_format not in ['npy', 'csv', 'fcs']:
-        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
-            % data_format
-        return
-
-    urls = []
-
-    for pk in sample_pk_list:
-        urls.append(
-            "%s%s/api/repository/samples/%d/%s/" %
-            (METHOD, host, pk, data_format))
-    headers = {'Authorization': "Token %s" % token}
-    data = ''
-    try:
-        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
-        rs = grequests.map(reqs, size=5)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': data}
-
-    results = []
-
-    for r in rs:
-        if r.status_code == 200:
-            try:
-                filename = re.findall(
-                    "filename=([^']+)", r.headers['content-disposition'])[0]
-                if directory is None:
-                    directory = os.getcwd()
-
-                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
-                    fcs_file.write(r.content)
-            except Exception, e:
-                print e
-        else:
-            data = r.text
-
-        results.append({
-            'status': r.status_code,
-            'reason': r.reason,
-            'data': data,
-        })
-
-    return results
+#def download_samples(
+#        host,
+#        token,
+#        sample_pk_list,
+#        data_format='npy',
+#        directory=None):
+#    if data_format not in ['npy', 'csv', 'fcs']:
+#        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
+#            % data_format
+#        return
+#
+#    urls = []
+#
+#    for pk in sample_pk_list:
+#        urls.append(
+#            "%s%s/api/repository/samples/%d/%s/" %
+#            (METHOD, host, pk, data_format))
+#    headers = {'Authorization': "Token %s" % token}
+#    data = ''
+#    try:
+#        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
+#        rs = grequests.map(reqs, size=5)
+#    except Exception, e:
+#        print e
+#        return {'status': None, 'reason': 'No response', 'data': data}
+#
+#    results = []
+#
+#    for r in rs:
+#        if r.status_code == 200:
+#            try:
+#                filename = re.findall(
+#                    "filename=([^']+)", r.headers['content-disposition'])[0]
+#                if directory is None:
+#                    directory = os.getcwd()
+#
+#                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
+#                    fcs_file.write(r.content)
+#            except Exception, e:
+#                print e
+#        else:
+#            data = r.text
+#
+#        results.append({
+#            'status': r.status_code,
+#            'reason': r.reason,
+#            'data': data,
+#        })
+#
+#    return results
 
 
 def post_sample(
