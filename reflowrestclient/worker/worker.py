@@ -1,10 +1,11 @@
-import abc
 import json
 import logging
 import sys
 import time
 
-from reflowrestclient.daemon import Daemon
+import abc
+
+from reflowrestclient.worker.daemon import Daemon
 import reflowrestclient.utils as rest
 
 
