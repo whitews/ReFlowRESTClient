@@ -1,5 +1,5 @@
 import requests
-import grequests
+#import grequests
 import os
 import re
 
@@ -211,7 +211,12 @@ def get_site(host, token, site_pk):
     return get_request(token, url)
 
 
-def get_subjects(host, token, subject_code=None, project_pk=None):
+def get_subjects(
+        host,
+        token,
+        subject_code=None,
+        project_pk=None,
+        subject_group_pk=None):
     url = '%s%s%s' % (METHOD, host, URLS['SUBJECTS'])
     filter_params = dict()
 
@@ -220,6 +225,9 @@ def get_subjects(host, token, subject_code=None, project_pk=None):
 
     if project_pk is not None:
         filter_params['project'] = project_pk
+
+    if subject_group_pk is not None:
+        filter_params['subject_group'] = subject_group_pk
 
     return get_request(token, url, filter_params)
 
@@ -310,7 +318,7 @@ def get_compensations(
     filter_params = dict()
 
     if name is not None:
-        filter_params['original_filename'] = name
+        filter_params['name'] = name
 
     if site_panel_pk is not None:
         filter_params['site_panel'] = site_panel_pk
@@ -486,46 +494,56 @@ def download_sample(
     }
 
 
-def download_samples(host, token, sample_pk_list, directory=None):
-    urls = []
-
-    for pk in sample_pk_list:
-        urls.append(
-            "%s%s/api/repository/samples/%d/fcs_as_pk/" %
-            (METHOD, host, pk))
-    headers = {'Authorization': "Token %s" % token}
-    data = ''
-    try:
-        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
-        rs = grequests.map(reqs, size=5)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': data}
-
-    results = []
-
-    for r in rs:
-        if r.status_code == 200:
-            try:
-                filename = re.findall(
-                    "filename=([^']+)", r.headers['content-disposition'])[0]
-                if directory is None:
-                    directory = os.getcwd()
-
-                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
-                    fcs_file.write(r.content)
-            except Exception, e:
-                print e
-        else:
-            data = r.text
-
-        results.append({
-            'status': r.status_code,
-            'reason': r.reason,
-            'data': data,
-        })
-
-    return results
+#def download_samples(
+#        host,
+#        token,
+#        sample_pk_list,
+#        data_format='npy',
+#        directory=None):
+#    if data_format not in ['npy', 'csv', 'fcs']:
+#        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
+#            % data_format
+#        return
+#
+#    urls = []
+#
+#    for pk in sample_pk_list:
+#        urls.append(
+#            "%s%s/api/repository/samples/%d/%s/" %
+#            (METHOD, host, pk, data_format))
+#    headers = {'Authorization': "Token %s" % token}
+#    data = ''
+#    try:
+#        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
+#        rs = grequests.map(reqs, size=5)
+#    except Exception, e:
+#        print e
+#        return {'status': None, 'reason': 'No response', 'data': data}
+#
+#    results = []
+#
+#    for r in rs:
+#        if r.status_code == 200:
+#            try:
+#                filename = re.findall(
+#                    "filename=([^']+)", r.headers['content-disposition'])[0]
+#                if directory is None:
+#                    directory = os.getcwd()
+#
+#                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
+#                    fcs_file.write(r.content)
+#            except Exception, e:
+#                print e
+#        else:
+#            data = r.text
+#
+#        results.append({
+#            'status': r.status_code,
+#            'reason': r.reason,
+#            'data': data,
+#        })
+#
+#    return results
 
 
 def post_sample(
@@ -535,6 +553,8 @@ def post_sample(
         subject_pk,
         visit_type_pk,
         specimen_pk,
+        pretreatment,
+        storage,
         stimulation_pk,
         site_panel_pk,
         compensation_pk=None):
@@ -543,6 +563,8 @@ def post_sample(
         subject_pk      (required)
         visit_type_pk   (required)
         specimen_pk     (required)
+        pretreatment    (required)
+        storage         (required)
         stimulation_pk  (required)
         site_panel_pk   (required)
         compensation_pk (optional)
@@ -562,6 +584,8 @@ def post_sample(
         'subject': subject_pk,
         'visit': visit_type_pk,
         'specimen': specimen_pk,
+        'pretreatment': pretreatment,
+        'storage': storage,
         'stimulation': stimulation_pk,
         'site_panel': site_panel_pk
     }
@@ -598,6 +622,61 @@ def post_sample(
     return {
         'status': response.status_code,
         'reason': response.reason,
+        'data': data,
+    }
+
+
+def download_compensation(
+        host,
+        token,
+        compensation_pk,
+        data_format='npy',
+        filename=None,
+        directory=None):
+    """
+    Download sample data as CSV or Numpy (npy)
+
+    Options:
+        'data_format': 'npy' (default) or 'csv'
+        'filename': filename to use for downloaded file
+                    (default is the comp_<PK>.<format>, eg comp_42.npy)
+    """
+    if data_format == 'npy':
+        url = "%s%s/api/repository/compensations/%d/npy/" % (
+            METHOD, host, compensation_pk)
+    elif data_format == 'csv':
+        url = "%s%s/api/repository/compensations/%d/csv/" % (
+            METHOD, host, compensation_pk)
+    else:
+        print "Data format %s not supported, use 'npy' or 'csv'" \
+            % data_format
+        return
+
+    if filename is None:
+        filename = 'comp_' + str(compensation_pk) + '.' + data_format
+    if directory is None:
+        directory = os.getcwd()
+
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    if r.status_code == 200:
+        try:
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
         'data': data,
     }
 
