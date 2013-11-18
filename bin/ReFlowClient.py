@@ -9,7 +9,9 @@ import json
 import re
 import sys
 import os
+import calendar
 from threading import Thread
+
 VERSION = '0.11b'
 
 if hasattr(sys, '_MEIPASS'):
@@ -49,6 +51,8 @@ PAD_SMALL = 3
 PAD_MEDIUM = 6
 PAD_LARGE = 12
 PAD_EXTRA_LARGE = 15
+
+LABEL_WIDTH = 16
 
 # Headers for the upload queue tree view
 QUEUE_HEADERS = [
@@ -93,9 +97,6 @@ class ChosenFile(object):
         self.site_panel = None
         self.site_panel_pk = None
 
-        self.compensation = None
-        self.compensation_pk = None
-
     def reinitialize(self):
         self.status = 'Pending'  # other values are 'Error' and 'Complete'
         self.error_msg = None
@@ -117,9 +118,6 @@ class ChosenFile(object):
 
         self.site_panel = None
         self.site_panel_pk = None
-
-        self.compensation = None
-        self.compensation_pk = None
 
         # re-activate the checkbox
         self.checkbox.config(state=Tkinter.ACTIVE)
@@ -148,6 +146,237 @@ class MyCheckbutton(Tkinter.Checkbutton):
         self.var.set(0)
 
 
+def get_calendar(locale, fwday):
+    # instantiate proper calendar class
+    if locale is None:
+        return calendar.TextCalendar(fwday)
+    else:
+        return calendar.LocaleTextCalendar(fwday, locale)
+
+
+class Calendar(ttk.Frame):
+    """
+    Simple calendar using ttk Treeview together with calendar and datetime
+    classes.
+
+    Graciously borrowed from:
+    http://svn.python.org/projects/sandbox/trunk/ttk-gsoc/samples/ttkcalendar.py
+    """
+
+    # XXX ToDo: cget and configure
+
+    datetime = calendar.datetime.datetime
+    timedelta = calendar.datetime.timedelta
+
+    def __init__(self, master=None, **kw):
+        """
+        WIDGET-SPECIFIC OPTIONS
+
+            locale, firstweekday, year, month, selectbackground,
+            selectforeground
+        """
+        # remove custom options from kw before initializating ttk.Frame
+        fwday = kw.pop('firstweekday', calendar.MONDAY)
+        year = kw.pop('year', self.datetime.now().year)
+        month = kw.pop('month', self.datetime.now().month)
+        locale = kw.pop('locale', None)
+        sel_bg = kw.pop('selectbackground', '#ecffc4')
+        sel_fg = kw.pop('selectforeground', '#05640e')
+
+        self._date = self.datetime(year, month, 1)
+        self._selection = None  # no date selected
+
+        ttk.Frame.__init__(self, master, **kw)
+
+        self._cal = get_calendar(locale, fwday)
+
+        self.__setup_styles()       # creates custom styles
+        self.__place_widgets()      # pack/grid used widgets
+        self.__config_calendar()    # adjust calendar columns and setup tags
+        # configure a canvas, and proper bindings, for selecting dates
+        self._font = tkFont.Font()
+        self._canvas = Tkinter.Canvas(
+            self._calendar,
+            background=sel_bg,
+            borderwidth=0,
+            highlightthickness=0)
+        self._canvas.text = self._canvas.create_text(
+            0,
+            0,
+            fill=sel_fg,
+            anchor='w')
+
+        self.__setup_selection()
+
+        # store items ids, used for insertion later
+        self._items = [self._calendar.insert(
+            '', 'end', values='') for _ in range(6)]
+        # insert dates in the currently empty calendar
+        self._build_calendar()
+
+        # set the minimal size for the widget
+        self._calendar.bind('<Map>', self.__minsize)
+
+    def __setitem__(self, item, value):
+        if item in ('year', 'month'):
+            raise AttributeError("attribute '%s' is not writeable" % item)
+        elif item == 'selectbackground':
+            self._canvas['background'] = value
+        elif item == 'selectforeground':
+            self._canvas.itemconfigure(self._canvas.text, item=value)
+        else:
+            ttk.Frame.__setitem__(self, item, value)
+
+    def __getitem__(self, item):
+        if item in ('year', 'month'):
+            return getattr(self._date, item)
+        elif item == 'selectbackground':
+            return self._canvas['background']
+        elif item == 'selectforeground':
+            return self._canvas.itemcget(self._canvas.text, 'fill')
+        else:
+            r = ttk.tclobjs_to_py({item: ttk.Frame.__getitem__(self, item)})
+            return r[item]
+
+    def __setup_styles(self):
+        # custom ttk styles
+        style = ttk.Style(self.master)
+        arrow_layout = lambda dir: (
+            [('Button.focus', {'children': [('Button.%sarrow' % dir, None)]})]
+        )
+        style.layout('L.TButton', arrow_layout('left'))
+        style.layout('R.TButton', arrow_layout('right'))
+
+    def __place_widgets(self):
+        # header frame and its widgets
+        hframe = ttk.Frame(self)
+        lbtn = ttk.Button(hframe, style='L.TButton', command=self._prev_month)
+        rbtn = ttk.Button(hframe, style='R.TButton', command=self._next_month)
+        self._header = ttk.Label(hframe, width=15, anchor='center')
+        # the calendar
+        self._calendar = ttk.Treeview(show='', selectmode='none', height=7)
+
+        # pack the widgets
+        hframe.pack(in_=self, side='top', pady=4, anchor='center')
+        lbtn.grid(in_=hframe)
+        self._header.grid(in_=hframe, column=1, row=0, padx=12)
+        rbtn.grid(in_=hframe, column=2, row=0)
+        self._calendar.pack(in_=self, expand=1, fill='both', side='bottom')
+
+    def __config_calendar(self):
+        cols = self._cal.formatweekheader(3).split()
+        self._calendar['columns'] = cols
+        self._calendar.tag_configure('header', background='grey90')
+        self._calendar.insert('', 'end', values=cols, tag='header')
+        # adjust its columns width
+        font = tkFont.Font()
+        max_width = max(font.measure(col) for col in cols)
+        for col in cols:
+            self._calendar.column(
+                col,
+                width=max_width,
+                minwidth=max_width,
+                anchor='e')
+
+    def __setup_selection(self):
+        self._canvas.bind(
+            '<ButtonPress-1>',
+            lambda evt: self._canvas.place_forget())
+        self._calendar.bind(
+            '<Configure>',
+            lambda evt: self._canvas.place_forget())
+        self._calendar.bind('<ButtonPress-1>', self._pressed)
+
+    def __minsize(self, evt):
+        width, height = self._calendar.master.geometry().split('x')
+        height = height[:height.index('+')]
+        self._calendar.master.minsize(width, height)
+
+    def _build_calendar(self):
+        year, month = self._date.year, self._date.month
+
+        # update header text (Month, YEAR)
+        header = self._cal.formatmonthname(year, month, 0)
+        self._header['text'] = header.title()
+
+        # update calendar shown dates
+        cal = self._cal.monthdayscalendar(year, month)
+        for indx, item in enumerate(self._items):
+            week = cal[indx] if indx < len(cal) else []
+            fmt_week = [('%02d' % day) if day else '' for day in week]
+            self._calendar.item(item, values=fmt_week)
+
+    def _show_selection(self, text, bbox):
+        """Configure canvas for a new selection."""
+        x, y, width, height = bbox
+
+        text_width = self._font.measure(text)
+
+        canvas = self._canvas
+        canvas.configure(width=width, height=height)
+        canvas.coords(canvas.text, width - text_width, height / 2 - 1)
+        canvas.itemconfigure(canvas.text, text=text)
+        canvas.place(in_=self._calendar, x=x, y=y)
+
+    # Callbacks
+
+    def _pressed(self, evt):
+        """Clicked somewhere in the calendar."""
+        x, y, widget = evt.x, evt.y, evt.widget
+        item = widget.identify_row(y)
+        column = widget.identify_column(x)
+
+        if not column or not item in self._items:
+            # clicked in the weekdays row or just outside the columns
+            return
+
+        item_values = widget.item(item)['values']
+        if not len(item_values):  # row is empty for this month
+            return
+
+        text = item_values[int(column[1]) - 1]
+        if not text: # date is empty
+            return
+
+        bbox = widget.bbox(item, column)
+        if not bbox:  # calendar not visible yet
+            return
+
+        # update and then show selection
+        text = '%02d' % text
+        self._selection = (text, item, column)
+        self._show_selection(text, bbox)
+
+    def _prev_month(self):
+        """Updated calendar to show the previous month."""
+        self._canvas.place_forget()
+
+        self._date = self._date - self.timedelta(days=1)
+        self._date = self.datetime(self._date.year, self._date.month, 1)
+        self._build_calendar()  # reconstuct calendar
+
+    def _next_month(self):
+        """Update calendar to show the next month."""
+        self._canvas.place_forget()
+
+        year, month = self._date.year, self._date.month
+        self._date = self._date + self.timedelta(
+            days=calendar.monthrange(year, month)[1] + 1)
+        self._date = self.datetime(self._date.year, self._date.month, 1)
+        self._build_calendar()  # reconstruct calendar
+
+    # Properties
+
+    @property
+    def selection(self):
+        """Return a datetime representing the current selected date."""
+        if not self._selection:
+            return None
+
+        year, month = self._date.year, self._date.month
+        return self.datetime(year, month, int(self._selection[0]))
+
+
 class Application(Tkinter.Frame):
 
     def __init__(self, master):
@@ -173,7 +402,6 @@ class Application(Tkinter.Frame):
         self.site_panel_dict = dict()
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
-        self.compensation_dict = dict()
 
         # dict of ChosenFile objects, key is file path, value is ChosenFile
         self.file_dict = dict()
@@ -225,10 +453,7 @@ class Application(Tkinter.Frame):
         self.site_panel_selection = Tkinter.StringVar()
         self.site_panel_selection.trace(
             "w",
-            self.update_site_panel_metadata)
-
-        self.compensation_menu = None
-        self.compensation_selection = Tkinter.StringVar()
+            self.update_add_to_queue_button_state)
 
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
@@ -386,12 +611,12 @@ class Application(Tkinter.Frame):
             top_frame,
             bg=BACKGROUND_COLOR)
 
-        # overall project frame (on bottom left of main window)
+        # overall project frame
         project_frame = Tkinter.Frame(
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # project label frame (top of project chooser frame)
+        # project label frame
         project_chooser_label_frame = Tkinter.Frame(
             project_frame,
             bg=BACKGROUND_COLOR)
@@ -399,12 +624,12 @@ class Application(Tkinter.Frame):
             project_chooser_label_frame,
             text='Project:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         project_chooser_label.pack(side='left')
         project_chooser_label_frame.pack(side='left', fill='x')
 
-        # project chooser listbox frame (bottom of project chooser frame)
+        # project chooser listbox frame
         project_chooser_frame = Tkinter.Frame(
             project_frame,
             bg=BACKGROUND_COLOR)
@@ -420,10 +645,10 @@ class Application(Tkinter.Frame):
 
         project_frame.pack(side='top', fill='x', expand=True)
 
-        # overall site frame (on bottom, 2nd from left of main window
+        # overall site frame
         site_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
 
-        # site label frame (top of site chooser frame)
+        # site label frame
         site_chooser_label_frame = Tkinter.Frame(
             site_frame,
             bg=BACKGROUND_COLOR)
@@ -431,12 +656,12 @@ class Application(Tkinter.Frame):
             site_chooser_label_frame,
             text='Site:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         site_chooser_label.pack(side='left')
         site_chooser_label_frame.pack(side='left', fill='x')
 
-        # site chooser listbox frame (bottom of site chooser frame)
+        # site chooser listbox frame
         site_chooser_frame = Tkinter.Frame(
             site_frame,
             bg=BACKGROUND_COLOR)
@@ -450,10 +675,10 @@ class Application(Tkinter.Frame):
 
         site_frame.pack(side='top', fill='x', expand=True)
 
-        # overall subject frame (on bottom, 2nd from left of main window
+        # overall subject frame
         subject_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
 
-        # subject label frame (top of subject chooser frame)
+        # subject label frame
         subject_chooser_label_frame = Tkinter.Frame(
             subject_frame,
             bg=BACKGROUND_COLOR)
@@ -461,12 +686,12 @@ class Application(Tkinter.Frame):
             subject_chooser_label_frame,
             text='Subject:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         subject_chooser_label.pack(side='left')
         subject_chooser_label_frame.pack(side='left', fill='x')
 
-        # subject chooser listbox frame (bottom of subject chooser frame)
+        # subject chooser listbox frame
         subject_chooser_frame = Tkinter.Frame(
             subject_frame,
             bg=BACKGROUND_COLOR)
@@ -483,7 +708,7 @@ class Application(Tkinter.Frame):
         # overall visit frame
         visit_frame = Tkinter.Frame(metadata_frame, bg=BACKGROUND_COLOR)
 
-        # visit label frame (top of visit chooser frame)
+        # visit label frame
         visit_chooser_label_frame = Tkinter.Frame(
             visit_frame,
             bg=BACKGROUND_COLOR)
@@ -491,12 +716,12 @@ class Application(Tkinter.Frame):
             visit_chooser_label_frame,
             text='Visit:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         visit_chooser_label.pack(side='left')
         visit_chooser_label_frame.pack(side='left', fill='x')
 
-        # visit chooser listbox frame (bottom of visit chooser frame)
+        # visit chooser listbox frame
         visit_chooser_frame = Tkinter.Frame(visit_frame, bg=BACKGROUND_COLOR)
         self.visit_menu = Tkinter.OptionMenu(
             visit_chooser_frame,
@@ -513,7 +738,7 @@ class Application(Tkinter.Frame):
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # specimen label frame (top of specimen chooser frame)
+        # specimen label frame
         specimen_chooser_label_frame = Tkinter.Frame(
             specimen_frame,
             bg=BACKGROUND_COLOR)
@@ -521,12 +746,12 @@ class Application(Tkinter.Frame):
             specimen_chooser_label_frame,
             text='Specimen:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         specimen_chooser_label.pack(side='left')
         specimen_chooser_label_frame.pack(side='left', fill='x')
 
-        # specimen chooser listbox frame (bottom of specimen chooser frame)
+        # specimen chooser listbox frame
         specimen_chooser_frame = Tkinter.Frame(
             specimen_frame,
             bg=BACKGROUND_COLOR)
@@ -545,7 +770,7 @@ class Application(Tkinter.Frame):
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # pretreatment label frame (top of pretreatment chooser frame)
+        # pretreatment label frame
         pretreatment_chooser_label_frame = Tkinter.Frame(
             pretreatment_frame,
             bg=BACKGROUND_COLOR)
@@ -553,13 +778,12 @@ class Application(Tkinter.Frame):
             pretreatment_chooser_label_frame,
             text='Pre-treatment:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         pretreatment_chooser_label.pack(side='left')
         pretreatment_chooser_label_frame.pack(side='left', fill='x')
 
         # pretreatment chooser listbox frame
-        # (bottom of pretreatment chooser frame)
         pretreatment_chooser_frame = Tkinter.Frame(
             pretreatment_frame,
             bg=BACKGROUND_COLOR)
@@ -578,7 +802,7 @@ class Application(Tkinter.Frame):
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # storage label frame (top of storage chooser frame)
+        # storage label frame
         storage_chooser_label_frame = Tkinter.Frame(
             storage_frame,
             bg=BACKGROUND_COLOR)
@@ -586,12 +810,12 @@ class Application(Tkinter.Frame):
             storage_chooser_label_frame,
             text='Storage:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         storage_chooser_label.pack(side='left')
         storage_chooser_label_frame.pack(side='left', fill='x')
 
-        # storage chooser listbox frame (bottom of storage chooser frame)
+        # storage chooser listbox frame
         storage_chooser_frame = Tkinter.Frame(
             storage_frame,
             bg=BACKGROUND_COLOR)
@@ -610,7 +834,7 @@ class Application(Tkinter.Frame):
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # stimulation label frame (top of stimulation chooser frame)
+        # stimulation label frame
         stimulation_chooser_label_frame = Tkinter.Frame(
             stimulation_frame,
             bg=BACKGROUND_COLOR)
@@ -618,13 +842,12 @@ class Application(Tkinter.Frame):
             stimulation_chooser_label_frame,
             text='Stimulation:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         stimulation_chooser_label.pack(side='left')
         stimulation_chooser_label_frame.pack(side='left', fill='x')
 
         # stimulation chooser listbox frame
-        # (bottom of stimulation chooser frame)
         stimulation_chooser_frame = Tkinter.Frame(
             stimulation_frame,
             bg=BACKGROUND_COLOR)
@@ -643,7 +866,7 @@ class Application(Tkinter.Frame):
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # site_panel label frame (top of site_panel chooser frame)
+        # site_panel label frame
         site_panel_chooser_label_frame = Tkinter.Frame(
             site_panel_frame,
             bg=BACKGROUND_COLOR)
@@ -651,13 +874,12 @@ class Application(Tkinter.Frame):
             site_panel_chooser_label_frame,
             text='Site Panel:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
         site_panel_chooser_label.pack(side='left')
         site_panel_chooser_label_frame.pack(side='left', fill='x')
 
         # site_panel chooser listbox frame
-        # (bottom of site_panel chooser frame)
         site_panel_chooser_frame = Tkinter.Frame(
             site_panel_frame,
             bg=BACKGROUND_COLOR)
@@ -671,38 +893,41 @@ class Application(Tkinter.Frame):
 
         site_panel_frame.pack(side='top', fill='x', expand=True)
 
-        # overall compensation frame
-        compensation_frame = Tkinter.Frame(
+        # overall acquisition date frame
+        acquisition_date_frame = Tkinter.Frame(
             metadata_frame,
             bg=BACKGROUND_COLOR)
 
-        # compensation label frame (top of compensation chooser frame)
-        compensation_chooser_label_frame = Tkinter.Frame(
-            compensation_frame,
+        # acq date label frame
+        acquisition_date_chooser_label_frame = Tkinter.Frame(
+            acquisition_date_frame,
             bg=BACKGROUND_COLOR)
-        compensation_chooser_label = Tkinter.Label(
-            compensation_chooser_label_frame,
-            text='Compensation:',
+        acquisition_date_chooser_label = Tkinter.Label(
+            acquisition_date_chooser_label_frame,
+            text='Acquisition Date:',
             bg=BACKGROUND_COLOR,
-            width=12,
+            width=LABEL_WIDTH,
             anchor=Tkinter.E)
-        compensation_chooser_label.pack(side='left')
-        compensation_chooser_label_frame.pack(side='left', fill='x')
+        acquisition_date_chooser_label.pack(
+            side='top',
+            fill=Tkinter.BOTH,
+            anchor=Tkinter.N)
+        acquisition_date_chooser_label_frame.pack(
+            side='left',
+            fill=Tkinter.BOTH,
+            anchor=Tkinter.N)
 
-        # compensation chooser listbox frame
-        # (bottom of compensation chooser frame)
-        compensation_chooser_frame = Tkinter.Frame(
-            compensation_frame,
+        # acquisition_date chooser frame
+        acquisition_date_chooser_frame = Tkinter.Frame(
+            acquisition_date_frame,
             bg=BACKGROUND_COLOR)
-        self.compensation_menu = Tkinter.OptionMenu(
-            compensation_chooser_frame,
-            self.compensation_selection,
-            '')
-        self.compensation_menu.config(bg=BACKGROUND_COLOR)
-        self.compensation_menu.pack(fill='x', expand=True)
-        compensation_chooser_frame.pack(fill='x', expand=True)
+        acquisition_cal = Calendar(
+            master=acquisition_date_chooser_frame,
+            firstweekday=calendar.SUNDAY)
+        acquisition_cal.pack(expand=1, fill='both')
+        acquisition_date_chooser_frame.pack(fill='x', expand=True)
 
-        compensation_frame.pack(side='top', fill='x', expand=True)
+        acquisition_date_frame.pack(side='top', fill='x', expand=True)
 
         self.load_user_projects()
         self.load_specimens()
@@ -970,7 +1195,6 @@ class Application(Tkinter.Frame):
         self.visit_menu['menu'].delete(0, 'end')
         self.stimulation_menu['menu'].delete(0, 'end')
         self.site_panel_menu['menu'].delete(0, 'end')
-        self.compensation_menu['menu'].delete(0, 'end')
 
         for result in response['data']:
             self.project_dict[result['project_name']] = result['id']
@@ -1116,46 +1340,11 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
-    def update_site_panel_metadata(self, *args, **kwargs):
-        self.compensation_menu['menu'].delete(0, 'end')
-        self.compensation_selection.set('')
-        self.compensation_dict.clear()
-
-        if not self.site_panel_selection.get():
-            self.update_add_to_queue_button_state()
-            return
-        site_panel_pk = self.site_panel_dict[self.site_panel_selection.get()]
-        rest_args = [self.host, self.token]
-        rest_kwargs = {'site_panel_pk': site_panel_pk}
-        try:
-            response = rest.get_compensations(*rest_args, **rest_kwargs)
-        except Exception, e:
-            print e
-            self.update_add_to_queue_button_state()
-            return
-
-        if not 'data' in response:
-            self.update_add_to_queue_button_state()
-            return
-
-        for result in response['data']:
-            self.compensation_dict[result['name']] = result['id']
-        for comp_filename in sorted(self.compensation_dict.keys()):
-            self.compensation_menu['menu'].add_command(
-                label=comp_filename,
-                command=lambda value=comp_filename:
-                self.compensation_selection.set(value))
-
-        self.update_add_to_queue_button_state()
 
     def update_site_metadata(self, *args, **kwargs):
         self.site_panel_menu['menu'].delete(0, 'end')
         self.site_panel_selection.set('')
         self.site_panel_dict.clear()
-
-        self.compensation_menu['menu'].delete(0, 'end')
-        self.compensation_selection.set('')
-        self.compensation_dict.clear()
 
         if not self.site_selection.get():
             return
@@ -1243,11 +1432,6 @@ class Application(Tkinter.Frame):
                     c_file.site_panel_pk = \
                         self.site_panel_dict[c_file.site_panel]
 
-                    c_file.compensation = self.compensation_selection.get()
-                    if c_file.compensation:
-                        c_file.compensation_pk = \
-                            self.compensation_dict[c_file.compensation]
-
                     # Populate our tree item,
                     item = list()
                     item.append(c_file.file_name)
@@ -1259,7 +1443,6 @@ class Application(Tkinter.Frame):
                     item.append(c_file.storage)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
-                    item.append(c_file.compensation)
                     item.append(c_file.status)
 
                     # check if the item is already in the queue
@@ -1457,10 +1640,6 @@ class Application(Tkinter.Frame):
                 'storage': str(chosen_file.storage),
                 'stimulation_pk': str(chosen_file.stimulation_pk)
             }
-
-            if chosen_file.compensation_pk:
-                rest_kwargs['compensation_pk'] = \
-                    str(chosen_file.compensation_pk)
 
             try:
                 response_dict = rest.post_sample(
