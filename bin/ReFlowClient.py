@@ -94,8 +94,14 @@ class ChosenFile(object):
         self.stimulation = None
         self.stimulation_pk = None
 
+        self.pretreatment = None
+
+        self.storage = None
+
         self.site_panel = None
         self.site_panel_pk = None
+
+        self.acq_date = None
 
     def reinitialize(self):
         self.status = 'Pending'  # other values are 'Error' and 'Complete'
@@ -1449,6 +1455,8 @@ class Application(Tkinter.Frame):
                     c_file.site_panel_pk = \
                         self.site_panel_dict[c_file.site_panel]
 
+                    c_file.acq_date = self.acquisition_date_selection.get()
+
                     # Populate our tree item,
                     item = list()
                     item.append(c_file.file_name)
@@ -1460,6 +1468,7 @@ class Application(Tkinter.Frame):
                     item.append(c_file.storage)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
+                    item.append(c_file.acq_date)
                     item.append(c_file.status)
 
                     # check if the item is already in the queue
@@ -1635,6 +1644,7 @@ class Application(Tkinter.Frame):
             if not chosen_file.project or \
                     not chosen_file.subject_pk or \
                     not chosen_file.site_panel_pk or \
+                    not chosen_file.acq_date or \
                     not chosen_file.specimen_pk or \
                     not chosen_file.pretreatment or \
                     not chosen_file.storage or \
@@ -1655,7 +1665,8 @@ class Application(Tkinter.Frame):
                 'specimen_pk': str(chosen_file.specimen_pk),
                 'pretreatment': str(chosen_file.pretreatment),
                 'storage': str(chosen_file.storage),
-                'stimulation_pk': str(chosen_file.stimulation_pk)
+                'stimulation_pk': str(chosen_file.stimulation_pk),
+                'acquisition_date': str(chosen_file.acq_date)
             }
 
             try:
