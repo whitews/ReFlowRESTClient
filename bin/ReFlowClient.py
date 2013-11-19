@@ -65,7 +65,7 @@ QUEUE_HEADERS = [
     'Storage',
     'Stimulation',
     'Site Panel',
-    'Compensation',
+    'Acquisition Date',
     'Status'
 ]
 
@@ -168,7 +168,7 @@ class Calendar(ttk.Frame):
     datetime = calendar.datetime.datetime
     timedelta = calendar.datetime.timedelta
 
-    def __init__(self, master=None, **kw):
+    def __init__(self, master=None, variable=None, **kw):
         """
         WIDGET-SPECIFIC OPTIONS
 
@@ -188,6 +188,8 @@ class Calendar(ttk.Frame):
 
         ttk.Frame.__init__(self, master, **kw)
 
+        self._variable = variable
+
         self._cal = get_calendar(locale, fwday)
 
         self.__setup_styles()       # creates custom styles
@@ -199,7 +201,8 @@ class Calendar(ttk.Frame):
             self._calendar,
             background=sel_bg,
             borderwidth=0,
-            highlightthickness=0)
+            highlightthickness=1,
+            highlightbackground="black")
         self._canvas.text = self._canvas.create_text(
             0,
             0,
@@ -313,10 +316,10 @@ class Calendar(ttk.Frame):
         text_width = self._font.measure(text)
 
         canvas = self._canvas
-        canvas.configure(width=width, height=height)
-        canvas.coords(canvas.text, width - text_width, height / 2 - 1)
+        canvas.configure(width=width, height=height-1)
+        canvas.coords(canvas.text, width - text_width - 2, height / 2)
         canvas.itemconfigure(canvas.text, text=text)
-        canvas.place(in_=self._calendar, x=x, y=y)
+        canvas.place(in_=self._calendar, x=x-1, y=y-1)
 
     # Callbacks
 
@@ -346,6 +349,12 @@ class Calendar(ttk.Frame):
         text = '%02d' % text
         self._selection = (text, item, column)
         self._show_selection(text, bbox)
+        if self._variable:
+            self._variable.set(
+                "%d-%d-%d" % (
+                    self._date.year,
+                    self._date.month,
+                    int(self._selection[0])))
 
     def _prev_month(self):
         """Updated calendar to show the previous month."""
@@ -452,6 +461,11 @@ class Application(Tkinter.Frame):
         self.site_panel_menu = None
         self.site_panel_selection = Tkinter.StringVar()
         self.site_panel_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
+        self.acquisition_date_selection = Tkinter.StringVar()
+        self.acquisition_date_selection.trace(
             "w",
             self.update_add_to_queue_button_state)
 
@@ -923,7 +937,9 @@ class Application(Tkinter.Frame):
             bg=BACKGROUND_COLOR)
         acquisition_cal = Calendar(
             master=acquisition_date_chooser_frame,
-            firstweekday=calendar.SUNDAY)
+            variable=self.acquisition_date_selection,
+            firstweekday=calendar.SUNDAY,
+            )
         acquisition_cal.pack(expand=1, fill='both')
         acquisition_date_chooser_frame.pack(fill='x', expand=True)
 
@@ -1391,7 +1407,8 @@ class Application(Tkinter.Frame):
                 not self.pretreatment_selection.get() or \
                 not self.storage_selection.get() or \
                 not self.stimulation_selection.get() or \
-                not self.site_panel_selection.get():
+                not self.site_panel_selection.get() or \
+                not self.acquisition_date_selection.get():
             active = False
         if len(self.file_list_canvas.children) == 0:
             active = False
