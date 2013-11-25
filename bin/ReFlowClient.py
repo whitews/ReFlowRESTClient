@@ -4,13 +4,16 @@ import tkMessageBox
 import tkFileDialog
 import tkFont
 from PIL import Image, ImageTk
-import reflowrestclient.utils as rest
 import json
 import re
 import sys
 import os
 import calendar
 from threading import Thread
+from exceptions import TypeError
+
+import reflowrestclient.utils as rest
+import flowio
 
 VERSION = '0.11b'
 
@@ -65,6 +68,7 @@ QUEUE_HEADERS = [
     'Storage',
     'Stimulation',
     'Site Panel',
+    'Cytometer',
     'Acquisition Date',
     'Status'
 ]
@@ -75,6 +79,13 @@ class ChosenFile(object):
         self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
+
+        # test if file is an FCS file, raise TypeError if not
+        try:
+            self.flow_data = flowio.FlowData(f)
+        except:
+            raise TypeError("File %s is not an FCS file." % self.file_name)
+
         self.checkbox = checkbox
         self.status = 'Pending'  # other values are 'Error' and 'Complete'
         self.error_msg = ""
@@ -100,6 +111,9 @@ class ChosenFile(object):
 
         self.site_panel = None
         self.site_panel_pk = None
+
+        self.cytometer = None
+        self.cytometer_pk = None
 
         self.acq_date = None
 
@@ -168,9 +182,6 @@ class Calendar(ttk.Frame):
     Graciously borrowed from:
     http://svn.python.org/projects/sandbox/trunk/ttk-gsoc/samples/ttkcalendar.py
     """
-
-    # XXX ToDo: cget and configure
-
     datetime = calendar.datetime.datetime
     timedelta = calendar.datetime.timedelta
 
@@ -250,8 +261,15 @@ class Calendar(ttk.Frame):
     def __setup_styles(self):
         # custom ttk styles
         style = ttk.Style(self.master)
-        arrow_layout = lambda dir: (
-            [('Button.focus', {'children': [('Button.%sarrow' % dir, None)]})]
+        arrow_layout = lambda direction: (
+            [
+                (
+                    'Button.focus',
+                    {
+                        'children': [('Button.%sarrow' % direction, None)]
+                    }
+                )
+            ]
         )
         style.layout('L.TButton', arrow_layout('left'))
         style.layout('R.TButton', arrow_layout('right'))
@@ -344,7 +362,7 @@ class Calendar(ttk.Frame):
             return
 
         text = item_values[int(column[1]) - 1]
-        if not text: # date is empty
+        if not text:  # date is empty
             return
 
         bbox = widget.bbox(item, column)
@@ -415,6 +433,7 @@ class Application(Tkinter.Frame):
         self.subject_dict = dict()
         self.visit_dict = dict()
         self.site_panel_dict = dict()
+        self.cytometer_dict = dict()
         self.specimen_dict = dict()
         self.stimulation_dict = dict()
 
@@ -470,6 +489,12 @@ class Application(Tkinter.Frame):
             "w",
             self.update_add_to_queue_button_state)
 
+        self.cytometer_menu = None
+        self.cytometer_selection = Tkinter.StringVar()
+        self.cytometer_selection.trace(
+            "w",
+            self.update_add_to_queue_button_state)
+
         self.acquisition_date_selection = Tkinter.StringVar()
         self.acquisition_date_selection.trace(
             "w",
@@ -489,6 +514,7 @@ class Application(Tkinter.Frame):
         self.clear_selected_queue_button = None
         self.queue_tree = None
         self.upload_progress_bar = None
+        self.view_metadata_button = None
         self.add_to_queue_button = None
         self.file_list_canvas = None
 
@@ -913,6 +939,38 @@ class Application(Tkinter.Frame):
 
         site_panel_frame.pack(side='top', fill='x', expand=True)
 
+        # overall cytometer frame
+        cytometer_frame = Tkinter.Frame(
+            metadata_frame,
+            bg=BACKGROUND_COLOR)
+
+        # cytometer label frame
+        cytometer_chooser_label_frame = Tkinter.Frame(
+            cytometer_frame,
+            bg=BACKGROUND_COLOR)
+        cytometer_chooser_label = Tkinter.Label(
+            cytometer_chooser_label_frame,
+            text='Cytometer:',
+            bg=BACKGROUND_COLOR,
+            width=LABEL_WIDTH,
+            anchor=Tkinter.E)
+        cytometer_chooser_label.pack(side='left')
+        cytometer_chooser_label_frame.pack(side='left', fill='x')
+
+        # cytometer chooser listbox frame
+        cytometer_chooser_frame = Tkinter.Frame(
+            cytometer_frame,
+            bg=BACKGROUND_COLOR)
+        self.cytometer_menu = Tkinter.OptionMenu(
+            cytometer_chooser_frame,
+            self.cytometer_selection,
+            '')
+        self.cytometer_menu.config(bg=BACKGROUND_COLOR)
+        self.cytometer_menu.pack(fill='x', expand=True)
+        cytometer_chooser_frame.pack(fill='x', expand=True)
+
+        cytometer_frame.pack(side='top', fill='x', expand=True)
+
         # overall acquisition date frame
         acquisition_date_frame = Tkinter.Frame(
             metadata_frame,
@@ -945,7 +1003,7 @@ class Application(Tkinter.Frame):
             master=acquisition_date_chooser_frame,
             variable=self.acquisition_date_selection,
             firstweekday=calendar.SUNDAY,
-            )
+        )
         acquisition_cal.pack(expand=1, fill='both')
         acquisition_date_chooser_frame.pack(fill='x', expand=True)
 
@@ -984,6 +1042,10 @@ class Application(Tkinter.Frame):
             file_chooser_button_frame,
             text='Select All',
             command=self.select_all_files)
+        self.view_metadata_button = ttk.Button(
+            file_chooser_button_frame,
+            text='View Metadata',
+            command=self.view_metadata)
         self.add_to_queue_button = ttk.Button(
             file_chooser_button_frame,
             text='Add to Queue',
@@ -993,7 +1055,9 @@ class Application(Tkinter.Frame):
         file_chooser_button.pack(side='left')
         file_clear_selection_button.pack(side='left')
         file_clear_all_button.pack(side='left')
+
         self.add_to_queue_button.pack(side='right')
+        self.view_metadata_button.pack(side='right')
         file_chooser_button_frame.pack(
             anchor='n',
             fill='x',
@@ -1181,6 +1245,13 @@ class Application(Tkinter.Frame):
                 text=os.path.basename(f.name),
                 file_path=f.name
             )
+
+            try:
+                chosen_file = ChosenFile(f, cb)
+            except TypeError:
+                del cb
+                continue
+
             # bind to our canvas mouse function
             # to keep scrolling working when the mouse is over a checkbox
             cb.bind('<MouseWheel>', self._on_mousewheel)
@@ -1190,8 +1261,6 @@ class Application(Tkinter.Frame):
                 anchor='nw',
                 window=cb
             )
-
-            chosen_file = ChosenFile(f, cb)
 
             self.file_dict[chosen_file.file_path] = chosen_file
 
@@ -1217,6 +1286,7 @@ class Application(Tkinter.Frame):
         self.visit_menu['menu'].delete(0, 'end')
         self.stimulation_menu['menu'].delete(0, 'end')
         self.site_panel_menu['menu'].delete(0, 'end')
+        self.cytometer_menu['menu'].delete(0, 'end')
 
         for result in response['data']:
             self.project_dict[result['project_name']] = result['id']
@@ -1362,17 +1432,21 @@ class Application(Tkinter.Frame):
                 command=lambda value=stimulation:
                 self.stimulation_selection.set(value))
 
-
     def update_site_metadata(self, *args, **kwargs):
         self.site_panel_menu['menu'].delete(0, 'end')
         self.site_panel_selection.set('')
         self.site_panel_dict.clear()
+
+        self.cytometer_menu['menu'].delete(0, 'end')
+        self.cytometer_selection.set('')
+        self.cytometer_dict.clear()
 
         if not self.site_selection.get():
             return
         site_pk = self.site_dict[self.site_selection.get()]
         rest_args = [self.host, self.token]
         rest_kwargs = {'site_pk': site_pk}
+
         try:
             response = rest.get_site_panels(*rest_args, **rest_kwargs)
         except Exception, e:
@@ -1389,6 +1463,23 @@ class Application(Tkinter.Frame):
                 label=panel_name,
                 command=lambda value=panel_name:
                 self.site_panel_selection.set(value))
+
+        try:
+            response = rest.get_cytometers(*rest_args, **rest_kwargs)
+        except Exception, e:
+            print e
+            return
+
+        if not 'data' in response:
+            return
+
+        for result in response['data']:
+            self.cytometer_dict[result['cytometer_name']] = result['id']
+        for panel_name in sorted(self.cytometer_dict.keys()):
+            self.cytometer_menu['menu'].add_command(
+                label=panel_name,
+                command=lambda value=panel_name:
+                self.cytometer_selection.set(value))
 
     def update_metadata(*args):
         self = args[0]
@@ -1414,6 +1505,7 @@ class Application(Tkinter.Frame):
                 not self.storage_selection.get() or \
                 not self.stimulation_selection.get() or \
                 not self.site_panel_selection.get() or \
+                not self.cytometer_selection.get() or \
                 not self.acquisition_date_selection.get():
             active = False
         if len(self.file_list_canvas.children) == 0:
@@ -1423,6 +1515,66 @@ class Application(Tkinter.Frame):
             self.add_to_queue_button.config(state='active')
         else:
             self.add_to_queue_button.config(state='disabled')
+
+    def view_metadata(self):
+        message_win = Tkinter.Toplevel()
+        meta_frame = Tkinter.Frame(message_win)
+        meta_scroll_bar = Tkinter.Scrollbar(
+            meta_frame,
+            orient='vertical')
+        metadata_text = Tkinter.Text(
+            meta_frame,
+            bg=BACKGROUND_COLOR,
+            yscrollcommand=meta_scroll_bar.set)
+
+        for k, v in self.file_list_canvas.children.items():
+            if isinstance(v, MyCheckbutton):
+                if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
+                    # get metadata for only the selected checkboxes
+                    chosen_file = self.file_dict[v.file_path]
+                    metadata_text.insert(Tkinter.END, chosen_file.file_name)
+                    metadata_text.insert(Tkinter.END, '\n')
+                    metadata_dict = chosen_file.flow_data.text
+                    for key in sorted(metadata_dict):
+                        metadata_text.insert(Tkinter.END, key + ": ")
+                        metadata_text.insert(Tkinter.END, metadata_dict[key])
+                        metadata_text.insert(Tkinter.END, '\n')
+
+        meta_scroll_bar.config(command=metadata_text.yview)
+        meta_scroll_bar.pack(side='right', fill='y')
+        metadata_text.config(
+            state=Tkinter.DISABLED,
+            background="white",
+            highlightthickness=1,
+            highlightbackground=BORDER_COLOR)
+
+        meta_frame.pack(
+            fill=Tkinter.BOTH,
+            expand=Tkinter.TRUE,
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
+
+        message_win.title('Metadata')
+        message_win.minsize(width=480, height=320)
+        message_win.config(bg=BACKGROUND_COLOR)
+
+        metadata_text.pack(
+            anchor='nw',
+            fill=Tkinter.BOTH,
+            expand=Tkinter.TRUE,
+            padx=0,
+            pady=0
+        )
+
+        # make sure there's a way to destroy the dialog
+        message_button = ttk.Button(
+            message_win,
+            text='OK',
+            command=message_win.destroy)
+        message_button.pack(
+            anchor=Tkinter.E,
+            padx=PAD_MEDIUM,
+            pady=PAD_MEDIUM)
 
     def add_to_upload_queue(self):
         for k, v in self.file_list_canvas.children.items():
@@ -1455,6 +1607,10 @@ class Application(Tkinter.Frame):
                     c_file.site_panel_pk = \
                         self.site_panel_dict[c_file.site_panel]
 
+                    c_file.cytometer = self.cytometer_selection.get()
+                    c_file.cytometer_pk = \
+                        self.cytometer_dict[c_file.cytometer]
+
                     c_file.acq_date = self.acquisition_date_selection.get()
 
                     # Populate our tree item,
@@ -1468,6 +1624,7 @@ class Application(Tkinter.Frame):
                     item.append(c_file.storage)
                     item.append(c_file.stimulation)
                     item.append(c_file.site_panel)
+                    item.append(c_file.cytometer)
                     item.append(c_file.acq_date)
                     item.append(c_file.status)
 
@@ -1644,6 +1801,7 @@ class Application(Tkinter.Frame):
             if not chosen_file.project or \
                     not chosen_file.subject_pk or \
                     not chosen_file.site_panel_pk or \
+                    not chosen_file.cytometer_pk or \
                     not chosen_file.acq_date or \
                     not chosen_file.specimen_pk or \
                     not chosen_file.pretreatment or \
@@ -1661,6 +1819,7 @@ class Application(Tkinter.Frame):
             rest_kwargs = {
                 'subject_pk': str(chosen_file.subject_pk),
                 'site_panel_pk': str(chosen_file.site_panel_pk),
+                'cytometer_pk': str(chosen_file.cytometer_pk),
                 'visit_type_pk': str(chosen_file.visit_pk),
                 'specimen_pk': str(chosen_file.specimen_pk),
                 'pretreatment': str(chosen_file.pretreatment),

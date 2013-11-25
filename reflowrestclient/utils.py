@@ -14,6 +14,7 @@ URLS = {
     'SUBJECTS':       '/api/repository/subjects/',
     'PROJECT_PANELS': '/api/repository/project_panels/',
     'SITE_PANELS':    '/api/repository/site_panels/',
+    'CYTOMETERS':     '/api/repository/cytometers/',
     'COMPENSATIONS':  '/api/repository/compensations/',
     'STIMULATIONS':   '/api/repository/stimulations/',
     'SAMPLES':        '/api/repository/samples/',
@@ -307,6 +308,20 @@ def get_site_panel(host, token, site_panel_pk):
     return get_request(token, url)
 
 
+def get_cytometers(
+        host, token, site_pk=None, project_pk=None):
+    url = '%s%s%s' % (METHOD, host, URLS['CYTOMETERS'])
+    filter_params = dict()
+
+    if site_pk is not None:
+        filter_params['site'] = site_pk
+
+    if project_pk is not None:
+        filter_params['site__project'] = project_pk
+
+    return get_request(token, url, filter_params)
+
+
 def get_compensations(
         host,
         token,
@@ -557,17 +572,21 @@ def post_sample(
         storage,
         stimulation_pk,
         site_panel_pk,
+        cytometer_pk,
+        acquisition_date,
         compensation_pk=None):
     """
     POST a FCS sample, associating the file with the following:
-        subject_pk      (required)
-        visit_type_pk   (required)
-        specimen_pk     (required)
-        pretreatment    (required)
-        storage         (required)
-        stimulation_pk  (required)
-        site_panel_pk   (required)
-        compensation_pk (optional)
+        subject_pk       (required)
+        visit_type_pk    (required)
+        specimen_pk      (required)
+        pretreatment     (required)
+        storage          (required)
+        stimulation_pk   (required)
+        site_panel_pk    (required)
+        cytometer_pk     (required)
+        acquisition_date (required)
+        compensation_pk  (optional)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
@@ -587,7 +606,9 @@ def post_sample(
         'pretreatment': pretreatment,
         'storage': storage,
         'stimulation': stimulation_pk,
-        'site_panel': site_panel_pk
+        'site_panel': site_panel_pk,
+        'cytometer': cytometer_pk,
+        'acquisition_date': acquisition_date
     }
 
     # add the compensation field if present
