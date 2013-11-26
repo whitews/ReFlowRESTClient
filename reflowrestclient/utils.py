@@ -295,7 +295,7 @@ def get_site_panels(
 
 def get_site_panel(host, token, site_panel_pk):
     """
-    GET a serialized ProjectPanel instance
+    GET a serialized SitePanel instance
         site_panel_pk    (required)
 
     Returns a dictionary with keys:
@@ -306,6 +306,57 @@ def get_site_panel(host, token, site_panel_pk):
     """
     url = '%s%s%s%s/' % (METHOD, host, URLS['SITE_PANELS'], site_panel_pk)
     return get_request(token, url)
+
+
+def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
+    """
+    GET a serialized ProjectPanel instance
+        site_panel_pk    (required)
+
+    Returns True/False whether dictionary matches the site panel
+    """
+
+    # TODO: verify the parameter_dict
+
+    response = get_site_panel(host, token, site_panel_pk)
+
+    site_parameters = None
+
+    if response.has_key('data'):
+        if response['data'].has_key('parameters'):
+            site_parameters = response['data']['parameters']
+
+    matches = dict()
+    non_matches = dict()
+    missing = dict()
+
+    if site_parameters:
+        for param in site_parameters:
+            if param.has_key('fcs_number'):
+                if param['fcs_number'] in parameter_dict:
+                    candidate = parameter_dict[param['fcs_number']]
+                    if len(candidate) != 2:
+                        non_matches[param['fcs_number']] = candidate
+                        continue
+                    if candidate[0] != param['fcs_text']:
+                        non_matches[param['fcs_number']] = candidate
+                        continue
+                    if candidate[1] != param['fcs_opt_text']:
+                        non_matches[param['fcs_number']] = candidate
+                        continue
+                    matches[param['fcs_number']] = candidate
+                else:
+                    missing[param['fcs_number']] = [
+                        param['fcs_text'],
+                        param['fcs_opt_text']
+                    ]
+
+    if (len(matches) == len(site_parameters)) and \
+            len(non_matches) == 0 and \
+            len(missing) == 0:
+        return True
+
+    return False
 
 
 def get_cytometers(
