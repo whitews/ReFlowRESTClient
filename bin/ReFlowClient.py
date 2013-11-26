@@ -1526,19 +1526,26 @@ class Application(Tkinter.Frame):
             meta_frame,
             bg=BACKGROUND_COLOR,
             yscrollcommand=meta_scroll_bar.set)
+        metadata_text.tag_configure('alt-row', background=ROW_ALT_COLOR)
+        metadata_text.tag_configure('file-name', font=('TkDefaultFont', 18, 'bold'))
 
         for k, v in self.file_list_canvas.children.items():
             if isinstance(v, MyCheckbutton):
                 if v.is_checked() and v.cget('state') != Tkinter.DISABLED:
                     # get metadata for only the selected checkboxes
                     chosen_file = self.file_dict[v.file_path]
-                    metadata_text.insert(Tkinter.END, chosen_file.file_name)
+                    metadata_text.insert(Tkinter.END, chosen_file.file_name, ("file-name"))
                     metadata_text.insert(Tkinter.END, '\n')
                     metadata_dict = chosen_file.flow_data.text
-                    for key in sorted(metadata_dict):
+                    for i, key in enumerate(sorted(metadata_dict)):
+                        line_start = metadata_text.index(Tkinter.INSERT)
                         metadata_text.insert(Tkinter.END, key + ": ")
                         metadata_text.insert(Tkinter.END, metadata_dict[key])
                         metadata_text.insert(Tkinter.END, '\n')
+                        if i % 2:
+                            metadata_text.tag_add("alt-row", line_start, "end")
+                        else:
+                            metadata_text.tag_remove("alt-row", line_start, "end")
 
         meta_scroll_bar.config(command=metadata_text.yview)
         meta_scroll_bar.pack(side='right', fill='y')
