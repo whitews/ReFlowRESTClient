@@ -1544,7 +1544,9 @@ class Application(Tkinter.Frame):
                     for i, key in enumerate(sorted(metadata_dict)):
                         line_start = metadata_text.index(Tkinter.INSERT)
                         metadata_text.insert(Tkinter.END, key + ": ")
-                        metadata_text.insert(Tkinter.END, metadata_dict[key])
+                        metadata_text.insert(
+                            Tkinter.END,
+                            unicode(metadata_dict[key], errors='replace'))
                         metadata_text.insert(Tkinter.END, '\n')
                         if i % 2:
                             metadata_text.tag_add("alt-row", line_start, "end")
