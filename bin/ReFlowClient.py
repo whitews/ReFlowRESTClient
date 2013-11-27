@@ -1702,59 +1702,6 @@ class Application(Tkinter.Frame):
                     # finally, disable our checkboxes
                     v.config(state=Tkinter.DISABLED)
 
-        self._auto_resize_queue_columns()
-
-    def _auto_resize_queue_columns(self):
-        """
-        automagically set the column widths
-        """
-
-        # get_children returns a tuple of item IDs from the tree
-        tree_items = self.queue_tree.get_children()
-
-        col_widths = {}
-        for i, value in enumerate(QUEUE_HEADERS):
-            col_widths[i] = 0
-
-        for item in tree_items:
-            for i, value in enumerate(self.queue_tree.item(item)['values']):
-                width = tkFont.Font().measure(value)
-                header_width = tkFont.Font().measure(QUEUE_HEADERS[i])
-                # don't make the column smaller than the header text
-                if header_width + 3 > width:
-                    width = header_width + 3
-
-                # check if it's higher than the value we already have
-                if width > col_widths[i]:
-                    col_widths[i] = width
-
-        total_width = sum(col_widths.values())
-
-        # get the tree's width
-        tree_width = self.queue_tree.winfo_width()
-
-        # see if there's any extra space leftover
-        # and distribute equally across the columns
-        extra = int((tree_width - total_width) / len(col_widths))
-
-        # the extra width may not quite cover the whole
-        # tree width if the column count doesn't evenly
-        # divide the leftover space (we floored the value)
-        # add the extra extra to the first column
-        if tree_width > (total_width + (extra * len(col_widths))):
-            col_widths[0] = \
-                col_widths[0] + \
-                tree_width - \
-                (total_width + (extra * len(col_widths)))
-
-        # apply our auto-generated column widths
-        for i, value in enumerate(QUEUE_HEADERS):
-            self.queue_tree.column(
-                value,
-                minwidth=0,
-                width=col_widths[i] + extra,
-                stretch=Tkinter.TRUE)
-
     def clear_selected_queue(self):
         # get_children returns a tuple of item IDs from the tree
         tree_items = self.queue_tree.selection()
@@ -1766,7 +1713,7 @@ class Application(Tkinter.Frame):
                 chosen_file = self.file_dict[item]
             except Exception, e:
                 print e
-                break
+                continue
 
             # user may have cleared the checkbox by now,
             # if so, we'll delete this file from our list,
@@ -1839,8 +1786,8 @@ class Application(Tkinter.Frame):
         for item in tree_items:
             # the row's values are in the order we created them in
             # the status is the last column
-            # don't upload already uploaded files (status=="Complete")
-            if self.queue_tree.item(item)['values'][-1] != 'Complete':
+            # only upload files with status=="Pending"
+            if self.queue_tree.item(item)['values'][-1] == 'Pending':
                 # the file path is the item
                 upload_list.append(item)
 
@@ -1853,6 +1800,7 @@ class Application(Tkinter.Frame):
                 chosen_file = self.file_dict[item]
             except Exception, e:
                 print e
+                continue
 
             if not chosen_file.project or \
                     not chosen_file.subject_pk or \
