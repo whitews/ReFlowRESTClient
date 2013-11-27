@@ -1205,6 +1205,8 @@ class Application(Tkinter.Frame):
             return
 
         for cb in cb_to_delete:
+            file_path = cb.file_path
+            del(self.file_dict[file_path])
             cb.destroy()
 
         # and re-order items to not leave blank spaces
@@ -1234,9 +1236,11 @@ class Application(Tkinter.Frame):
         if len(selected_files) < 1:
             return
 
-        # clear the canvas
+        # clear the canvas and the relevant file_dict keys
         self.file_list_canvas.delete(Tkinter.ALL)
         for k in self.file_list_canvas.children.keys():
+            file_path = self.file_list_canvas.children[k].file_path
+            del(self.file_dict[file_path])
             del(self.file_list_canvas.children[k])
 
         for i, f in enumerate(selected_files):
