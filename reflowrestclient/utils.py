@@ -335,15 +335,20 @@ def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
             if param.has_key('fcs_number'):
                 if param['fcs_number'] in parameter_dict:
                     candidate = parameter_dict[param['fcs_number']]
-                    if len(candidate) != 2:
+                    if not candidate.has_key('n'):
                         non_matches[param['fcs_number']] = candidate
                         continue
-                    if candidate[0] != param['fcs_text']:
+                    if candidate['n'] != param['fcs_text']:
                         non_matches[param['fcs_number']] = candidate
                         continue
-                    if candidate[1] != param['fcs_opt_text']:
+                    if not 's' in candidate and param['fcs_opt_text'] != '':
                         non_matches[param['fcs_number']] = candidate
                         continue
+                    elif 's' in candidate:
+                        if candidate['s'] != param['fcs_opt_text']:
+                            non_matches[param['fcs_number']] = candidate
+                            continue
+                    # if we get here, everything matched
                     matches[param['fcs_number']] = candidate
                 else:
                     missing[param['fcs_number']] = [
