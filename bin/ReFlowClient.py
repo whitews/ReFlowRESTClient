@@ -143,6 +143,11 @@ class ChosenFile(object):
         self.checkbox.config(state=Tkinter.ACTIVE)
         self.checkbox.mark_unchecked()
 
+    def mark_as_not_matching(self):
+        self.checkbox.config(background='#FFAAAA')
+
+    def mark_as_matching(self):
+        self.checkbox.config(background='white')
 
 class MyCheckbutton(Tkinter.Checkbutton):
     def __init__(self, *args, **kwargs):
@@ -487,7 +492,7 @@ class Application(Tkinter.Frame):
         self.site_panel_selection = Tkinter.StringVar()
         self.site_panel_selection.trace(
             "w",
-            self.update_add_to_queue_button_state)
+            self.site_selection_changed)
 
         self.cytometer_menu = None
         self.cytometer_selection = Tkinter.StringVar()
@@ -1216,7 +1221,7 @@ class Application(Tkinter.Frame):
             if isinstance(cb, MyCheckbutton):
                 self.file_list_canvas.create_window(
                     10,
-                    (20 * i),
+                    (24 * i),
                     anchor='nw',
                     window=cb
                 )
@@ -1261,7 +1266,7 @@ class Application(Tkinter.Frame):
             cb.bind('<MouseWheel>', self._on_mousewheel)
             self.file_list_canvas.create_window(
                 10,
-                (20 * i),
+                (24 * i),
                 anchor='nw',
                 window=cb
             )
@@ -1272,6 +1277,7 @@ class Application(Tkinter.Frame):
         self.file_list_canvas.config(
             scrollregion=(0, 0, 1000, len(selected_files)*20))
 
+        self.mark_site_panel_matches()
         self.update_add_to_queue_button_state()
 
     def load_user_projects(self):
@@ -1519,6 +1525,43 @@ class Application(Tkinter.Frame):
             self.add_to_queue_button.config(state='active')
         else:
             self.add_to_queue_button.config(state='disabled')
+
+    def mark_site_panel_matches(self):
+        """
+        Change text color of FCS files' in file chooser frame based
+        on whether the file matches the selected site panel
+        """
+        site_panel_selection = self.site_panel_selection.get()
+        if not site_panel_selection:
+            return
+
+        site_panel_pk = self.site_panel_dict[site_panel_selection]
+
+        for fcs_file in self.file_dict:
+            param_dict = {}
+            metadata = self.file_dict[fcs_file].flow_data.text
+            for key in metadata:
+                matches = re.search('^P(\d+)([N,S])$', key, flags=re.IGNORECASE)
+                if matches:
+                    channel_number = int(matches.group(1))
+                    n_or_s = str.lower(matches.group(2))
+                    if not param_dict.has_key(channel_number):
+                        param_dict[channel_number] = {}
+                    param_dict[channel_number][n_or_s] = metadata[key]
+            is_match = rest.is_site_panel_match(
+                self.host,
+                self.token,
+                site_panel_pk,
+                param_dict)
+
+            if is_match:
+                self.file_dict[fcs_file].mark_as_matching()
+            else:
+                self.file_dict[fcs_file].mark_as_not_matching()
+
+    def site_selection_changed(self, *args, **kwargs):
+        self.mark_site_panel_matches()
+        self.update_add_to_queue_button_state(*args, **kwargs)
 
     def view_metadata(self):
         message_win = Tkinter.Toplevel()
