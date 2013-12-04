@@ -350,6 +350,11 @@ class Calendar(ttk.Frame):
         canvas.itemconfigure(canvas.text, text=text)
         canvas.place(in_=self._calendar, x=x-1, y=y-1)
 
+    def clear_selection(self):
+        """Clear current selection."""
+        self._selection = None
+        self._canvas.place_forget()
+
     # Callbacks
 
     def _pressed(self, evt):
@@ -500,6 +505,7 @@ class Application(Tkinter.Frame):
             "w",
             self.update_add_to_queue_button_state)
 
+        self.acquisition_cal = None
         self.acquisition_date_selection = Tkinter.StringVar()
         self.acquisition_date_selection.trace(
             "w",
@@ -1004,12 +1010,12 @@ class Application(Tkinter.Frame):
         acquisition_date_chooser_frame = Tkinter.Frame(
             acquisition_date_frame,
             bg=BACKGROUND_COLOR)
-        acquisition_cal = Calendar(
+        self.acquisition_cal = Calendar(
             master=acquisition_date_chooser_frame,
             variable=self.acquisition_date_selection,
             firstweekday=calendar.SUNDAY,
         )
-        acquisition_cal.pack(expand=1, fill='both')
+        self.acquisition_cal.pack(expand=1, fill='both')
         acquisition_date_chooser_frame.pack(fill='x', expand=True)
 
         acquisition_date_frame.pack(side='top', fill='x', expand=True)
@@ -1276,6 +1282,11 @@ class Application(Tkinter.Frame):
         # update scroll region
         self.file_list_canvas.config(
             scrollregion=(0, 0, 1000, len(selected_files)*20))
+
+        # clear the acquisition date and subject
+        self.subject_selection.set('')
+        self.acquisition_date_selection.set('')
+        self.acquisition_cal.clear_selection()
 
         self.mark_site_panel_matches()
         self.update_add_to_queue_button_state()
@@ -1712,7 +1723,7 @@ class Application(Tkinter.Frame):
             try:
                 chosen_file = self.file_dict[item]
             except Exception, e:
-                print e
+                self.queue_tree.delete(item)
                 continue
 
             # user may have cleared the checkbox by now,
