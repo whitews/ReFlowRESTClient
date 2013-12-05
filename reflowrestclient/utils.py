@@ -6,20 +6,21 @@ import re
 METHOD = 'https://'
 
 URLS = {
-    'TOKEN':          '/api/token-auth/',
-    'PROJECTS':       '/api/repository/projects/',
-    'SPECIMENS':      '/api/repository/specimens/',
-    'SUBJECT_GROUPS': '/api/repository/subject_groups/',
-    'SITES':          '/api/repository/sites/',
-    'SUBJECTS':       '/api/repository/subjects/',
-    'PROJECT_PANELS': '/api/repository/project_panels/',
-    'SITE_PANELS':    '/api/repository/site_panels/',
-    'CYTOMETERS':     '/api/repository/cytometers/',
-    'COMPENSATIONS':  '/api/repository/compensations/',
-    'STIMULATIONS':   '/api/repository/stimulations/',
-    'SAMPLES':        '/api/repository/samples/',
-    'CREATE_SAMPLES': '/api/repository/samples/add/',
-    'VISIT_TYPES':    '/api/repository/visit_types/',
+    'TOKEN':               '/api/token-auth/',
+    'PROJECTS':            '/api/repository/projects/',
+    'SPECIMENS':           '/api/repository/specimens/',
+    'SUBJECT_GROUPS':      '/api/repository/subject_groups/',
+    'SITES':               '/api/repository/sites/',
+    'SUBJECTS':            '/api/repository/subjects/',
+    'PROJECT_PANELS':      '/api/repository/project_panels/',
+    'SITE_PANELS':         '/api/repository/site_panels/',
+    'CYTOMETERS':          '/api/repository/cytometers/',
+    'COMPENSATIONS':       '/api/repository/compensations/',
+    'CREATE_COMPENSATION': '/api/repository/compensations/add/',
+    'STIMULATIONS':        '/api/repository/stimulations/',
+    'SAMPLES':             '/api/repository/samples/',
+    'CREATE_SAMPLES':      '/api/repository/samples/add/',
+    'VISIT_TYPES':         '/api/repository/visit_types/',
 
     # Process manager API URLs
     'PROCESSES':               '/api/process_manager/processes/',
@@ -754,6 +755,64 @@ def download_compensation(
     return {
         'status': r.status_code,
         'reason': r.reason,
+        'data': data,
+    }
+
+
+def post_compensation(
+        host,
+        token,
+        name,
+        site_panel_pk,
+        acquisition_date,
+        matrix_text):
+    """
+    POST a compensation matrix. The matrix text can be comma or tab delimited.
+        name             (required)
+        site_panel_pk    (required)
+        acquisition_date (required)
+        matrix_text      (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary string representation of object successfully posted,
+                empty string if unsuccessful
+    """
+
+    url = '%s%s%s' % (METHOD, host, URLS['CREATE_COMPENSATION'])
+    headers = {'Authorization': "Token %s" % token}
+
+    # Subject, visit, specimen, stimulation, and site_panel are required
+    data = {
+        'name': name,
+        'site_panel': site_panel_pk,
+        'acquisition_date': acquisition_date,
+        'matrix_text': matrix_text
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            data=data,
+            verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if response.status_code == 201:
+        try:
+            data = response.json()
+        except Exception, e:
+            data = response.text()
+            print e
+    else:
+        data = response.text
+
+    return {
+        'status': response.status_code,
+        'reason': response.reason,
         'data': data,
     }
 
