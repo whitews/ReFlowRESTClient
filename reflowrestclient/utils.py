@@ -289,7 +289,7 @@ def get_site_panels(
         filter_params['project_panel'] = project_panel_pk
 
     if project_pk is not None:
-        filter_params['site__project'] = project_pk
+        filter_params['project_panel__project'] = project_pk
 
     return get_request(token, url, filter_params)
 
