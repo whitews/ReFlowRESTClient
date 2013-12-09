@@ -459,7 +459,8 @@ def get_samples(
         site_panel_pk=None,
         project_panel_pk=None,
         original_filename=None,
-        subject_code=None):
+        subject_code=None,
+        sha1=None):
     url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
 
@@ -492,6 +493,9 @@ def get_samples(
 
     if subject_code is not None:
         filter_params['subject__subject_code'] = subject_code
+
+    if sha1 is not None:
+        filter_params['sha1'] = sha1
 
     return get_request(token, url, filter_params)
 
