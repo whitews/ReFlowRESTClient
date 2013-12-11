@@ -460,6 +460,7 @@ def get_samples(
         project_panel_pk=None,
         original_filename=None,
         subject_code=None,
+        acquisition_date=None,
         sha1=None):
     url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
     filter_params = dict()
@@ -493,6 +494,9 @@ def get_samples(
 
     if subject_code is not None:
         filter_params['subject__subject_code'] = subject_code
+
+    if acquisition_date is not None:
+        filter_params['acquisition_date'] = acquisition_date
 
     if sha1 is not None:
         filter_params['sha1'] = sha1
