@@ -17,8 +17,7 @@ for file_path in file_path_list:
         print e
         sys.exit()
 
-host = "localhost:8000"
-
+host = raw_input('Host: ')
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 

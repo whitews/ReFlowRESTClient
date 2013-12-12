@@ -3,10 +3,7 @@ import sys
 import json
 from reflowrestclient.utils import get_token, post_sample
 
-host = "localhost:8000"
-auth_token_url = "/api-token-auth/"
-url = "/api/samples/"
-
+host = raw_input('Host: ')
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 
@@ -17,7 +14,6 @@ if token:
 else:
     print "No token for you!!!"
     sys.exit()
-
 
 subject_pk = raw_input('Subject Primary Key: ')
 site_pk = raw_input('Site Primary Key: ')
@@ -30,9 +26,7 @@ response_dict = post_sample(
     token,
     file_path,
     subject_pk=subject_pk,
-    site_pk=site_pk,
     visit_type_pk=visit_type_pk,
-    panel_pk=panel_pk
 )
 
 print "Response: ", response_dict['status'], response_dict['reason']

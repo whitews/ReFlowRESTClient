@@ -5,14 +5,18 @@ import sys
 import os
 import re
 import time
+import getpass
 
 if not len(sys.argv) == 2:
     sys.exit("Provide an input file")
 
 input_file = sys.argv[1]
 
-host = '127.0.0.1'
-token = 'replace-me-with-a-real-token'
+host = raw_input('Host: ')
+username = raw_input('Username: ')
+password = getpass.getpass('Password: ')
+
+token = Rest.get_token(host, username, password)
 
 project_pk = None  # replace with project PK
 project_panels = [
