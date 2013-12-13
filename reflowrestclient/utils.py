@@ -20,6 +20,7 @@ URLS = {
     'STIMULATIONS':        '/api/repository/stimulations/',
     'SAMPLES':             '/api/repository/samples/',
     'CREATE_SAMPLES':      '/api/repository/samples/add/',
+    'SAMPLE_METADATA':     '/api/repository/samplemetadata/',
     'VISIT_TYPES':         '/api/repository/visit_types/',
 
     # Process manager API URLs
@@ -385,7 +386,8 @@ def get_compensations(
         name=None,
         site_panel_pk=None,
         site_pk=None,
-        project_pk=None):
+        project_pk=None,
+        acquisition_date=None):
     url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
     filter_params = dict()
 
@@ -400,6 +402,9 @@ def get_compensations(
 
     if project_pk is not None:
         filter_params['site_panel__site__project'] = project_pk
+
+    if acquisition_date is not None:
+        filter_params['acquisition_date'] = acquisition_date
 
     return get_request(token, url, filter_params)
 
@@ -710,6 +715,19 @@ def post_sample(
         'reason': response.reason,
         'data': data,
     }
+
+
+def get_sample_metadata(host, token, sample_pk=None, key=None):
+    url = '%s%s%s' % (METHOD, host, URLS['SAMPLE_METADATA'])
+    filter_params = dict()
+
+    if sample_pk is not None:
+        filter_params['sample'] = sample_pk
+
+    if key is not None:
+        filter_params['key'] = key
+
+    return get_request(token, url, filter_params)
 
 
 def download_compensation(
