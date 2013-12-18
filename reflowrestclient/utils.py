@@ -27,7 +27,6 @@ URLS = {
     'VERIFY_WORKER':           '/api/repository/verify_worker/',
     'PROCESS_REQUESTS':        '/api/repository/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
-    'SAMPLE_SET':              '/api/repository/sample_set/',
 }
 
 
@@ -944,7 +943,7 @@ def verify_pr_assignment(host, token, process_request_pk):
 
 def revoke_pr_assignment(host, token, process_request_pk):
     """
-
+    Requests un-assignment from a ProcessRequest on the ReFlow server
     """
     url = '%s%s%s%s/%s' % (
         METHOD,
@@ -952,6 +951,24 @@ def revoke_pr_assignment(host, token, process_request_pk):
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
         'revoke_assignment')
+    filter_params = dict()
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
+
+
+def complete_pr_assignment(host, token, process_request_pk):
+    """
+    Report that the ProcessRequest has been completed
+    """
+    url = '%s%s%s%s/%s' % (
+        METHOD,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'complete_assignment')
     filter_params = dict()
 
     if process_request_pk is not None:

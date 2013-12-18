@@ -7,6 +7,13 @@ class MyWorker(worker.Worker):
         return True
 
     def process(self):
+        print "Do some processing"
+        return True
+
+    def report_errors(self):
+        return
+
+    def upload_results(self):
         return
 
 
@@ -14,8 +21,9 @@ if __name__ == "__main__":
     host = 'localhost:8000'
     name = 'good_worker'
 
-    worker = MyWorker(host, name)
-    worker.sleep = 5
+    usage = "usage: %s start|stop|restart" % sys.argv[0]
+
+    worker = MyWorker(host, name, sleep=5)
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
@@ -26,8 +34,9 @@ if __name__ == "__main__":
             worker.restart()
         else:
             print "Unknown command"
+            print usage
             sys.exit(2)
         sys.exit(0)
     else:
-        print "usage: %s start|stop|restart" % sys.argv[0]
+        print usage
         sys.exit(2)
