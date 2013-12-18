@@ -5,9 +5,9 @@ import time
 
 import abc
 
-from reflowrestclient.worker.daemon import Daemon
-import reflowrestclient.utils as rest
-
+from reflowrestclient.processing.daemon import Daemon
+from reflowrestclient import utils
+from models import ProcessRequest
 
 WORKER_CONF = '/etc/reflow_worker.conf'
 
@@ -30,7 +30,7 @@ class Worker(Daemon):
         try:
             worker_json = json.load(open(WORKER_CONF, 'r'))
             self.token = worker_json[host][name]
-            del(worker_json)
+            del worker_json
         except Exception as e:
             message = "No token found for worker. Check the config file %s\n"
             sys.stderr.write(message % WORKER_CONF)
@@ -39,7 +39,7 @@ class Worker(Daemon):
 
         # verify worker with the host
         try:
-            result = rest.verify_worker(self.host, self.token)
+            result = utils.verify_worker(self.host, self.token)
             self.genuine = result['data']['worker']  # should be True
             if self.genuine is not True:
                 raise Exception
@@ -55,18 +55,6 @@ class Worker(Daemon):
 
         super(Worker, self).__init__(pid_file)
 
-    def get_process_inputs(self):
-        input_dict = {}
-
-        if self.__assigned_pr:
-            if self.__assigned_pr.has_key('input_values'):
-                for input in self.__assigned_pr['input_values']:
-                    key = input['process_input']['input_name']
-
-                    # TODO: handle default values if present and check for duplicates
-                    input_dict[key] = input['value']
-        return input_dict
-
     def run(self):
         logging.basicConfig(
             filename='/Users/swhite/Desktop/worker.log',
@@ -81,47 +69,80 @@ class Worker(Daemon):
         # just capture and log all Exceptions and Errors
         if self.__assigned_pr is None:
             try:
-                viable_requests = rest.get_viable_process_requests(self.host, self.token)
+                viable_requests = utils.get_viable_process_requests(
+                    self.host,
+                    self.token)
             except Exception as e:
                 logging.warning("Exception: ", e.message)
+                time.sleep(self.sleep)
+                return
 
-            if not viable_requests.has_key('data'):
-                logging.warning("Error: Malformed response from ReFlow server attempting to get viable process requests.")
+            if not 'data' in viable_requests:
+                logging.warning(
+                    "Error: Malformed response from ReFlow server attempting " +
+                    "to get viable process requests.")
+                time.sleep(self.sleep)
+                return
             if not isinstance(viable_requests['data'], list):
-                logging.warning("Error: Malformed response from ReFlow server attempting to get viable process requests.")
+                logging.warning(
+                    "Error: Malformed response from ReFlow " +
+                    "server attempting to get viable process requests.")
+                time.sleep(self.sleep)
+                return
 
-            if len(viable_requests['data']) > 0:
-                for request in viable_requests['data']:
-                    # request ProcessRequest assignment
-                    try:
-                        assignment_response = rest.request_process_request_assignment(self.host, self.token, request['id'])
-                    except Exception as e:
-                        logging.warning("Exception: ", e.message)
+            if not len(viable_requests['data']) > 0:
+                time.sleep(self.sleep)
+                return
 
-                    # check the response,
-                    # if 201 then our assignment request was granted and
-                    # we'll verify we have the assignment
-                    try:
-                        if assignment_response['status'] == 201:
-                            verify_assignment_response = rest.verify_process_request_assignment(self.host, self.token, request['id'])
-                            if verify_assignment_response['data']['assignment'] is True:
-                                pr_response = rest.get_process_request(self.host, self.token, request['id'])
-                                self.__assigned_pr = pr_response['data']
-                    except Exception as e:
-                        logging.warning("Exception: ", e.message)
+            for request in viable_requests['data']:
+                # request ProcessRequest assignment
+                try:
+                    assignment_response = utils.request_pr_assignment(
+                        self.host,
+                        self.token,
+                        request['id'])
+                except Exception as e:
+                    logging.warning("Exception: ", e.message)
+
+                if not 'status' in assignment_response:
+                    continue
+                if not assignment_response['status'] == 201:
+                    continue
+
+                # check the response,
+                # if 201 then our assignment request was granted and
+                # we'll verify we have the assignment
+                try:
+                    verify_assignment_response = utils.verify_pr_assignment(
+                        self.host,
+                        self.token,
+                        request['id'])
+                    if verify_assignment_response['data']['assignment']:
+                        pr_response = utils.get_process_request(
+                            self.host,
+                            self.token,
+                            request['id'])
+                        self.__assigned_pr = ProcessRequest(
+                            self.host,
+                            self.token,
+                            pr_response['data'])
+                except Exception as e:
+                    logging.warning("Exception: ", e.message)
             else:
                 time.sleep(self.sleep)
         else:
             # We've got something to do!
-
             are_inputs_valid = self.validate_inputs()
 
             if not are_inputs_valid:
                 # TODO: Report an error for this PR back to ReFlow host
-                logging.warning("Error: Invalid input values for process request")
+                logging.warning(
+                    "Error: Invalid input values for process request")
                 return
 
-            # TODO: Next, download the samples in the sample set
+            # Download the samples
+            assert isinstance(self.__assigned_pr, ProcessRequest)
+            self.__assigned_pr.download_samples()
 
             # Process the data
             self.process()
@@ -155,5 +176,3 @@ class Worker(Daemon):
         It will be called after when the Worker has an assigned ProcessRequest.
         """
         return
-
-
