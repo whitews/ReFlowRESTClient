@@ -72,7 +72,7 @@ class Daemon(object):
     def delete_pid(self):
         os.remove(self.pid_file)
 
-    def start(self):
+    def start(self, debug=False):
         """
         Start the daemon
         """
@@ -90,7 +90,8 @@ class Daemon(object):
             sys.exit(1)
 
         # Start the daemon
-        self.__daemonize()
+        if not debug:
+            self.__daemonize()
         self.run()
 
     def stop(self):
