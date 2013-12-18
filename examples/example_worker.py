@@ -1,10 +1,9 @@
 import sys
-from reflowrestclient.worker import Worker
+from reflowrestclient.processing import worker
 
 
-class MyWorker(Worker):
+class MyWorker(worker.Worker):
     def validate_inputs(self):
-        inputs = self.get_process_inputs()
         return True
 
     def process(self):
@@ -20,7 +19,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
-            worker.start()
+            worker.start(debug=True)
         elif 'stop' == sys.argv[1]:
             worker.stop()
         elif 'restart' == sys.argv[1]:

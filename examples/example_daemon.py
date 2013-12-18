@@ -1,6 +1,6 @@
 import sys
 import time
-from reflowrestclient.worker.daemon import Daemon
+from reflowrestclient.processing.daemon import Daemon
 
 
 class MyDaemon(Daemon):
