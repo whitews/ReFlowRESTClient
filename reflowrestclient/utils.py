@@ -1,7 +1,5 @@
 import requests
-#import grequests
 import os
-import re
 
 METHOD = 'https://'
 
@@ -23,12 +21,13 @@ URLS = {
     'SAMPLE_METADATA':     '/api/repository/samplemetadata/',
     'VISIT_TYPES':         '/api/repository/visit_types/',
 
-    # Process manager API URLs
-    'PROCESSES':               '/api/process_manager/processes/',
-    'WORKERS':                 '/api/process_manager/workers/',
-    'VERIFY_WORKER':           '/api/process_manager/verify_worker/',
-    'PROCESS_REQUESTS':        '/api/process_manager/process_requests/',
-    'VIABLE_PROCESS_REQUESTS': '/api/process_manager/viable_process_requests/',
+    # Process related API URLs
+    'PROCESSES':               '/api/repository/processes/',
+    'WORKERS':                 '/api/repository/workers/',
+    'VERIFY_WORKER':           '/api/repository/verify_worker/',
+    'PROCESS_REQUESTS':        '/api/repository/process_requests/',
+    'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
+    'SAMPLE_SET':              '/api/repository/sample_set/',
 }
 
 
@@ -324,8 +323,8 @@ def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
 
     site_parameters = None
 
-    if response.has_key('data'):
-        if response['data'].has_key('parameters'):
+    if 'data' in response:
+        if 'parameters' in response['data']:
             site_parameters = response['data']['parameters']
 
     matches = dict()
@@ -334,10 +333,10 @@ def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
 
     if site_parameters:
         for param in site_parameters:
-            if param.has_key('fcs_number'):
+            if 'fcs_number' in param:
                 if param['fcs_number'] in parameter_dict:
                     candidate = parameter_dict[param['fcs_number']]
-                    if not candidate.has_key('n'):
+                    if not 'n' in candidate:
                         non_matches[param['fcs_number']] = candidate
                         continue
                     if candidate['n'] != param['fcs_text']:
@@ -577,58 +576,6 @@ def download_sample(
         'reason': r.reason,
         'data': data,
     }
-
-
-#def download_samples(
-#        host,
-#        token,
-#        sample_pk_list,
-#        data_format='npy',
-#        directory=None):
-#    if data_format not in ['npy', 'csv', 'fcs']:
-#        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
-#            % data_format
-#        return
-#
-#    urls = []
-#
-#    for pk in sample_pk_list:
-#        urls.append(
-#            "%s%s/api/repository/samples/%d/%s/" %
-#            (METHOD, host, pk, data_format))
-#    headers = {'Authorization': "Token %s" % token}
-#    data = ''
-#    try:
-#        reqs = (grequests.get(u, headers=headers, verify=False) for u in urls)
-#        rs = grequests.map(reqs, size=5)
-#    except Exception, e:
-#        print e
-#        return {'status': None, 'reason': 'No response', 'data': data}
-#
-#    results = []
-#
-#    for r in rs:
-#        if r.status_code == 200:
-#            try:
-#                filename = re.findall(
-#                    "filename=([^']+)", r.headers['content-disposition'])[0]
-#                if directory is None:
-#                    directory = os.getcwd()
-#
-#                with open("%s/%s" % (directory, filename), "wb") as fcs_file:
-#                    fcs_file.write(r.content)
-#            except Exception, e:
-#                print e
-#        else:
-#            data = r.text
-#
-#        results.append({
-#            'status': r.status_code,
-#            'reason': r.reason,
-#            'data': data,
-#        })
-#
-#    return results
 
 
 def post_sample(
@@ -935,7 +882,7 @@ def get_process_request(host, token, process_request_pk):
     return get_request(token, url)
 
 
-def request_process_request_assignment(host, token, process_request_pk):
+def request_pr_assignment(host, token, process_request_pk):
     """
     Requesting user must be a Worker registered with the Process and
     and the ProcessRequest must have 'Pending' status
@@ -976,7 +923,7 @@ def request_process_request_assignment(host, token, process_request_pk):
     }
 
 
-def verify_process_request_assignment(host, token, process_request_pk):
+def verify_pr_assignment(host, token, process_request_pk):
     """
     Result will include 'assignment': True of request.user (Worker) is assigned
     to the specified ProcessRequest
@@ -995,7 +942,7 @@ def verify_process_request_assignment(host, token, process_request_pk):
     return get_request(token, url, filter_params)
 
 
-def revoke_process_request_assignment(host, token, process_request_pk):
+def revoke_pr_assignment(host, token, process_request_pk):
     """
 
     """
