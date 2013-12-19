@@ -7,7 +7,7 @@ class MyWorker(worker.Worker):
         return True
 
     def process(self):
-        print "Do some processing"
+        self.assigned_pr.compensate_samples()
         return True
 
     def report_errors(self):
