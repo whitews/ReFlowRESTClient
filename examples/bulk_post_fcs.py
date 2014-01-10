@@ -2,7 +2,10 @@ import getpass
 import sys
 import json
 from reflowrestclient.utils import *
-import fcm
+import flowio
+
+
+# TODO: update with site panel and remove site
 
 file_path_list = sys.argv[1:]
 
@@ -10,9 +13,9 @@ print 'Verifying FCS files...'
 
 for file_path in file_path_list:
     try:
-        f = fcm.loadFCS(file_path)
-        if not len(f.channels) > 0:
-            raise Exception("One of more files specified either isn't an FCS file or has no channel information.")
+        f = flowio.FlowData(file_path)
+        if f.channel_count > 0:
+            raise Exception("Error reading file %s" % file_path)
     except Exception, e:
         print e
         sys.exit()
