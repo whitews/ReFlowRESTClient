@@ -12,7 +12,9 @@ setup(
     long_description=open('README.md').read(),
     install_requires=[
         'numpy>=1.6.2',
-        'fcm>=0.9.1',
+        'flowio',
+        'flowutils',
+        'flowstats',
         'requests>=1.1.0',
         'grequests>=0.2.0',
         'Pillow>=2.0.0',
