@@ -16,7 +16,6 @@ setup(
         'flowutils',
         'flowstats',
         'requests>=1.1.0',
-        'grequests>=0.2.0',
         'Pillow>=2.0.0',
     ]
 )
