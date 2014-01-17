@@ -887,7 +887,8 @@ def request_pr_assignment(host, token, process_request_pk):
     and the ProcessRequest must have 'Pending' status
     """
     url = '%s%s%s%s/%s' % (
-        METHOD, host,
+        METHOD,
+        host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
         'request_assignment')
