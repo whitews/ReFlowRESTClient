@@ -22,7 +22,7 @@ if hasattr(sys, '_MEIPASS'):
     RESOURCE_DIR = sys._MEIPASS
 else:
     # for development
-    RESOURCE_DIR = '../resources'
+    RESOURCE_DIR = '../../resources'
 
 LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.gif')
 if sys.platform == 'win32':

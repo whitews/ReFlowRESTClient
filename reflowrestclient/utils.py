@@ -27,6 +27,7 @@ URLS = {
     'VERIFY_WORKER':           '/api/repository/verify_worker/',
     'PROCESS_REQUESTS':        '/api/repository/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
+    'CREATE_PROCESS_REQUEST_OUTPUT':  '/api/repository/process_request_outputs/add/',
 }
 
 
@@ -986,3 +987,61 @@ def verify_worker(host, token):
     filter_params = dict()
 
     return get_request(token, url, filter_params)
+
+
+def post_process_request_output(
+        host,
+        token,
+        process_request_id,
+        file_path):
+    """
+    POST a ProcessRequestOutput instance.
+        process_request_ID (required)
+        file               (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary string representation of object successfully posted,
+                empty string if unsuccessful
+    """
+
+    url = '%s%s%s' % (METHOD, host, URLS['CREATE_PROCESS_REQUEST_OUTPUT'])
+    headers = {'Authorization': "Token %s" % token}
+
+    # Subject, visit, specimen, stimulation, and site_panel are required
+    data = {
+        'process_request': process_request_id,
+        'key': file_path.split('/')[-1]
+    }
+
+    # get FCS file
+    files = {
+        'value': open(file_path, "rb")
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            data=data,
+            files=files,
+            verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if response.status_code == 201:
+        try:
+            data = response.json()
+        except Exception, e:
+            data = response.text()
+            print e
+    else:
+        data = response.text
+
+    return {
+        'status': response.status_code,
+        'reason': response.reason,
+        'data': data,
+    }
