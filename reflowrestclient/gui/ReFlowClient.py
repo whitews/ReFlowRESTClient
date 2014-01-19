@@ -35,6 +35,8 @@ if sys.platform == 'win32':
 
 elif sys.platform == 'darwin':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.icns')
+elif sys.platform == 'linux2':
+    ICON_PATH = None  # haven't figured out icons on linux yet : (
 else:
     sys.exit("Your operating system is not supported.")
 
@@ -513,7 +515,10 @@ class Application(Tkinter.Frame):
 
         # can't call super on old-style class, call parent init directly
         Tkinter.Frame.__init__(self, master)
-        self.master.iconbitmap(ICON_PATH)
+        if sys.platform == 'linux2':
+            pass
+        else:
+            self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
         self.master.minsize(width=WINDOW_HEIGHT, height=WINDOW_WIDTH)
         self.master.config(bg=BACKGROUND_COLOR)
