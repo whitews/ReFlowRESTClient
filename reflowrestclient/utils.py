@@ -473,7 +473,7 @@ def get_samples(
         filter_params['subject'] = subject_pk
 
     if site_pk is not None:
-        filter_params['site_panel__site'] = site_pk
+        filter_params['site'] = site_pk
 
     if project_pk is not None:
         filter_params['subject__project'] = project_pk
@@ -491,7 +491,7 @@ def get_samples(
         filter_params['site_panel'] = site_panel_pk
 
     if project_panel_pk is not None:
-        filter_params['site_panel__project_panel'] = project_panel_pk
+        filter_params['project_panel'] = project_panel_pk
 
     if original_filename is not None:
         filter_params['original_filename'] = original_filename
