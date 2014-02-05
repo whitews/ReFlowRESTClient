@@ -49,8 +49,8 @@ ROW_ALT_COLOR = '#f3f6fa'
 SUCCESS_FOREGROUND_COLOR = '#00cc00'
 ERROR_FOREGROUND_COLOR = '#ff0000'
 
-WINDOW_HEIGHT = 1024
-WINDOW_WIDTH = 640
+WINDOW_WIDTH = 1024
+WINDOW_HEIGHT = 776
 
 PAD_SMALL = 3
 PAD_MEDIUM = 6
@@ -520,7 +520,7 @@ class Application(Tkinter.Frame):
         else:
             self.master.iconbitmap(ICON_PATH)
         self.master.title('ReFlow Client - ' + VERSION)
-        self.master.minsize(width=WINDOW_HEIGHT, height=WINDOW_WIDTH)
+        self.master.minsize(width=WINDOW_WIDTH, height=WINDOW_HEIGHT)
         self.master.config(bg=BACKGROUND_COLOR)
 
         self.menu_bar = Tkinter.Menu(master)
