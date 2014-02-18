@@ -26,13 +26,7 @@ else:
 
 LOGO_PATH = os.path.join(RESOURCE_DIR, 'reflow_text.gif')
 if sys.platform == 'win32':
-    ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.ico')
-
-    # Hack for tkFileDialog bug in Windows in Python 2.7.5
-    # to avoid IOError on erroneous parsing of file names
-    # ...looks like the file names may be passed as Tcl lists???
-    Tkinter.wantobjects = 0
-
+    ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow2.ico')
 elif sys.platform == 'darwin':
     ICON_PATH = os.path.join(RESOURCE_DIR, 'reflow.icns')
 elif sys.platform == 'linux2':
@@ -84,7 +78,7 @@ class ChosenFile(object):
 
         # test if file is an FCS file, raise TypeError if not
         try:
-            self.flow_data = flowio.FlowData(f)
+            self.flow_data = flowio.FlowData(f.name)
         except:
             raise TypeError("File %s is not an FCS file." % self.file_name)
 
@@ -1247,7 +1241,19 @@ class Application(Tkinter.Frame):
         self.update_add_to_queue_button_state()
 
     def choose_files(self):
-        selected_files = tkFileDialog.askopenfiles('r')
+        # Some Tkinter bug in Windows where askopenfiles throws an IOError
+        # Looks like this will be fixed in the next Python release 2.7.7 ???
+        # See http://bugs.python.org/issue5712
+        if sys.platform == 'win32':
+            selected_files = []
+            selected_file_paths = tkFileDialog.askopenfilenames()
+            f = Tkinter.Frame()
+            selected_file_paths = f.tk.splitlist(selected_file_paths)
+            for path in selected_file_paths:
+                f = open(path)
+                selected_files.append(f)
+        else:
+            selected_files = tkFileDialog.askopenfiles('r')
 
         if len(selected_files) < 1:
             return
