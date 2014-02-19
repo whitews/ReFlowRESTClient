@@ -1050,7 +1050,7 @@ class Application(Tkinter.Frame):
             command=self.choose_files)
         file_clear_selection_button = ttk.Button(
             file_chooser_button_frame,
-            text='Clear Selected',
+            text='Remove Selected Files',
             command=self.clear_selected_files)
         file_clear_all_button = ttk.Button(
             file_chooser_button_frame,
