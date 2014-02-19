@@ -72,13 +72,14 @@ QUEUE_HEADERS = [
 
 class ChosenFile(object):
     def __init__(self, f, checkbox):
-        self.file = f
         self.file_path = f.name
         self.file_name = os.path.basename(f.name)
 
         # test if file is an FCS file, raise TypeError if not
         try:
-            self.flow_data = flowio.FlowData(f.name)
+            flow_data = flowio.FlowData(f.name)
+            self.flow_metadata = flow_data.text
+            del flow_data
         except:
             raise TypeError("File %s is not an FCS file." % self.file_name)
 
@@ -113,6 +114,8 @@ class ChosenFile(object):
 
         self.acq_date = None
 
+        del f
+
     def reinitialize(self):
         self.status = 'Pending'  # other values are 'Error' and 'Complete'
         self.error_msg = None
@@ -144,6 +147,7 @@ class ChosenFile(object):
 
     def mark_as_matching(self):
         self.checkbox.config(background='white')
+
 
 class MyCheckbutton(Tkinter.Checkbutton):
     def __init__(self, *args, **kwargs):
@@ -1274,6 +1278,8 @@ class Application(Tkinter.Frame):
 
             try:
                 chosen_file = ChosenFile(f, cb)
+                f.close()
+                del f
             except TypeError:
                 del cb
                 continue
@@ -1289,6 +1295,7 @@ class Application(Tkinter.Frame):
             )
 
             self.file_dict[chosen_file.file_path] = chosen_file
+            del chosen_file
 
         # update scroll region
         self.file_list_canvas.config(
@@ -1298,6 +1305,8 @@ class Application(Tkinter.Frame):
         self.subject_selection.set('')
         self.acquisition_date_selection.set('')
         self.acquisition_cal.clear_selection()
+
+        del selected_files
 
         self.mark_site_panel_matches()
         self.update_add_to_queue_button_state()
@@ -1561,7 +1570,7 @@ class Application(Tkinter.Frame):
 
         for fcs_file in self.file_dict:
             param_dict = {}
-            metadata = self.file_dict[fcs_file].flow_data.text
+            metadata = self.file_dict[fcs_file].flow_metadata
             for key in metadata:
                 matches = re.search('^P(\d+)([N,S])$', key, flags=re.IGNORECASE)
                 if matches:
@@ -1605,7 +1614,7 @@ class Application(Tkinter.Frame):
                     chosen_file = self.file_dict[v.file_path]
                     metadata_text.insert(Tkinter.END, chosen_file.file_name, ("file-name"))
                     metadata_text.insert(Tkinter.END, '\n')
-                    metadata_dict = chosen_file.flow_data.text
+                    metadata_dict = chosen_file.flow_metadata
                     for i, key in enumerate(sorted(metadata_dict)):
                         line_start = metadata_text.index(Tkinter.INSERT)
                         metadata_text.insert(Tkinter.END, key + ": ")
