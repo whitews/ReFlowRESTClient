@@ -15,7 +15,7 @@ from exceptions import TypeError
 import reflowrestclient.utils as rest
 import flowio
 
-VERSION = '0.11b'
+VERSION = '0.12'
 
 if hasattr(sys, '_MEIPASS'):
     # for PyInstaller 2.0
