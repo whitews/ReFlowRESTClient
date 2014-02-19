@@ -1266,8 +1266,11 @@ class Application(Tkinter.Frame):
         self.file_list_canvas.delete(Tkinter.ALL)
         for k in self.file_list_canvas.children.keys():
             file_path = self.file_list_canvas.children[k].file_path
-            del(self.file_dict[file_path])
             del(self.file_list_canvas.children[k])
+
+            # if file is not in queue, delete it from the app
+            if not self.queue_tree.exists(file_path):
+                del(self.file_dict[file_path])
 
         for i, f in enumerate(selected_files):
             cb = MyCheckbutton(
