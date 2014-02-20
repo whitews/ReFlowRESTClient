@@ -636,7 +636,7 @@ def post_sample(
 
     # get FCS file
     files = {
-        'sample_file': (file_obj.name, file_obj)
+        'sample_file': (os.path.basename(file_obj.name), file_obj)
     }
 
     try:
