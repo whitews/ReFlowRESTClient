@@ -632,9 +632,11 @@ def post_sample(
     if compensation_pk:
         data['compensation'] = compensation_pk
 
+    file_obj = open(file_path, "rb")
+
     # get FCS file
     files = {
-        'sample_file': open(file_path, "rb")
+        'sample_file': (file_obj.name, file_obj)
     }
 
     try:
@@ -645,8 +647,11 @@ def post_sample(
             files=files,
             verify=False)
     except Exception, e:
+        file_obj.close()
         print e
         return {'status': None, 'reason': 'No response', 'data': ''}
+
+    file_obj.close()
 
     if response.status_code == 201:
         try:
