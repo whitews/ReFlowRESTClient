@@ -892,7 +892,7 @@ def request_pr_assignment(host, token, process_request_pk):
     Requesting user must be a Worker registered with the Process and
     and the ProcessRequest must have 'Pending' status
     """
-    url = '%s%s%s%s/%s' % (
+    url = '%s%s%s%s/%s/' % (
         METHOD,
         host,
         URLS['PROCESS_REQUESTS'],
@@ -934,7 +934,7 @@ def verify_pr_assignment(host, token, process_request_pk):
     Result will include 'assignment': True of request.user (Worker) is assigned
     to the specified ProcessRequest
     """
-    url = '%s%s%s%s/%s' % (
+    url = '%s%s%s%s/%s/' % (
         METHOD,
         host,
         URLS['PROCESS_REQUESTS'],
@@ -952,7 +952,7 @@ def revoke_pr_assignment(host, token, process_request_pk):
     """
     Requests un-assignment from a ProcessRequest on the ReFlow server
     """
-    url = '%s%s%s%s/%s' % (
+    url = '%s%s%s%s/%s/' % (
         METHOD,
         host,
         URLS['PROCESS_REQUESTS'],
@@ -970,7 +970,7 @@ def complete_pr_assignment(host, token, process_request_pk):
     """
     Report that the ProcessRequest has been completed
     """
-    url = '%s%s%s%s/%s' % (
+    url = '%s%s%s%s/%s/' % (
         METHOD,
         host,
         URLS['PROCESS_REQUESTS'],
