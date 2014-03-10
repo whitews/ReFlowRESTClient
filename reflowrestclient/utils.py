@@ -27,6 +27,7 @@ URLS = {
     'VERIFY_WORKER':           '/api/repository/verify_worker/',
     'PROCESS_REQUESTS':        '/api/repository/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
+    'ASSIGNED_PROCESS_REQUESTS': '/api/repository/assigned_process_requests/',
     'CREATE_PROCESS_REQUEST_OUTPUT':  '/api/repository/process_request_outputs/add/',
 }
 
@@ -838,6 +839,20 @@ def get_process_requests(
 
     if request_user_pk is not None:
         filter_params['request_user'] = request_user_pk
+
+    return get_request(token, url, filter_params)
+
+
+def get_assigned_process_requests(
+        host,
+        token):
+    """
+    Returns process requests that are assigned to the requesting worker
+    i.e. the requesting user must be a Worker in the ReFlow server
+    Also, only non-Completed requests will be returned
+    """
+    url = '%s%s%s' % (METHOD, host, URLS['ASSIGNED_PROCESS_REQUESTS'])
+    filter_params = dict()
 
     return get_request(token, url, filter_params)
 
