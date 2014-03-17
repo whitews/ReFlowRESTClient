@@ -1065,3 +1065,54 @@ def post_process_request_output(
         'reason': response.reason,
         'data': data,
     }
+
+
+def download_process_output(
+        host,
+        token,
+        process_output_pk,
+        filename=None,
+        directory=None):
+    """
+    Download process request output file
+
+    Options:
+        'filename': (optional) filename to use for downloaded file
+                    (default is the <PK>_process_output, with no extension)
+        'directory': (optional) local directory in which to save the file
+                    (default is the current directory)
+    """
+
+    url = "%s%s/api/repository/process_request_outputs/%d/download/" % (
+        METHOD, host, process_output_pk)
+
+    if directory is None:
+        directory = os.getcwd()
+
+    if filename is None:
+        filename = str(process_output_pk) + "_process_output"
+    if directory is None:
+        directory = os.getcwd()
+
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    if r.status_code == 200:
+        try:
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
