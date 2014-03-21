@@ -5,7 +5,6 @@ from reflowrestclient import utils
 host = raw_input('Host: ')
 username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
-filename = 'test.fcs'
 
 token = utils.get_token(host, username, password)
 
