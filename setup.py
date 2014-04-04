@@ -5,7 +5,7 @@ setup(
     version='0.0.5',
     author='Scott White',
     author_email='scott.white@duke.edu',
-    packages=['reflowrestclient', 'reflowrestclient.processing'],
+    packages=['reflowrestclient'],
     url='https://github.com/whitews/ReFlowRESTClient',
     license='LICENSE.txt',
     description='REST client for interacting with a ReFlow repository.',
