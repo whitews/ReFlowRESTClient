@@ -20,6 +20,7 @@ URLS = {
     'CREATE_SAMPLES':      '/api/repository/samples/add/',
     'SAMPLE_METADATA':     '/api/repository/samplemetadata/',
     'VISIT_TYPES':         '/api/repository/visit_types/',
+    'SAMPLE_COLLECTION':   '/api/repository/sample_collections/',
 
     # Process related API URLs
     'PROCESSES':               '/api/repository/processes/',
@@ -681,6 +682,21 @@ def get_sample_metadata(host, token, sample_pk=None, key=None):
         filter_params['key'] = key
 
     return get_request(token, url, filter_params)
+
+
+def get_sample_collection(host, token, sample_collection_pk):
+    """
+    GET a serialized Sample Collection instance
+        sample_collection_pk    (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary representation of object successfully GET'd,
+                empty string if unsuccessful
+    """
+    url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLE_COLLECTION'], sample_collection_pk)
+    return get_request(token, url)
 
 
 def download_compensation(
