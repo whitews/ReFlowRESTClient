@@ -13,7 +13,6 @@ Contents:
 
    intro
    package-uploader-gui
-   worker-setup
 
 Indices and tables
 ==================
