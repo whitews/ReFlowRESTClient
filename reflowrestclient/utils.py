@@ -291,7 +291,7 @@ def get_site_panels(
         filter_params['project_panel'] = project_panel_pk
 
     if project_pk is not None:
-        filter_params['project_panel__project'] = project_pk
+        filter_params['project'] = project_pk
 
     return get_request(token, url, filter_params)
 
@@ -376,7 +376,7 @@ def get_cytometers(
         filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params['site__project'] = project_pk
+        filter_params['project'] = project_pk
 
     return get_request(token, url, filter_params)
 
@@ -399,10 +399,10 @@ def get_compensations(
         filter_params['site_panel'] = site_panel_pk
 
     if site_pk is not None:
-        filter_params['site_panel__site'] = site_pk
+        filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params['site_panel__site__project'] = project_pk
+        filter_params['project'] = project_pk
 
     if acquisition_date is not None:
         filter_params['acquisition_date'] = acquisition_date
@@ -478,7 +478,7 @@ def get_samples(
         filter_params['site'] = site_pk
 
     if project_pk is not None:
-        filter_params['subject__project'] = project_pk
+        filter_params['project'] = project_pk
 
     if visit_pk is not None:
         filter_params['visit'] = visit_pk
@@ -499,7 +499,7 @@ def get_samples(
         filter_params['original_filename'] = original_filename
 
     if subject_code is not None:
-        filter_params['subject__subject_code'] = subject_code
+        filter_params['subject_code'] = subject_code
 
     if acquisition_date is not None:
         filter_params['acquisition_date'] = acquisition_date
