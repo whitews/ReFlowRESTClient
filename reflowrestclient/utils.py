@@ -1,7 +1,10 @@
 import requests
 import os
 
-METHOD = 'https://'
+METHOD = {
+    'https': 'https://',
+    'http': 'http://'
+}
 
 URLS = {
     'TOKEN':               '/api/token-auth/',
@@ -69,14 +72,14 @@ def get_request(token, url, params=None):
     }
 
 
-def get_token(host, username, password):
+def get_token(host, username, password, method=METHOD['https']):
     """
     Login to host url using user credentials given.
 
     Returns the authenticating user's token (string) if successful,
     returns None if authentication failed.
     """
-    url = '%s%s%s' % (METHOD, host, URLS['TOKEN'])
+    url = '%s%s%s' % (method, host, URLS['TOKEN'])
 
     token = None
 
@@ -111,8 +114,8 @@ def get_token(host, username, password):
     return token
 
 
-def get_projects(host, token, project_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['PROJECTS'])
+def get_projects(host, token, project_name=None, method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['PROJECTS'])
     filter_params = dict()
 
     if project_name is not None:
@@ -121,7 +124,7 @@ def get_projects(host, token, project_name=None):
     return get_request(token, url, filter_params)
 
 
-def get_project(host, token, project_pk):
+def get_project(host, token, project_pk, method=METHOD['https']):
     """
     GET a serialized Project instance
         project_pk    (required)
@@ -132,12 +135,12 @@ def get_project(host, token, project_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECTS'], project_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['PROJECTS'], project_pk)
     return get_request(token, url)
 
 
-def get_specimens(host, token, specimen_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SPECIMENS'])
+def get_specimens(host, token, specimen_name=None, method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SPECIMENS'])
     filter_params = dict()
 
     if specimen_name is not None:
@@ -146,8 +149,13 @@ def get_specimens(host, token, specimen_name=None):
     return get_request(token, url, filter_params)
 
 
-def get_subject_groups(host, token, group_name=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SUBJECT_GROUPS'])
+def get_subject_groups(
+        host,
+        token,
+        group_name=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SUBJECT_GROUPS'])
     filter_params = dict()
 
     if group_name is not None:
@@ -159,8 +167,13 @@ def get_subject_groups(host, token, group_name=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
-def get_visit_types(host, token, visit_type_name=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['VISIT_TYPES'])
+def get_visit_types(
+        host,
+        token,
+        visit_type_name=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['VISIT_TYPES'])
     filter_params = dict()
 
     if visit_type_name is not None:
@@ -172,7 +185,7 @@ def get_visit_types(host, token, visit_type_name=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
-def get_visit_type(host, token, visit_type_pk):
+def get_visit_type(host, token, visit_type_pk, method=METHOD['https']):
     """
     GET a serialized ProjectVisitType instance
         visit_type_pk    (required)
@@ -183,12 +196,17 @@ def get_visit_type(host, token, visit_type_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['VISIT_TYPES'], visit_type_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['VISIT_TYPES'], visit_type_pk)
     return get_request(token, url)
 
 
-def get_sites(host, token, site_name=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SITES'])
+def get_sites(
+        host,
+        token,
+        site_name=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SITES'])
     filter_params = dict()
 
     if site_name is not None:
@@ -200,7 +218,7 @@ def get_sites(host, token, site_name=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
-def get_site(host, token, site_pk):
+def get_site(host, token, site_pk, method=METHOD['https']):
     """
     GET a serialized Site instance
         site_pk    (required)
@@ -211,7 +229,7 @@ def get_site(host, token, site_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SITES'], site_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['SITES'], site_pk)
     return get_request(token, url)
 
 
@@ -220,8 +238,9 @@ def get_subjects(
         token,
         subject_code=None,
         project_pk=None,
-        subject_group_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SUBJECTS'])
+        subject_group_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SUBJECTS'])
     filter_params = dict()
 
     if subject_code is not None:
@@ -236,7 +255,7 @@ def get_subjects(
     return get_request(token, url, filter_params)
 
 
-def get_subject(host, token, subject_pk):
+def get_subject(host, token, subject_pk, method=METHOD['https']):
     """
     GET a serialized Subject instance
         subject_pk    (required)
@@ -247,12 +266,17 @@ def get_subject(host, token, subject_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SUBJECTS'], subject_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['SUBJECTS'], subject_pk)
     return get_request(token, url)
 
 
-def get_project_panels(host, token, panel_name=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['PROJECT_PANELS'])
+def get_project_panels(
+        host,
+        token,
+        panel_name=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['PROJECT_PANELS'])
     filter_params = dict()
 
     if panel_name is not None:
@@ -264,7 +288,7 @@ def get_project_panels(host, token, panel_name=None, project_pk=None):
     return get_request(token, url, filter_params)
 
 
-def get_project_panel(host, token, project_panel_pk):
+def get_project_panel(host, token, project_panel_pk, method=METHOD['https']):
     """
     GET a serialized ProjectPanel instance
         project_panel_pk    (required)
@@ -275,13 +299,18 @@ def get_project_panel(host, token, project_panel_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['PROJECT_PANELS'], project_panel_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['PROJECT_PANELS'], project_panel_pk)
     return get_request(token, url)
 
 
 def get_site_panels(
-        host, token, project_panel_pk=None, site_pk=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SITE_PANELS'])
+        host,
+        token,
+        project_panel_pk=None,
+        site_pk=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SITE_PANELS'])
     filter_params = dict()
 
     if site_pk is not None:
@@ -296,7 +325,7 @@ def get_site_panels(
     return get_request(token, url, filter_params)
 
 
-def get_site_panel(host, token, site_panel_pk):
+def get_site_panel(host, token, site_panel_pk, method=METHOD['https']):
     """
     GET a serialized SitePanel instance
         site_panel_pk    (required)
@@ -307,11 +336,16 @@ def get_site_panel(host, token, site_panel_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SITE_PANELS'], site_panel_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['SITE_PANELS'], site_panel_pk)
     return get_request(token, url)
 
 
-def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
+def is_site_panel_match(
+        host,
+        token,
+        site_panel_pk,
+        parameter_dict,
+        method=METHOD['https']):
     """
     GET a serialized ProjectPanel instance
         site_panel_pk    (required)
@@ -368,8 +402,12 @@ def is_site_panel_match(host, token, site_panel_pk, parameter_dict):
 
 
 def get_cytometers(
-        host, token, site_pk=None, project_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['CYTOMETERS'])
+        host,
+        token,
+        site_pk=None,
+        project_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['CYTOMETERS'])
     filter_params = dict()
 
     if site_pk is not None:
@@ -388,8 +426,9 @@ def get_compensations(
         site_panel_pk=None,
         site_pk=None,
         project_pk=None,
-        acquisition_date=None):
-    url = '%s%s%s' % (METHOD, host, URLS['COMPENSATIONS'])
+        acquisition_date=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['COMPENSATIONS'])
     filter_params = dict()
 
     if name is not None:
@@ -410,7 +449,7 @@ def get_compensations(
     return get_request(token, url, filter_params)
 
 
-def get_compensation(host, token, compensation_pk):
+def get_compensation(host, token, compensation_pk, method=METHOD['https']):
     """
     GET a serialized Compensation instance
         compensation_pk    (required)
@@ -421,12 +460,17 @@ def get_compensation(host, token, compensation_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['COMPENSATIONS'], compensation_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['COMPENSATIONS'], compensation_pk)
     return get_request(token, url)
 
 
-def get_stimulations(host, token, project_pk=None, stimulation_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['STIMULATIONS'])
+def get_stimulations(
+        host,
+        token,
+        project_pk=None,
+        stimulation_name=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['STIMULATIONS'])
     filter_params = dict()
 
     if project_pk is not None:
@@ -438,7 +482,7 @@ def get_stimulations(host, token, project_pk=None, stimulation_name=None):
     return get_request(token, url, filter_params)
 
 
-def get_stimulation(host, token, stimulation_pk):
+def get_stimulation(host, token, stimulation_pk, method=METHOD['https']):
     """
     GET a serialized Stimulation instance
         stimulation_pk    (required)
@@ -449,7 +493,7 @@ def get_stimulation(host, token, stimulation_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['STIMULATIONS'], stimulation_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['STIMULATIONS'], stimulation_pk)
     return get_request(token, url)
 
 
@@ -467,8 +511,9 @@ def get_samples(
         original_filename=None,
         subject_code=None,
         acquisition_date=None,
-        sha1=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SAMPLES'])
+        sha1=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SAMPLES'])
     filter_params = dict()
 
     if subject_pk is not None:
@@ -510,7 +555,7 @@ def get_samples(
     return get_request(token, url, filter_params)
 
 
-def get_sample(host, token, sample_pk):
+def get_sample(host, token, sample_pk, method=METHOD['https']):
     """
     GET a serialized Sample instance
         sample_pk    (required)
@@ -521,7 +566,7 @@ def get_sample(host, token, sample_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLES'], sample_pk)
+    url = '%s%s%s%s/' % (method, host, URLS['SAMPLES'], sample_pk)
     return get_request(token, url)
 
 
@@ -531,7 +576,8 @@ def download_sample(
         sample_pk,
         data_format='npy',
         filename=None,
-        directory=None):
+        directory=None,
+        method=METHOD['https']):
     """
     Download sample data as FCS, CSV, or Numpy (npy)
 
@@ -541,11 +587,11 @@ def download_sample(
                     (default is the PK.<format>, eg 42.npy)
     """
     if data_format == 'npy':
-        url = "%s%s/api/repository/samples/%d/npy/" % (METHOD, host, sample_pk)
+        url = "%s%s/api/repository/samples/%d/npy/" % (method, host, sample_pk)
     elif data_format == 'csv':
-        url = "%s%s/api/repository/samples/%d/csv/" % (METHOD, host, sample_pk)
+        url = "%s%s/api/repository/samples/%d/csv/" % (method, host, sample_pk)
     elif data_format == 'fcs':
-        url = "%s%s/api/repository/samples/%d/fcs/" % (METHOD, host, sample_pk)
+        url = "%s%s/api/repository/samples/%d/fcs/" % (method, host, sample_pk)
     else:
         print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
             % data_format
@@ -593,7 +639,8 @@ def post_sample(
         site_panel_pk,
         cytometer_pk,
         acquisition_date,
-        compensation_pk=None):
+        compensation_pk=None,
+        method=METHOD['https']):
     """
     POST a FCS sample, associating the file with the following:
         subject_pk       (required)
@@ -614,7 +661,7 @@ def post_sample(
                 empty string if unsuccessful
     """
 
-    url = '%s%s%s' % (METHOD, host, URLS['CREATE_SAMPLES'])
+    url = '%s%s%s' % (method, host, URLS['CREATE_SAMPLES'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, visit, specimen, stimulation, and site_panel are required
@@ -671,8 +718,13 @@ def post_sample(
     }
 
 
-def get_sample_metadata(host, token, sample_pk=None, key=None):
-    url = '%s%s%s' % (METHOD, host, URLS['SAMPLE_METADATA'])
+def get_sample_metadata(
+        host,
+        token,
+        sample_pk=None,
+        key=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SAMPLE_METADATA'])
     filter_params = dict()
 
     if sample_pk is not None:
@@ -684,7 +736,11 @@ def get_sample_metadata(host, token, sample_pk=None, key=None):
     return get_request(token, url, filter_params)
 
 
-def get_sample_collection(host, token, sample_collection_pk):
+def get_sample_collection(
+        host,
+        token,
+        sample_collection_pk,
+        method=METHOD['https']):
     """
     GET a serialized Sample Collection instance
         sample_collection_pk    (required)
@@ -695,7 +751,12 @@ def get_sample_collection(host, token, sample_collection_pk):
         'data': Dictionary representation of object successfully GET'd,
                 empty string if unsuccessful
     """
-    url = '%s%s%s%s/' % (METHOD, host, URLS['SAMPLE_COLLECTION'], sample_collection_pk)
+    url = '%s%s%s%s/' % (
+        method,
+        host,
+        URLS['SAMPLE_COLLECTION'],
+        sample_collection_pk
+    )
     return get_request(token, url)
 
 
@@ -705,7 +766,8 @@ def download_compensation(
         compensation_pk,
         data_format='npy',
         filename=None,
-        directory=None):
+        directory=None,
+        method=METHOD['https']):
     """
     Download sample data as CSV or Numpy (npy)
 
@@ -716,10 +778,10 @@ def download_compensation(
     """
     if data_format == 'npy':
         url = "%s%s/api/repository/compensations/%d/npy/" % (
-            METHOD, host, compensation_pk)
+            method, host, compensation_pk)
     elif data_format == 'csv':
         url = "%s%s/api/repository/compensations/%d/csv/" % (
-            METHOD, host, compensation_pk)
+            method, host, compensation_pk)
     else:
         print "Data format %s not supported, use 'npy' or 'csv'" \
             % data_format
@@ -760,7 +822,8 @@ def post_compensation(
         name,
         site_panel_pk,
         acquisition_date,
-        matrix_text):
+        matrix_text,
+        method=METHOD['https']):
     """
     POST a compensation matrix. The matrix text can be comma or tab delimited.
         name             (required)
@@ -775,7 +838,7 @@ def post_compensation(
                 empty string if unsuccessful
     """
 
-    url = '%s%s%s' % (METHOD, host, URLS['CREATE_COMPENSATION'])
+    url = '%s%s%s' % (method, host, URLS['CREATE_COMPENSATION'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, visit, specimen, stimulation, and site_panel are required
@@ -818,8 +881,8 @@ def post_compensation(
 ###    the user to be a superuser   ###
 ###    or a Worker                  ###
 #######################################
-def get_processes(host, token, process_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['PROCESSES'])
+def get_processes(host, token, process_name=None, method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['PROCESSES'])
     filter_params = dict()
 
     if process_name is not None:
@@ -828,8 +891,8 @@ def get_processes(host, token, process_name=None):
     return get_request(token, url, filter_params)
 
 
-def get_workers(host, token, worker_name=None):
-    url = '%s%s%s' % (METHOD, host, URLS['WORKERS'])
+def get_workers(host, token, worker_name=None, method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['WORKERS'])
     filter_params = dict()
 
     if worker_name is not None:
@@ -843,8 +906,9 @@ def get_process_requests(
         token,
         process_pk=None,
         worker_pk=None,
-        request_user_pk=None):
-    url = '%s%s%s' % (METHOD, host, URLS['PROCESS_REQUESTS'])
+        request_user_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['PROCESS_REQUESTS'])
     filter_params = dict()
 
     if process_pk is not None:
@@ -861,13 +925,14 @@ def get_process_requests(
 
 def get_assigned_process_requests(
         host,
-        token):
+        token,
+        method=METHOD['https']):
     """
     Returns process requests that are assigned to the requesting worker
     i.e. the requesting user must be a Worker in the ReFlow server
     Also, only non-Completed requests will be returned
     """
-    url = '%s%s%s' % (METHOD, host, URLS['ASSIGNED_PROCESS_REQUESTS'])
+    url = '%s%s%s' % (method, host, URLS['ASSIGNED_PROCESS_REQUESTS'])
     filter_params = dict()
 
     return get_request(token, url, filter_params)
@@ -878,13 +943,14 @@ def get_viable_process_requests(
         token,
         process_pk=None,
         worker_pk=None,
-        request_user_pk=None):
+        request_user_pk=None,
+        method=METHOD['https']):
     """
     Returns process requests that are compatible with the requesting user
     i.e. the requesting user must be a Worker registered with the Process
     Also, only unassigned 'Pending' requests will be returned
     """
-    url = '%s%s%s' % (METHOD, host, URLS['VIABLE_PROCESS_REQUESTS'])
+    url = '%s%s%s' % (method, host, URLS['VIABLE_PROCESS_REQUESTS'])
     filter_params = dict()
 
     if process_pk is not None:
@@ -899,7 +965,11 @@ def get_viable_process_requests(
     return get_request(token, url, filter_params)
 
 
-def get_process_request(host, token, process_request_pk):
+def get_process_request(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
     """
     GET a serialized ProcessRequest instance
         process_request_pk    (required)
@@ -911,20 +981,24 @@ def get_process_request(host, token, process_request_pk):
                 empty string if unsuccessful
     """
     url = '%s%s%s%s/' % (
-        METHOD,
+        method,
         host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk)
     return get_request(token, url)
 
 
-def request_pr_assignment(host, token, process_request_pk):
+def request_pr_assignment(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
     """
     Requesting user must be a Worker registered with the Process and
     and the ProcessRequest must have 'Pending' status
     """
     url = '%s%s%s%s/%s/' % (
-        METHOD,
+        method,
         host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
@@ -960,13 +1034,17 @@ def request_pr_assignment(host, token, process_request_pk):
     }
 
 
-def verify_pr_assignment(host, token, process_request_pk):
+def verify_pr_assignment(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
     """
     Result will include 'assignment': True of request.user (Worker) is assigned
     to the specified ProcessRequest
     """
     url = '%s%s%s%s/%s/' % (
-        METHOD,
+        method,
         host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
@@ -979,12 +1057,16 @@ def verify_pr_assignment(host, token, process_request_pk):
     return get_request(token, url, filter_params)
 
 
-def revoke_pr_assignment(host, token, process_request_pk):
+def revoke_pr_assignment(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
     """
     Requests un-assignment from a ProcessRequest on the ReFlow server
     """
     url = '%s%s%s%s/%s/' % (
-        METHOD,
+        method,
         host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
@@ -997,12 +1079,16 @@ def revoke_pr_assignment(host, token, process_request_pk):
     return get_request(token, url, filter_params)
 
 
-def complete_pr_assignment(host, token, process_request_pk):
+def complete_pr_assignment(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
     """
     Report that the ProcessRequest has been completed
     """
     url = '%s%s%s%s/%s/' % (
-        METHOD,
+        method,
         host,
         URLS['PROCESS_REQUESTS'],
         process_request_pk,
@@ -1015,11 +1101,11 @@ def complete_pr_assignment(host, token, process_request_pk):
     return get_request(token, url, filter_params)
 
 
-def verify_worker(host, token):
+def verify_worker(host, token, method=METHOD['https']):
     """
     Result will include 'worker': True if request.user is a Worker on host
     """
-    url = '%s%s%s' % (METHOD, host, URLS['VERIFY_WORKER'])
+    url = '%s%s%s' % (method, host, URLS['VERIFY_WORKER'])
     filter_params = dict()
 
     return get_request(token, url, filter_params)
@@ -1029,7 +1115,8 @@ def post_process_request_output(
         host,
         token,
         process_request_id,
-        file_path):
+        file_path,
+        method=METHOD['https']):
     """
     POST a ProcessRequestOutput instance.
         process_request_ID (required)
@@ -1042,7 +1129,7 @@ def post_process_request_output(
                 empty string if unsuccessful
     """
 
-    url = '%s%s%s' % (METHOD, host, URLS['CREATE_PROCESS_REQUEST_OUTPUT'])
+    url = '%s%s%s' % (method, host, URLS['CREATE_PROCESS_REQUEST_OUTPUT'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, visit, specimen, stimulation, and site_panel are required
@@ -1088,7 +1175,8 @@ def download_process_output(
         token,
         process_output_pk,
         filename=None,
-        directory=None):
+        directory=None,
+        method=METHOD['https']):
     """
     Download process request output file
 
@@ -1100,7 +1188,7 @@ def download_process_output(
     """
 
     url = "%s%s/api/repository/process_request_outputs/%d/download/" % (
-        METHOD, host, process_output_pk)
+        method, host, process_output_pk)
 
     if directory is None:
         directory = os.getcwd()
