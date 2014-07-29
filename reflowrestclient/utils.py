@@ -313,6 +313,7 @@ def get_site_panels(
         project_panel_pk=None,
         site_pk=None,
         project_pk=None,
+        panel_type=None,
         method=METHOD['https']):
     url = '%s%s%s' % (method, host, URLS['SITE_PANELS'])
     filter_params = dict()
@@ -325,6 +326,9 @@ def get_site_panels(
 
     if project_pk is not None:
         filter_params['project'] = project_pk
+
+    if panel_type is not None:
+        filter_params['panel_type'] = panel_type
 
     return get_request(token, url, filter_params)
 
@@ -359,7 +363,7 @@ def is_site_panel_match(
 
     # TODO: verify the parameter_dict
 
-    response = get_site_panel(host, token, site_panel_pk)
+    response = get_site_panel(host, token, site_panel_pk, method=method)
 
     site_parameters = None
 
@@ -542,7 +546,7 @@ def get_samples(
         filter_params['site_panel'] = site_panel_pk
 
     if project_panel_pk is not None:
-        filter_params['project_panel'] = project_panel_pk
+        filter_params['panel'] = project_panel_pk
 
     if original_filename is not None:
         filter_params['original_filename'] = original_filename
@@ -824,16 +828,16 @@ def post_compensation(
         host,
         token,
         name,
-        site_panel_pk,
+        panel_template_pk,
         acquisition_date,
         matrix_text,
         method=METHOD['https']):
     """
     POST a compensation matrix. The matrix text can be comma or tab delimited.
-        name             (required)
-        site_panel_pk    (required)
-        acquisition_date (required)
-        matrix_text      (required)
+        name              (required)
+        panel_template_pk (required)
+        acquisition_date  (required)
+        matrix_text       (required)
 
     Returns a dictionary with keys:
         'status': The HTTP response code
@@ -848,7 +852,7 @@ def post_compensation(
     # Subject, visit, specimen, stimulation, and site_panel are required
     data = {
         'name': name,
-        'site_panel': site_panel_pk,
+        'panel_template': panel_template_pk,
         'acquisition_date': acquisition_date,
         'matrix_text': matrix_text
     }
