@@ -1,5 +1,5 @@
 import getpass
-from reflowrestclient.utils import get_token, METHOD
+from reflowrestclient import utils
 
 host = "localhost:8000"
 
@@ -7,7 +7,7 @@ username = raw_input('Username: ')
 password = getpass.getpass('Password: ')
 method = raw_input('Method (https or http): ')
 
-token = get_token(host, username, password, method=METHOD[method])
+token = utils.get_token(host, username, password, method=utils.METHOD[method])
 
 if token:
     print "Got token!!!"
