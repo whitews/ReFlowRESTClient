@@ -274,6 +274,7 @@ def get_project_panels(
         host,
         token,
         panel_name=None,
+        staining=None,
         project_pk=None,
         method=METHOD['https']):
     url = '%s%s%s' % (method, host, URLS['PROJECT_PANELS'])
@@ -281,6 +282,9 @@ def get_project_panels(
 
     if panel_name is not None:
         filter_params['panel_name'] = panel_name
+
+    if staining is not None:
+        filter_params['staining'] = staining
 
     if project_pk is not None:
         filter_params['project'] = project_pk
