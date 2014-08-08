@@ -32,7 +32,7 @@ URLS = {
     'PROCESS_REQUESTS':        '/api/repository/process_requests/',
     'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
     'ASSIGNED_PROCESS_REQUESTS': '/api/repository/assigned_process_requests/',
-    'CREATE_PROCESS_REQUEST_OUTPUT':  '/api/repository/process_request_outputs/add/',
+    'PROCESS_REQUEST_OUTPUTS':  '/api/repository/process_request_outputs/',
 }
 
 
@@ -1137,7 +1137,7 @@ def post_process_request_output(
                 empty string if unsuccessful
     """
 
-    url = '%s%s%s' % (method, host, URLS['CREATE_PROCESS_REQUEST_OUTPUT'])
+    url = '%s%s%s' % (method, host, URLS['PROCESS_REQUEST_OUTPUTS'])
     headers = {'Authorization': "Token %s" % token}
 
     # Subject, visit, specimen, stimulation, and site_panel are required
