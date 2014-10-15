@@ -26,13 +26,15 @@ URLS = {
     'SAMPLE_COLLECTION':   '/api/repository/sample_collections/',
 
     # Process related API URLs
-    'PROCESSES':               '/api/repository/processes/',
-    'WORKERS':                 '/api/repository/workers/',
-    'VERIFY_WORKER':           '/api/repository/verify_worker/',
-    'PROCESS_REQUESTS':        '/api/repository/process_requests/',
-    'VIABLE_PROCESS_REQUESTS': '/api/repository/viable_process_requests/',
+    'PROCESSES':                 '/api/repository/processes/',
+    'WORKERS':                   '/api/repository/workers/',
+    'VERIFY_WORKER':             '/api/repository/verify_worker/',
+    'PROCESS_REQUESTS':          '/api/repository/process_requests/',
+    'VIABLE_PROCESS_REQUESTS':   '/api/repository/viable_process_requests/',
     'ASSIGNED_PROCESS_REQUESTS': '/api/repository/assigned_process_requests/',
-    'PROCESS_REQUEST_OUTPUTS':  '/api/repository/process_request_outputs/',
+    'PROCESS_REQUEST_OUTPUTS':   '/api/repository/process_request_outputs/',
+    'CLUSTERS':                  '/api/repository/clusters/',
+    'SAMPLE_CLUSTERS':           '/api/repository/sample_clusters/',
 }
 
 
@@ -1226,5 +1228,116 @@ def download_process_output(
     return {
         'status': r.status_code,
         'reason': r.reason,
+        'data': data,
+    }
+
+
+def post_cluster(
+        host,
+        token,
+        process_request_id,
+        cluster_index,
+        method=METHOD['https']):
+    """
+    POST a Cluster instance.
+        process_request_id (required)
+        cluster_index      (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary string representation of object successfully posted,
+                empty string if unsuccessful
+    """
+
+    url = '%s%s%s' % (method, host, URLS['CLUSTERS'])
+    headers = {'Authorization': "Token %s" % token}
+
+    # process_request and index are required
+    data = {
+        'process_request': process_request_id,
+        'index': cluster_index
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            data=data,
+            verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if response.status_code == 201:
+        try:
+            data = response.json()
+        except Exception, e:
+            data = response.text()
+            print e
+    else:
+        data = response.text
+
+    return {
+        'status': response.status_code,
+        'reason': response.reason,
+        'data': data,
+    }
+
+
+def post_sample_cluster(
+        host,
+        token,
+        cluster_id,
+        sample_id,
+        param_dict,
+        event_indices,
+        method=METHOD['https']):
+    """
+    POST a SampleCluster instance.
+        cluster_id     (required)
+        param_dict     (required)
+        event_indices  (required)
+
+    Returns a dictionary with keys:
+        'status': The HTTP response code
+        'reason': The HTTP response reason
+        'data': Dictionary string representation of object successfully posted,
+                empty string if unsuccessful
+    """
+
+    url = '%s%s%s' % (method, host, URLS['SAMPLE_CLUSTERS'])
+    headers = {'Authorization': "Token %s" % token}
+
+    # process_request and index are required
+    data = {
+        'cluster_id': cluster_id,
+        'sample_id': sample_id,
+        'parameters': param_dict,
+        'event_indices': event_indices
+    }
+
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            data=data,
+            verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': ''}
+
+    if response.status_code == 201:
+        try:
+            data = response.json()
+        except Exception, e:
+            data = response.text()
+            print e
+    else:
+        data = response.text
+
+    return {
+        'status': response.status_code,
+        'reason': response.reason,
         'data': data,
     }
