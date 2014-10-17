@@ -1,5 +1,6 @@
 import requests
 import os
+import json
 
 METHOD = {
     'https': 'https://',
@@ -1307,7 +1308,10 @@ def post_sample_cluster(
     """
 
     url = '%s%s%s' % (method, host, URLS['SAMPLE_CLUSTERS'])
-    headers = {'Authorization': "Token %s" % token}
+    headers = {
+        'Authorization': "Token %s" % token,
+        'Content-type': 'application/json'  # b/c of the nested param_dict
+    }
 
     # process_request and index are required
     data = {
@@ -1316,6 +1320,9 @@ def post_sample_cluster(
         'parameters': param_dict,
         'event_indices': event_indices
     }
+
+    # convert to JSON b/c of nested objects (param_dict)
+    data = json.dumps(data)
 
     try:
         response = requests.post(
