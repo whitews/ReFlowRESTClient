@@ -1348,3 +1348,17 @@ def post_sample_cluster(
         'reason': response.reason,
         'data': data,
     }
+
+
+def get_sample_clusters(
+        host,
+        token,
+        process_request_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SAMPLE_CLUSTERS'])
+    filter_params = dict()
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
