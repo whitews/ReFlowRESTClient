@@ -33,7 +33,6 @@ URLS = {
     'PROCESS_REQUESTS':          '/api/repository/process_requests/',
     'VIABLE_PROCESS_REQUESTS':   '/api/repository/viable_process_requests/',
     'ASSIGNED_PROCESS_REQUESTS': '/api/repository/assigned_process_requests/',
-    'PROCESS_REQUEST_OUTPUTS':   '/api/repository/process_request_outputs/',
     'CLUSTERS':                  '/api/repository/clusters/',
     'SAMPLE_CLUSTERS':           '/api/repository/sample_clusters/',
 }
@@ -1120,117 +1119,6 @@ def verify_worker(host, token, method=METHOD['https']):
     filter_params = dict()
 
     return get_request(token, url, filter_params)
-
-
-def post_process_request_output(
-        host,
-        token,
-        process_request_id,
-        file_path,
-        method=METHOD['https']):
-    """
-    POST a ProcessRequestOutput instance.
-        process_request_ID (required)
-        file               (required)
-
-    Returns a dictionary with keys:
-        'status': The HTTP response code
-        'reason': The HTTP response reason
-        'data': Dictionary string representation of object successfully posted,
-                empty string if unsuccessful
-    """
-
-    url = '%s%s%s' % (method, host, URLS['PROCESS_REQUEST_OUTPUTS'])
-    headers = {'Authorization': "Token %s" % token}
-
-    # Subject, visit, specimen, stimulation, and site_panel are required
-    data = {
-        'process_request': process_request_id,
-        'key': file_path.split('/')[-1]
-    }
-
-    # get FCS file
-    files = {
-        'value': open(file_path, "rb")
-    }
-
-    try:
-        response = requests.post(
-            url,
-            headers=headers,
-            data=data,
-            files=files,
-            verify=False)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': ''}
-
-    if response.status_code == 201:
-        try:
-            data = response.json()
-        except Exception, e:
-            data = response.text()
-            print e
-    else:
-        data = response.text
-
-    return {
-        'status': response.status_code,
-        'reason': response.reason,
-        'data': data,
-    }
-
-
-def download_process_output(
-        host,
-        token,
-        process_output_pk,
-        filename=None,
-        directory=None,
-        method=METHOD['https']):
-    """
-    Download process request output file
-
-    Options:
-        'filename': (optional) filename to use for downloaded file
-                    (default is the <PK>_process_output, with no extension)
-        'directory': (optional) local directory in which to save the file
-                    (default is the current directory)
-    """
-
-    url = "%s%s/api/repository/process_request_outputs/%d/download/" % (
-        method, host, process_output_pk)
-
-    if directory is None:
-        directory = os.getcwd()
-
-    if filename is None:
-        filename = str(process_output_pk) + "_process_output"
-    if directory is None:
-        directory = os.getcwd()
-
-    headers = {'Authorization': "Token %s" % token}
-    data = ''
-    try:
-        r = requests.get(url, headers=headers, verify=False)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': data}
-
-    if r.status_code == 200:
-        try:
-            with open("%s/%s" % (directory, filename), "wb") as data_file:
-                data_file.write(r.content)
-        except Exception, e:
-            print e
-    else:
-        data = r.text
-
-    return {
-        'status': r.status_code,
-        'reason': r.reason,
-        'data': data,
-    }
 
 
 def post_cluster(
