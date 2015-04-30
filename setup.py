@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ReFlowRESTClient',
-    version='0.1.0b',
+    version='0.1.1b',
     author='Scott White',
     author_email='scott.white@duke.edu',
     packages=['reflowrestclient'],

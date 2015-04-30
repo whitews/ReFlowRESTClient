@@ -1181,6 +1181,7 @@ def post_sample_cluster(
         sample_id,
         param_dict,
         event_indices,
+        components,
         method=METHOD['https']):
     """
     POST a SampleCluster instance.
@@ -1206,13 +1207,14 @@ def post_sample_cluster(
         'cluster_id': cluster_id,
         'sample_id': sample_id,
         'parameters': param_dict,
-        'event_indices': event_indices
+        'event_indices': event_indices,
+        'components': components
     }
 
-    # convert to JSON b/c of nested objects (param_dict)
-    data = json.dumps(data)
-
     try:
+        # convert to JSON b/c of nested objects (param_dict)
+        data = json.dumps(data)
+
         response = requests.post(
             url,
             headers=headers,
