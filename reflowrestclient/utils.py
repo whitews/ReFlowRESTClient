@@ -35,6 +35,7 @@ URLS = {
     'ASSIGNED_PROCESS_REQUESTS': '/api/repository/assigned_process_requests/',
     'CLUSTERS':                  '/api/repository/clusters/',
     'SAMPLE_CLUSTERS':           '/api/repository/sample_clusters/',
+    'SAMPLE_CLUSTER_COMPONENTS': '/api/repository/sample_cluster_components/',
 }
 
 
@@ -1250,5 +1251,22 @@ def get_sample_clusters(
 
     if process_request_pk is not None:
         filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
+
+
+def get_sample_cluster_components(
+        host,
+        token,
+        process_request_pk=None,
+        sample_pk=None,
+        method=METHOD['https']):
+    url = '%s%s%s' % (method, host, URLS['SAMPLE_CLUSTER_COMPONENTS'])
+    filter_params = dict()
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+    if sample_pk is not None:
+        filter_params['sample'] = sample_pk
 
     return get_request(token, url, filter_params)
