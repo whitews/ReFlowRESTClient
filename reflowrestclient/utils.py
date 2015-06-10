@@ -1212,23 +1212,21 @@ def post_sample_cluster(
         'components': components
     }
 
-    try:
-        # convert to JSON b/c of nested objects (param_dict)
-        data = json.dumps(data)
+    # convert to JSON b/c of nested objects (param_dict)
+    data = json.dumps(data)
 
-        response = requests.post(
-            url,
-            headers=headers,
-            data=data,
-            verify=False)
-    except Exception, e:
-        print e
-        return {'status': None, 'reason': 'No response', 'data': ''}
+    response = requests.post(
+        url,
+        headers=headers,
+        data=data,
+        verify=False)
 
     if response.status_code == 201:
         try:
             data = response.json()
         except Exception, e:
+            # Since we got a 201 response but couldn't JSON-ify the response,
+            # we still need to return something sensible
             data = response.text()
             print e
     else:
