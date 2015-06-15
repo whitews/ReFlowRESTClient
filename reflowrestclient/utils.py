@@ -135,8 +135,7 @@ def get_project(host, token, project_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['PROJECTS'], project_pk)
     return get_request(token, url)
@@ -196,8 +195,7 @@ def get_visit_type(host, token, visit_type_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['VISIT_TYPES'], visit_type_pk)
     return get_request(token, url)
@@ -229,8 +227,7 @@ def get_site(host, token, site_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['SITES'], site_pk)
     return get_request(token, url)
@@ -266,8 +263,7 @@ def get_subject(host, token, subject_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['SUBJECTS'], subject_pk)
     return get_request(token, url)
@@ -303,8 +299,7 @@ def get_project_panel(host, token, project_panel_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['PROJECT_PANELS'], project_panel_pk)
     return get_request(token, url)
@@ -344,8 +339,7 @@ def get_site_panel(host, token, site_panel_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['SITE_PANELS'], site_panel_pk)
     return get_request(token, url)
@@ -383,13 +377,13 @@ def is_site_panel_match(
             if 'fcs_number' in param:
                 if param['fcs_number'] in parameter_dict:
                     candidate = parameter_dict[param['fcs_number']]
-                    if not 'n' in candidate:
+                    if 'n' not in candidate:
                         non_matches[param['fcs_number']] = candidate
                         continue
                     if candidate['n'] != param['fcs_text']:
                         non_matches[param['fcs_number']] = candidate
                         continue
-                    if not 's' in candidate and param['fcs_opt_text'] != '':
+                    if 's' not in candidate and param['fcs_opt_text'] != '':
                         non_matches[param['fcs_number']] = candidate
                         continue
                     elif 's' in candidate:
@@ -468,8 +462,7 @@ def get_compensation(host, token, compensation_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['COMPENSATIONS'], compensation_pk)
     return get_request(token, url)
@@ -501,8 +494,7 @@ def get_stimulation(host, token, stimulation_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['STIMULATIONS'], stimulation_pk)
     return get_request(token, url)
@@ -574,8 +566,7 @@ def get_sample(host, token, sample_pk, method=METHOD['https']):
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (method, host, URLS['SAMPLES'], sample_pk)
     return get_request(token, url)
@@ -759,8 +750,7 @@ def get_sample_collection(
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (
         method,
@@ -886,12 +876,12 @@ def post_compensation(
     }
 
 
-#######################################
-### START PROCESS MANAGER FUNCTIONS ###
-###    Note: Most of these require  ###
-###    the user to be a superuser   ###
-###    or a Worker                  ###
-#######################################
+###################################
+# START PROCESS MANAGER FUNCTIONS #
+#    Note: Most of these require  #
+#    the user to be a superuser   #
+#    or a Worker                  #
+###################################
 def get_processes(host, token, process_name=None, method=METHOD['https']):
     url = '%s%s%s' % (method, host, URLS['PROCESSES'])
     filter_params = dict()
@@ -988,8 +978,7 @@ def get_process_request(
     Returns a dictionary with keys:
         'status': The HTTP response code
         'reason': The HTTP response reason
-        'data': Dictionary representation of object successfully GET'd,
-                empty string if unsuccessful
+        'data': Dictionary representation of object
     """
     url = '%s%s%s%s/' % (
         method,
