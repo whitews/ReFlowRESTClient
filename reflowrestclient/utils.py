@@ -52,12 +52,7 @@ def get_request(token, url, params=None):
         'Authorization': "Token %s" % token,
     }
 
-    try:
-        response = requests.get(
-            url, headers=headers, params=params, verify=False)
-    except Exception, e:
-        print e.__class__
-        return {'status': None, 'reason': 'No response', 'data': ''}
+    response = requests.get(url, headers=headers, params=params, verify=False)
 
     if response.status_code == 200:
         try:
