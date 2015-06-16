@@ -1029,6 +1029,45 @@ def request_pr_assignment(
     }
 
 
+def report_pr_error(
+        host,
+        token,
+        process_request_pk,
+        error_msg_string,
+        method=METHOD['https']):
+    """
+    Requesting user must be a Worker assigned to the ProcessRequest and
+    and the ProcessRequest must have 'Worker' status
+    """
+    url = '%s%s%s%s/%s/' % (
+        method,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'report_error')
+    headers = {'Authorization': "Token %s" % token}
+
+    r = requests.patch(
+        url,
+        data={
+            'status_message': error_msg_string
+        },
+        headers=headers,
+        verify=False
+    )
+
+    if r.status_code == 201:
+        data = r.json()
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
+
 def verify_pr_assignment(
         host,
         token,
