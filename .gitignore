@@ -3,3 +3,6 @@
 *.db
 settings.py
 .DS_Store
+build
+dist
+*.egg-info
