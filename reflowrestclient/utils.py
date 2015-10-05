@@ -16,7 +16,6 @@ URLS = {
     'SUBJECTS':            '/api/repository/subjects/',
     'PROJECT_PANELS':      '/api/repository/project_panels/',
     'SITE_PANELS':         '/api/repository/site_panels/',
-    'CYTOMETERS':          '/api/repository/cytometers/',
     'COMPENSATIONS':       '/api/repository/compensations/',
     'CREATE_COMPENSATION': '/api/repository/compensations/add/',
     'STIMULATIONS':        '/api/repository/stimulations/',
@@ -401,24 +400,6 @@ def is_site_panel_match(
     return False
 
 
-def get_cytometers(
-        host,
-        token,
-        site_pk=None,
-        project_pk=None,
-        method=METHOD['https']):
-    url = '%s%s%s' % (method, host, URLS['CYTOMETERS'])
-    filter_params = dict()
-
-    if site_pk is not None:
-        filter_params['site'] = site_pk
-
-    if project_pk is not None:
-        filter_params['project'] = project_pk
-
-    return get_request(token, url, filter_params)
-
-
 def get_compensations(
         host,
         token,
@@ -634,7 +615,6 @@ def post_sample(
         storage,
         stimulation_pk,
         site_panel_pk,
-        cytometer_pk,
         acquisition_date,
         compensation_pk=None,
         method=METHOD['https']):
@@ -647,7 +627,6 @@ def post_sample(
         storage          (required)
         stimulation_pk   (required)
         site_panel_pk    (required)
-        cytometer_pk     (required)
         acquisition_date (required)
         compensation_pk  (optional)
 
@@ -670,7 +649,6 @@ def post_sample(
         'storage': storage,
         'stimulation': stimulation_pk,
         'site_panel': site_panel_pk,
-        'cytometer': cytometer_pk,
         'acquisition_date': acquisition_date
     }
 
