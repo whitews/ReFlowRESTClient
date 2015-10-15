@@ -14,7 +14,7 @@ URLS = {
     'SUBJECT_GROUPS':      '/api/repository/subject_groups/',
     'SITES':               '/api/repository/sites/',
     'SUBJECTS':            '/api/repository/subjects/',
-    'PROJECT_PANELS':      '/api/repository/project_panels/',
+    'PROJECT_PANELS':      '/api/repository/panel_templates/',
     'SITE_PANELS':         '/api/repository/site_panels/',
     'COMPENSATIONS':       '/api/repository/compensations/',
     'CREATE_COMPENSATION': '/api/repository/compensations/add/',
