@@ -1269,3 +1269,53 @@ def get_sample_cluster_components(
         filter_params['sample'] = sample_pk
 
     return get_request(token, url, filter_params)
+
+
+def download_sample_cluster_events(
+        host,
+        token,
+        sample_cluster_pk,
+        filename=None,
+        directory=None,
+        method=METHOD['https']):
+    """
+    Download sample data as CSV or Numpy (npy)
+
+    Options:
+        'data_format': 'npy' (default) or 'csv'
+        'filename': filename to use for downloaded file
+                    (default is the comp_<PK>.<format>, eg comp_42.npy)
+    """
+    url = "%s%s/api/repository/sample_clusters/%d/csv/" % (
+        method,
+        host,
+        sample_cluster_pk
+    )
+
+    if filename is None:
+        filename = 'sample_cluster_' + str(sample_cluster_pk) + '.csv'
+    if directory is None:
+        directory = os.getcwd()
+
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    if r.status_code == 200:
+        try:
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
