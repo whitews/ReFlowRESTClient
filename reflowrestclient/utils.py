@@ -314,7 +314,7 @@ def get_site_panels(
         filter_params['site'] = site_pk
 
     if project_panel_pk is not None:
-        filter_params['project_panel'] = project_panel_pk
+        filter_params['panel_template'] = project_panel_pk
 
     if project_pk is not None:
         filter_params['project'] = project_pk
