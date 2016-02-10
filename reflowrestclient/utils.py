@@ -1091,6 +1091,45 @@ def revoke_pr_assignment(
     return get_request(token, url, filter_params)
 
 
+def report_pr_progress(
+        host,
+        token,
+        process_request_pk,
+        percent_complete,
+        method=METHOD['https']):
+    """
+    Requesting user must be a Worker assigned to the ProcessRequest and
+    and the ProcessRequest must have 'Worker' status. Percent complete should
+    be an integer, and will be reported back as such to the ReFlow server.
+    """
+    url = '%s%s%s%s' % (
+        method,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk)
+    headers = {'Authorization': "Token %s" % token}
+
+    r = requests.patch(
+        url,
+        data={
+            'percent_complete': percent_complete
+        },
+        headers=headers,
+        verify=False
+    )
+
+    if r.status_code == 201:
+        data = r.json()
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
+
 def complete_pr_assignment(
         host,
         token,
