@@ -1091,6 +1091,29 @@ def revoke_pr_assignment(
     return get_request(token, url, filter_params)
 
 
+def purge_pr_results(
+        host,
+        token,
+        process_request_pk,
+        method=METHOD['https']):
+    """
+    Requests that previous ProcessRequest results be deleted. Only works
+    for uncompleted PRs, and only for the assigned Worker.
+    """
+    url = '%s%s%s%s/%s/' % (
+        method,
+        host,
+        URLS['PROCESS_REQUESTS'],
+        process_request_pk,
+        'purge_results')
+    filter_params = dict()
+
+    if process_request_pk is not None:
+        filter_params['process_request'] = process_request_pk
+
+    return get_request(token, url, filter_params)
+
+
 def report_pr_progress(
         host,
         token,
