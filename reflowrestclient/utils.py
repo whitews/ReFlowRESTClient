@@ -552,28 +552,13 @@ def download_sample(
         host,
         token,
         sample_pk,
-        data_format='npy',
         filename=None,
         directory=None,
         method=METHOD['https']):
     """
-    Download sample data as FCS, CSV, or Numpy (npy)
-
-    Options:
-        'data_format': 'npy' (default), 'fcs, or 'csv'
-        'filename': filename to use for downloaded file
-                    (default is the PK.<format>, eg 42.npy)
+    Download sample as FCS
     """
-    if data_format == 'npy':
-        url = "%s%s/api/repository/samples/%d/npy/" % (method, host, sample_pk)
-    elif data_format == 'csv':
-        url = "%s%s/api/repository/samples/%d/csv/" % (method, host, sample_pk)
-    elif data_format == 'fcs':
-        url = "%s%s/api/repository/samples/%d/fcs/" % (method, host, sample_pk)
-    else:
-        print "Data format %s not supported, use 'npy', 'csv', or 'fcs'" \
-            % data_format
-        return
+    url = "%s%s/api/repository/samples/%d/fcs/" % (method, host, sample_pk)
 
     if filename is None:
         filename = str(sample_pk) + '.' + data_format
