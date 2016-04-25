@@ -561,7 +561,7 @@ def download_sample(
     url = "%s%s/api/repository/samples/%d/fcs/" % (method, host, sample_pk)
 
     if filename is None:
-        filename = str(sample_pk) + '.' + data_format
+        filename = str(sample_pk) + '.fcs'
     if directory is None:
         directory = os.getcwd()
 
