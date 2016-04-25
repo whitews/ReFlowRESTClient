@@ -589,6 +589,52 @@ def download_sample(
     }
 
 
+def download_clean_sample(
+        host,
+        token,
+        sample_pk,
+        filename=None,
+        directory=None,
+        method=METHOD['https']
+    ):
+    """
+    Download clean sample as FCS
+    """
+    url = "%s%s/api/repository/samples/%d/fcs_clean/" % (
+        method,
+        host,
+        sample_pk
+    )
+
+    if filename is None:
+        filename = str(sample_pk) + '_clean.fcs'
+    if directory is None:
+        directory = os.getcwd()
+
+    headers = {'Authorization': "Token %s" % token}
+    data = ''
+    try:
+        r = requests.get(url, headers=headers, verify=False)
+    except Exception, e:
+        print e
+        return {'status': None, 'reason': 'No response', 'data': data}
+
+    if r.status_code == 200:
+        try:
+            with open("%s/%s" % (directory, filename), "wb") as data_file:
+                data_file.write(r.content)
+        except Exception, e:
+            print e
+    else:
+        data = r.text
+
+    return {
+        'status': r.status_code,
+        'reason': r.reason,
+        'data': data,
+    }
+
+
 def post_sample(
         host,
         token,
