@@ -1276,6 +1276,7 @@ def post_sample_cluster(
         sample_id,
         param_dict,
         events,
+        event_percentage,
         components,
         method=METHOD['https']):
     """
@@ -1303,6 +1304,7 @@ def post_sample_cluster(
         'sample_id': sample_id,
         'parameters': param_dict,
         'events': events,
+        'event_percentage': event_percentage,
         'components': components
     }
 
