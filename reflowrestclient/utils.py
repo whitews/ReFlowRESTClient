@@ -558,7 +558,7 @@ def download_sample(
     """
     Download sample as FCS
     """
-    url = "%s%s/api/repository/samples/%d/fcs/" % (method, host, sample_pk)
+    url = "%s%s/api/repository/samples/%d/fcs_original/" % (method, host, sample_pk)
 
     if filename is None:
         filename = str(sample_pk) + '.fcs'
