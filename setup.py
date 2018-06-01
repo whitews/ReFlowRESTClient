@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ReFlowRESTClient',
-    version='0.4',
+    version='0.5',
     author='Scott White',
     author_email='scott.white@duke.edu',
     packages=['reflowrestclient'],
@@ -12,6 +12,6 @@ setup(
     description='REST client for interacting with a ReFlow repository.',
     long_description=open('README.md').read(),
     requires=[
-        'requests (>=1.1.0)'
+        'requests'
     ]
 )

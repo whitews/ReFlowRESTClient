@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import requests
 import os
 import json
@@ -56,9 +58,9 @@ def get_request(token, url, params=None):
     if response.status_code == 200:
         try:
             data = response.json()
-        except Exception, e:
+        except Exception as e:
             data = response.text()
-            print e
+            print(e)
     else:
         data = response.text
 
@@ -87,8 +89,8 @@ def get_token(host, username, password, method=METHOD['https']):
 
     try:
         response = requests.post(url, data=data, verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return None
 
     if response.status_code == 200:
@@ -99,14 +101,14 @@ def get_token(host, username, password, method=METHOD['https']):
                 # delete all the user credentials
                 del(data, response, username, password)
             else:
-                print "Authentication token not in response"
+                print("Authentication token not in response")
 
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             return None
     else:
-        print "Authentication failed (%s: %s)" % (
-            response.status_code, response.reason)
+        print("Authentication failed (%s: %s)" % (
+            response.status_code, response.reason))
 
     return token
 
@@ -569,16 +571,16 @@ def download_sample(
     data = ''
     try:
         r = requests.get(url, headers=headers, verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
         try:
             with open("%s/%s" % (directory, filename), "wb") as data_file:
                 data_file.write(r.content)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     else:
         data = r.text
 
@@ -595,8 +597,7 @@ def download_clean_sample(
         sample_pk,
         filename=None,
         directory=None,
-        method=METHOD['https']
-    ):
+        method=METHOD['https']):
     """
     Download clean sample as FCS
     """
@@ -615,16 +616,16 @@ def download_clean_sample(
     data = ''
     try:
         r = requests.get(url, headers=headers, verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
         try:
             with open("%s/%s" % (directory, filename), "wb") as data_file:
                 data_file.write(r.content)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     else:
         data = r.text
 
@@ -701,9 +702,9 @@ def post_sample(
             data=data,
             files=files,
             verify=False)
-    except Exception, e:
+    except Exception as e:
         file_obj.close()
-        print e
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     file_obj.close()
@@ -711,9 +712,9 @@ def post_sample(
     if response.status_code == 201:
         try:
             data = response.json()
-        except Exception, e:
+        except Exception as e:
             data = response.text()
-            print e
+            print(e)
     else:
         data = response.text
 
@@ -788,8 +789,7 @@ def download_compensation(
         url = "%s%s/api/repository/compensations/%d/csv/" % (
             method, host, compensation_pk)
     else:
-        print "Data format %s not supported, use 'npy' or 'csv'" \
-            % data_format
+        print("Data format %s not supported, use 'npy' or 'csv'" % data_format)
         return
 
     if filename is None:
@@ -801,16 +801,16 @@ def download_compensation(
     data = ''
     try:
         r = requests.get(url, headers=headers, verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
         try:
             with open("%s/%s" % (directory, filename), "wb") as data_file:
                 data_file.write(r.content)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     else:
         data = r.text
 
@@ -860,16 +860,16 @@ def post_compensation(
             headers=headers,
             data=data,
             verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if response.status_code == 201:
         try:
             data = response.json()
-        except Exception, e:
+        except Exception as e:
             data = response.text()
-            print e
+            print(e)
     else:
         data = response.text
 
@@ -1018,16 +1018,16 @@ def request_pr_assignment(
             },
             headers=headers,
             verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if r.status_code == 201:
         try:
             data = r.json()
-        except Exception, e:
+        except Exception as e:
             data = r.text()
-            print e
+            print(e)
     else:
         data = r.text
 
@@ -1249,16 +1249,16 @@ def post_cluster(
             headers=headers,
             data=data,
             verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': ''}
 
     if response.status_code == 201:
         try:
             data = response.json()
-        except Exception, e:
+        except Exception as e:
             data = response.text()
-            print e
+            print(e)
     else:
         data = response.text
 
@@ -1320,11 +1320,11 @@ def post_sample_cluster(
     if response.status_code == 201:
         try:
             data = response.json()
-        except Exception, e:
+        except Exception as e:
             # Since we got a 201 response but couldn't JSON-ify the response,
             # we still need to return something sensible
             data = response.text()
-            print e
+            print(e)
     else:
         data = response.text
 
@@ -1396,16 +1396,16 @@ def download_sample_cluster_events(
     data = ''
     try:
         r = requests.get(url, headers=headers, verify=False)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return {'status': None, 'reason': 'No response', 'data': data}
 
     if r.status_code == 200:
         try:
             with open("%s/%s" % (directory, filename), "wb") as data_file:
                 data_file.write(r.content)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
     else:
         data = r.text
 
